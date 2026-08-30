@@ -1,0 +1,21 @@
+{
+  "name": "XBPNEUS Racing — Do Pedal ao Planeta",
+  "short_name": "XBPNEUS Racing",
+  "description": "Pilote a Rota Ouro com rua FBX e entregador XB animado, evoluindo do pedal à frota interplanetária.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0D1B33",
+  "theme_color": "#0D1B33",
+  "lang": "pt-BR",
+  "categories": ["games", "simulation"],
+  "icons": [
+    {
+      "src": "/assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

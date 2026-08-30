@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title-fleet desc-fleet">
+  <title id="title-fleet">EVOLUÇÃO DA FROTA</title><desc id="desc-fleet">BICICLETA → MOTO → UTILITÁRIO → CAMINHÃO → PLANETÁRIO</desc>
+  
+  <defs>
+    <linearGradient id="bg-fleet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#031d38"/>
+      <stop offset="0.58" stop-color="#062b50"/>
+      <stop offset="1" stop-color="#010b15"/>
+    </linearGradient>
+    <linearGradient id="metal-fleet" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#556875"/><stop offset="0.5" stop-color="#c5d2d8"/><stop offset="1" stop-color="#43545f"/>
+    </linearGradient>
+    <pattern id="grid-fleet" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#9cb7c6" stroke-opacity=".1"/>
+    </pattern>
+    <pattern id="stripe-fleet" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect width="18" height="36" fill="#18bfea" fill-opacity=".08"/>
+    </pattern>
+    <filter id="shadow-fleet" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".38"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg-fleet)"/>
+  <rect width="100%" height="100%" fill="url(#grid-fleet)"/>
+  <path d="M0 702 L992 72 H1600 V900 H0Z" fill="url(#stripe-fleet)"/>
+  <path d="M0 22H544L496 48H0Z" fill="#18bfea"/>
+  
+  <path d="M120 650H1490" stroke="#18bfea" stroke-width="9"/><path d="M120 690H1490" stroke="#86a3b3" stroke-width="2"/>
+  <g fill="none" stroke="#18bfea" stroke-width="14"><circle cx="170" cy="575" r="48"/><circle cx="350" cy="575" r="48"/><path d="M170 575L240 480L350 575L260 575L310 465M240 480L310 465"/></g>
+  <g transform="translate(430 390) scale(.58)"><g transform="translate(0 0) scale(1)">
+  <path d="M40 82H360V194H40Z" fill="#697b86"/><path d="M360 112H470L520 158V194H360Z" fill="#0a3d6e"/>
+  <path d="M386 124H454L484 154H386Z" fill="#8fc7db"/><rect x="58" y="100" width="274" height="14" fill="#48c6e8"/>
+  <g transform="translate(116 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#48c6e8" stroke-width="4"/>
+  <circle r="5.04" fill="#48c6e8"/>
+</g><g transform="translate(324 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#48c6e8" stroke-width="4"/>
+  <circle r="5.04" fill="#48c6e8"/>
+</g><g transform="translate(436 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#48c6e8" stroke-width="4"/>
+  <circle r="5.04" fill="#48c6e8"/>
+</g>
+</g></g>
+  <g transform="translate(720 360) scale(.72)"><g transform="translate(0 0) scale(1)">
+  <path d="M40 82H360V194H40Z" fill="#697b86"/><path d="M360 112H470L520 158V194H360Z" fill="#0a3d6e"/>
+  <path d="M386 124H454L484 154H386Z" fill="#8fc7db"/><rect x="58" y="100" width="274" height="14" fill="#59da9b"/>
+  <g transform="translate(116 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#59da9b" stroke-width="4"/>
+  <circle r="5.04" fill="#59da9b"/>
+</g><g transform="translate(324 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#59da9b" stroke-width="4"/>
+  <circle r="5.04" fill="#59da9b"/>
+</g><g transform="translate(436 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#59da9b" stroke-width="4"/>
+  <circle r="5.04" fill="#59da9b"/>
+</g>
+</g></g>
+  <g transform="translate(1040 320) scale(.88)"><g transform="translate(0 0) scale(1)">
+  <path d="M40 82H360V194H40Z" fill="#697b86"/><path d="M360 112H470L520 158V194H360Z" fill="#0a3d6e"/>
+  <path d="M386 124H454L484 154H386Z" fill="#8fc7db"/><rect x="58" y="100" width="274" height="14" fill="#18bfea"/>
+  <g transform="translate(116 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#18bfea" stroke-width="4"/>
+  <circle r="5.04" fill="#18bfea"/>
+</g><g transform="translate(324 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#18bfea" stroke-width="4"/>
+  <circle r="5.04" fill="#18bfea"/>
+</g><g transform="translate(436 202)">
+  <circle r="42" fill="#0a0d10" stroke="#4b5961" stroke-width="6"/>
+  <circle r="20.16" fill="#91a6b2" stroke="#18bfea" stroke-width="4"/>
+  <circle r="5.04" fill="#18bfea"/>
+</g>
+</g></g>
+  <g transform="translate(1390 410)"><circle r="105" fill="none" stroke="#18bfea" stroke-width="16"/><path d="M-68 0H68M0-68V68M-48-48L48 48M48-48L-48 48" stroke="#edf5f6" stroke-width="9"/></g>
+
+  <g font-family="Arial Narrow,Arial,sans-serif" letter-spacing="4">
+    <text x="64" y="830" fill="#edf5f6" font-size="34" font-weight="800">EVOLUÇÃO DA FROTA</text>
+    <text x="66" y="866" fill="#18bfea" font-size="16" font-weight="700">BICICLETA → MOTO → UTILITÁRIO → CAMINHÃO → PLANETÁRIO</text>
+  </g>
+</svg>

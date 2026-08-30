@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title-conditions desc-conditions">
+  <title id="title-conditions">CONDIÇÕES DE ROTA</title><desc id="desc-conditions">PREVISÃO OPERACIONAL EM TEMPO REAL</desc>
+  
+  <defs>
+    <linearGradient id="bg-conditions" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#031d38"/>
+      <stop offset="0.58" stop-color="#062b50"/>
+      <stop offset="1" stop-color="#010b15"/>
+    </linearGradient>
+    <linearGradient id="metal-conditions" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#556875"/><stop offset="0.5" stop-color="#c5d2d8"/><stop offset="1" stop-color="#43545f"/>
+    </linearGradient>
+    <pattern id="grid-conditions" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#9cb7c6" stroke-opacity=".1"/>
+    </pattern>
+    <pattern id="stripe-conditions" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect width="18" height="36" fill="#18bfea" fill-opacity=".08"/>
+    </pattern>
+    <filter id="shadow-conditions" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".38"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg-conditions)"/>
+  <rect width="100%" height="100%" fill="url(#grid-conditions)"/>
+  <path d="M0 702 L992 72 H1600 V900 H0Z" fill="url(#stripe-conditions)"/>
+  <path d="M0 22H544L496 48H0Z" fill="#18bfea"/>
+  
+  <g transform="translate(90 190)"><g transform="translate(0 0)"><path d="M0 0H430L390 190H0Z" fill="#092842" stroke="#18bfea" stroke-width="6"/><text x="80" y="112" fill="#18bfea" font-family="Arial,sans-serif" font-size="84" text-anchor="middle">☀</text><text x="145" y="98" fill="#edf5f6" font-family="Arial,sans-serif" font-size="28" font-weight="900">ABERTO</text><text x="145" y="132" fill="#91a6b2" font-family="Arial,sans-serif" font-size="16" letter-spacing="3">ANÁLISE XB</text></g><g transform="translate(500 0)"><path d="M0 0H430L390 190H0Z" fill="#092842" stroke="#48c6e8" stroke-width="6"/><text x="80" y="112" fill="#48c6e8" font-family="Arial,sans-serif" font-size="84" text-anchor="middle">☂</text><text x="145" y="98" fill="#edf5f6" font-family="Arial,sans-serif" font-size="28" font-weight="900">CHUVA</text><text x="145" y="132" fill="#91a6b2" font-family="Arial,sans-serif" font-size="16" letter-spacing="3">ANÁLISE XB</text></g><g transform="translate(1000 0)"><path d="M0 0H430L390 190H0Z" fill="#092842" stroke="#0a3d6e" stroke-width="6"/><text x="80" y="112" fill="#0a3d6e" font-family="Arial,sans-serif" font-size="84" text-anchor="middle">♨</text><text x="145" y="98" fill="#edf5f6" font-family="Arial,sans-serif" font-size="28" font-weight="900">CALOR</text><text x="145" y="132" fill="#91a6b2" font-family="Arial,sans-serif" font-size="16" letter-spacing="3">ANÁLISE XB</text></g><g transform="translate(0 250)"><path d="M0 0H430L390 190H0Z" fill="#092842" stroke="#91a6b2" stroke-width="6"/><text x="80" y="112" fill="#91a6b2" font-family="Arial,sans-serif" font-size="84" text-anchor="middle">≋</text><text x="145" y="98" fill="#edf5f6" font-family="Arial,sans-serif" font-size="28" font-weight="900">POEIRA</text><text x="145" y="132" fill="#91a6b2" font-family="Arial,sans-serif" font-size="16" letter-spacing="3">ANÁLISE XB</text></g><g transform="translate(500 250)"><path d="M0 0H430L390 190H0Z" fill="#092842" stroke="#b8d9ff" stroke-width="6"/><text x="80" y="112" fill="#b8d9ff" font-family="Arial,sans-serif" font-size="84" text-anchor="middle">❄</text><text x="145" y="98" fill="#edf5f6" font-family="Arial,sans-serif" font-size="28" font-weight="900">FRIO</text><text x="145" y="132" fill="#91a6b2" font-family="Arial,sans-serif" font-size="16" letter-spacing="3">ANÁLISE XB</text></g><g transform="translate(1000 250)"><path d="M0 0H430L390 190H0Z" fill="#092842" stroke="#9a8ee8" stroke-width="6"/><text x="80" y="112" fill="#9a8ee8" font-family="Arial,sans-serif" font-size="84" text-anchor="middle">ϟ</text><text x="145" y="98" fill="#edf5f6" font-family="Arial,sans-serif" font-size="28" font-weight="900">TEMPESTADE</text><text x="145" y="132" fill="#91a6b2" font-family="Arial,sans-serif" font-size="16" letter-spacing="3">ANÁLISE XB</text></g></g>
+
+  <g font-family="Arial Narrow,Arial,sans-serif" letter-spacing="4">
+    <text x="64" y="830" fill="#edf5f6" font-size="34" font-weight="800">CONDIÇÕES DE ROTA</text>
+    <text x="66" y="866" fill="#18bfea" font-size="16" font-weight="700">PREVISÃO OPERACIONAL EM TEMPO REAL</text>
+  </g>
+</svg>

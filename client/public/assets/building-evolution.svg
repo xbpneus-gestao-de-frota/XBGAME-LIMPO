@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title-buildings desc-buildings">
+  <title id="title-buildings">EVOLUÇÃO DA CENTRAL</title><desc id="desc-buildings">FUNDAÇÃO → OPERAÇÃO → CENTRO AVANÇADO</desc>
+  
+  <defs>
+    <linearGradient id="bg-buildings" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#031d38"/>
+      <stop offset="0.58" stop-color="#062b50"/>
+      <stop offset="1" stop-color="#010b15"/>
+    </linearGradient>
+    <linearGradient id="metal-buildings" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#556875"/><stop offset="0.5" stop-color="#c5d2d8"/><stop offset="1" stop-color="#43545f"/>
+    </linearGradient>
+    <pattern id="grid-buildings" width="64" height="64" patternUnits="userSpaceOnUse">
+      <path d="M64 0H0V64" fill="none" stroke="#9cb7c6" stroke-opacity=".1"/>
+    </pattern>
+    <pattern id="stripe-buildings" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
+      <rect width="18" height="36" fill="#18bfea" fill-opacity=".08"/>
+    </pattern>
+    <filter id="shadow-buildings" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".38"/>
+    </filter>
+  </defs>
+  <rect width="100%" height="100%" fill="url(#bg-buildings)"/>
+  <rect width="100%" height="100%" fill="url(#grid-buildings)"/>
+  <path d="M0 702 L992 72 H1600 V900 H0Z" fill="url(#stripe-buildings)"/>
+  <path d="M0 22H544L496 48H0Z" fill="#18bfea"/>
+  
+  <g transform="translate(130 450)"><rect width="360" height="160" fill="#17384d" stroke="#91a6b2" stroke-width="8"/><path d="M0 0L180-90L360 0L180 90Z" fill="#6f8794" opacity="0.5"/><g fill="#18bfea"><rect x="40" y="50" width="48" height="28"/><rect x="145" y="50" width="48" height="28"/><rect x="250" y="50" width="48" height="28"/><rect x="40" y="110" width="48" height="28"/><rect x="145" y="110" width="48" height="28"/><rect x="250" y="110" width="48" height="28"/></g><text x="180" y="230" text-anchor="middle" fill="#edf5f6" font-family="Arial,sans-serif" font-size="26" font-weight="800">FUNDAÇÃO</text></g><g transform="translate(620 345)"><rect width="360" height="265" fill="#17384d" stroke="#91a6b2" stroke-width="8"/><path d="M0 0L180-90L360 0L180 90Z" fill="#6f8794" opacity="0.5"/><g fill="#18bfea"><rect x="40" y="50" width="48" height="28"/><rect x="145" y="50" width="48" height="28"/><rect x="250" y="50" width="48" height="28"/><rect x="40" y="110" width="48" height="28"/><rect x="145" y="110" width="48" height="28"/><rect x="250" y="110" width="48" height="28"/><rect x="40" y="170" width="48" height="28"/><rect x="145" y="170" width="48" height="28"/><rect x="250" y="170" width="48" height="28"/></g><text x="180" y="335" text-anchor="middle" fill="#edf5f6" font-family="Arial,sans-serif" font-size="26" font-weight="800">OPERAÇÃO</text></g><g transform="translate(1110 240)"><rect width="360" height="370" fill="#17384d" stroke="#18bfea" stroke-width="8"/><path d="M0 0L180-90L360 0L180 90Z" fill="#18bfea" opacity="0.72"/><g fill="#18bfea"><rect x="40" y="50" width="48" height="28"/><rect x="145" y="50" width="48" height="28"/><rect x="250" y="50" width="48" height="28"/><rect x="40" y="110" width="48" height="28"/><rect x="145" y="110" width="48" height="28"/><rect x="250" y="110" width="48" height="28"/><rect x="40" y="170" width="48" height="28"/><rect x="145" y="170" width="48" height="28"/><rect x="250" y="170" width="48" height="28"/><rect x="40" y="230" width="48" height="28"/><rect x="145" y="230" width="48" height="28"/><rect x="250" y="230" width="48" height="28"/></g><text x="180" y="440" text-anchor="middle" fill="#edf5f6" font-family="Arial,sans-serif" font-size="26" font-weight="800">AVANÇADO</text></g>
+
+  <g font-family="Arial Narrow,Arial,sans-serif" letter-spacing="4">
+    <text x="64" y="830" fill="#edf5f6" font-size="34" font-weight="800">EVOLUÇÃO DA CENTRAL</text>
+    <text x="66" y="866" fill="#18bfea" font-size="16" font-weight="700">FUNDAÇÃO → OPERAÇÃO → CENTRO AVANÇADO</text>
+  </g>
+</svg>

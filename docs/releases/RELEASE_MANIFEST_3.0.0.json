@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "product": "XBPNEUS Racing — Do Pedal ao Planeta",
+  "release": "3.0.0",
+  "releaseDate": "2026-08-24",
+  "validationDate": "2026-08-25",
+  "releaseName": "Rota Ouro do Bairro XB",
+  "provenance": {
+    "baseArchive": "XBPNEUS_RACING_2.9.0_ESTABILIZADO.zip",
+    "basePreserved": true,
+    "workspace": "cópia isolada sem repositório Git"
+  },
+  "source": {
+    "status": "CONSOLIDATED_3_0_GOLDEN_ROUTE",
+    "entrypoint": "client/src/main.tsx",
+    "serviceWorker": "client/public/sw-v300.js",
+    "saveSchema": 3,
+    "authorityModules": [
+      "client/src/game/goldenRouteLayout.ts",
+      "client/src/game/neighborhoodLayout.ts",
+      "client/src/game/RoadSystem.ts",
+      "client/src/game/GameWorld.ts",
+      "client/src/game/environmentVisuals.ts",
+      "client/src/components/PilotFocusLayer.tsx",
+      "client/src/styles/pilot-focus.css"
+    ]
+  },
+  "distribution": {
+    "path": "dist",
+    "mode": "COMPATIBILITY_2_8_WITH_V300_GOLDEN_ROUTE_ADAPTER",
+    "adapter": "dist/public/assets/v300-golden-route.js",
+    "playableWithoutNodeModules": true,
+    "cleanBuild": false,
+    "cleanBuildBlocker": "EAI_AGAIN: ambiente sem resolução de registry.npmjs.org para baixar pnpm 10.15.1",
+    "publicationStatus": "NO_GO_UNTIL_CLEAN_BUILD_AND_MENU_MASCOT_REPLACEMENT"
+  },
+  "verification": {
+    "gameTests": {
+      "passed": 17,
+      "failed": 0
+    },
+    "securityTests": {
+      "passed": 4,
+      "failed": 0
+    },
+    "typescriptSyntaxFiles": 36,
+    "sourceIntegrity": "PASS",
+    "architecture": "PASS",
+    "releaseSecrets": 0,
+    "httpServer": "PASS",
+    "visualChecks": 15,
+    "finalMarker": "VERIFICACAO_OFFLINE_3_0_OK"
+  },
+  "playtest": {
+    "captureCount": 12,
+    "browser": "Chromium 144 / Xvfb / SwiftShader WebGL2",
+    "desktop": {
+      "viewport": "1440x900",
+      "states": [
+        "menu",
+        "central",
+        "rotas",
+        "curva 1",
+        "curva 2",
+        "chegada",
+        "resultado"
+      ],
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "firstRoute": {
+        "netCredits": 10,
+        "distanceKm": 1,
+        "completed": true
+      }
+    },
+    "mobile": {
+      "viewport": "390x844",
+      "states": [
+        "menu",
+        "central",
+        "curva 1",
+        "curva 2",
+        "resultado"
+      ],
+      "consoleErrors": 0,
+      "pageErrors": 0,
+      "horizontalOverflow": false,
+      "playerVisibleInBothCurves": true,
+      "firstRoute": {
+        "netCredits": 10,
+        "distanceKm": 1,
+        "completed": true
+      }
+    }
+  },
+  "criticalChanges": [
+    "linha central determinística da Rota Ouro",
+    "curva e contracurva compartilhadas por pista, atores, destino e câmera",
+    "módulos residenciais, comerciais, garagem, parque, ônibus e destino",
+    "escala de câmera por aspecto da viewport",
+    "correção de rotação acumulativa dos atores",
+    "preservação da curva durante pausa",
+    "redução do baú e HUD compacto",
+    "primeiro contrato preservado em 5 segundos, 1 km e XB$ 10"
+  ],
+  "knownLimitations": [
+    "dist ainda deriva do bundle compilado 2.8",
+    "fonte 3.0 precisa de build Vite limpa",
+    "mascote raster do menu ainda possui nariz, orelhas e dentes",
+    "arte de bairro ainda usa modelos low-poly provisórios",
+    "ativos Unreal ainda não foram convertidos para GLB/glTF"
+  ],
+  "evidence": [
+    "evidencias/validacao-v300/VERIFICACAO_OFFLINE_3.0.0_FINAL.log",
+    "evidencias/validacao-v300/BUILD_CLEAN_ATTEMPT_3.0.0.log",
+    "evidencias/validacao-v300/TDD_ACTOR_YAW_RED.log",
+    "evidencias/validacao-v300/TDD_ACTOR_YAW_GREEN.log",
+    "evidencias/validacao-v300/TDD_PAUSED_CURVE_RED.log",
+    "evidencias/validacao-v300/TDD_PAUSED_CURVE_GREEN.log",
+    "evidencias/validacao-v300/TDD_MOBILE_CAMERA_RED.log",
+    "evidencias/validacao-v300/TDD_MOBILE_CAMERA_GREEN.log",
+    "evidencias/playtest-v300/PLAYTEST_VISUAL_3.0.0.json",
+    "evidencias/playtest-v300/desktop-right-curve.png",
+    "evidencias/playtest-v300/desktop-left-curve.png",
+    "evidencias/playtest-v300/desktop-result.png",
+    "evidencias/playtest-v300/mobile-right-curve.png",
+    "evidencias/playtest-v300/mobile-left-curve.png",
+    "evidencias/playtest-v300/mobile-result.png"
+  ],
+  "changeInventory": {
+    "file": "ALTERACOES_ARQUIVOS_3.0.0.json",
+    "metadataFilesExcludedFromSelfComparison": [
+      "ALTERACOES_ARQUIVOS_3.0.0.json",
+      "SHA256SUMS_3.0.0.txt"
+    ],
+    "baseFiles": 255,
+    "currentFilesCompared": 309,
+    "added": 54,
+    "modified": 31,
+    "removed": 0,
+    "unchanged": 224
+  }
+}

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#272d31"/>
+  <filter id="noise"><feTurbulence baseFrequency=".65" numOctaves="4" seed="22"/><feColorMatrix values=".18 0 0 0 0  0 .18 0 0 0  0 0 .18 0 0  0 0 0 .55 0"/></filter>
+  <rect width="512" height="512" filter="url(#noise)" opacity=".55"/>
+  <path d="M30 100L120 72M220 184L302 142M380 92L470 66M44 340L130 310M236 414L322 376M384 300L466 266" stroke="#647078" stroke-width="5" opacity=".32"/>
+</svg>
