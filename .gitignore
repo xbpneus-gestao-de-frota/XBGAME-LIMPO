@@ -123,3 +123,6 @@ node_modules/
 
 # gerado pela compilacao a cada build
 SHA256SUMS_*.txt
+
+# registro do envio
+SUBIDA_LOG.txt
