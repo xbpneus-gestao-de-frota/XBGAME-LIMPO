@@ -1,21 +1,37 @@
-COMO SUBIR — depois de entrar na sua conta
+SUBIR O JOGO LIMPO PARA O GITHUB
+================================
 
-Abra o terminal dentro desta pasta e rode:
+A pasta ja esta pronta e conferida. Falta so o envio, que depende do
+seu acesso ao GitHub.
 
-    git push -u origin main
+Onde vai parar:
+https://github.com/xbpneus-gestao-de-frota/XBGAME-LIMPO
 
-Ele pede seu usuario e uma senha UMA vez.
-Atencao: no campo de senha o GitHub nao aceita mais a senha da conta.
-Ele pede um "token". Se pedir, voce gera em:
+O que vai subir: 191 arquivos, 2 marcos de trabalho, 153 testes.
+Nenhum outro repositorio e tocado.
 
-    github.com  ->  Settings  ->  Developer settings
-                ->  Personal access tokens  ->  Tokens (classic)
-                ->  Generate new token  ->  marque "repo"
 
-Cole o token no lugar da senha. So precisa fazer isso uma vez.
+CAMINHO 1 - GitHub Desktop (sem digitar nada)
+---------------------------------------------
+1. Abra o GitHub Desktop.
+2. Menu File > Add local repository.
+3. Escolha esta pasta:
+   C:\Users\xbpne\Desktop\ultimate game\XBPNEUS_RACING_LIMPO
+4. Clique no botao "Publish branch" (ou "Push origin").
 
-------------------------------------------------------------
-SE O REPOSITORIO JA TIVER ARQUIVOS DENTRO
 
-O push vai ser recusado. Nesse caso NAO force. Me avise, que eu
-olho o que ja esta la e junto as duas coisas sem perder nada.
+CAMINHO 2 - uma linha so
+-------------------------
+Abra o PowerShell e cole as duas linhas:
+
+cd "$env:USERPROFILE\Desktop\ultimate game\XBPNEUS_RACING_LIMPO"
+git push -u origin master:main
+
+
+DEPOIS
+------
+Me avise. Eu leio o repositorio pelo lado de fora e confiro arquivo
+por arquivo se chegou tudo.
+
+Os 16 arquivos de arte (o entregador, os logos, as pecas de rua) sobem
+junto por esses dois caminhos. So nao subiriam se fosse eu enviando.
