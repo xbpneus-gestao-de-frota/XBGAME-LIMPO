@@ -118,3 +118,8 @@ client/public/__manus__/
 *.pem
 *.p12
 *.pfx
+
+node_modules/
+
+# gerado pela compilacao a cada build
+SHA256SUMS_*.txt

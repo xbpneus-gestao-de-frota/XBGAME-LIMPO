@@ -1,0 +1,21 @@
+COMO SUBIR — depois de entrar na sua conta
+
+Abra o terminal dentro desta pasta e rode:
+
+    git push -u origin main
+
+Ele pede seu usuario e uma senha UMA vez.
+Atencao: no campo de senha o GitHub nao aceita mais a senha da conta.
+Ele pede um "token". Se pedir, voce gera em:
+
+    github.com  ->  Settings  ->  Developer settings
+                ->  Personal access tokens  ->  Tokens (classic)
+                ->  Generate new token  ->  marque "repo"
+
+Cole o token no lugar da senha. So precisa fazer isso uma vez.
+
+------------------------------------------------------------
+SE O REPOSITORIO JA TIVER ARQUIVOS DENTRO
+
+O push vai ser recusado. Nesse caso NAO force. Me avise, que eu
+olho o que ja esta la e junto as duas coisas sem perder nada.

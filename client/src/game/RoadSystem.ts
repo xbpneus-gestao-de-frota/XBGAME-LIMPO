@@ -19,7 +19,10 @@ import type {
   WeatherCondition,
 } from "./types";
 import { urbanRoadDecorFor } from "./urbanLayout";
-import { neighborhoodCurvePose } from "./neighborhoodLayout";
+import {
+  neighborhoodCurvePose,
+  type NeighborhoodCurvePose,
+} from "./neighborhoodLayout";
 import {
   advanceNeighborhoodPath,
   createNeighborhoodPathState,
@@ -55,6 +58,7 @@ interface DeliveryStopVisual {
 }
 
 const SEGMENT_LENGTH = 24;
+const SEGMENT_HALF_LENGTH = SEGMENT_LENGTH / 2;
 const SEGMENT_COUNT = 9;
 
 export class RoadSystem {
@@ -292,32 +296,93 @@ export class RoadSystem {
     });
   }
 
+  /**
+   * Deslocamento lateral do tracado no ponto `z` da pista, lido na grade viva
+   * dos segmentos: o inicio da celula de 24 em que `z` cai. Pista e atores
+   * derivam as duas amostras da curva do MESMO jeito, entao concordam por
+   * construcao, sem depender de arredondamento.
+   */
+  private neighborhoodCellStart(z: number): number {
+    const anchor = (this.segments[0]?.position.z ?? 0) - SEGMENT_HALF_LENGTH;
+    return anchor + Math.floor((z - anchor) / SEGMENT_LENGTH) * SEGMENT_LENGTH;
+  }
+
+  /** Deslocamento da curva na amostra `z` (sem porteira de terreno). */
+  private neighborhoodOffsetAt(z: number): number {
+    return neighborhoodCurvePose(
+      this.neighborhoodPath.travelDistance + z,
+      this.neighborhoodPath.travelDistance,
+      this.neighborhoodPath.progress,
+      this.neighborhoodPath.routePhase
+    ).offsetX;
+  }
+
+  /**
+   * A corda de uma celula de 24: o que o bloco rigido consegue mesmo desenhar.
+   * A tangente do centro nao serve — um bloco de 24 girado pelo angulo do meio
+   * nao encosta nos vizinhos, e a calcada tem 1,5 de largura.
+   */
+  private neighborhoodChord(cellStart: number): {
+    near: number;
+    far: number;
+    spread: number;
+    yaw: number;
+  } {
+    const near = this.neighborhoodOffsetAt(cellStart);
+    const far = this.neighborhoodOffsetAt(cellStart + SEGMENT_LENGTH);
+    const spread = far - near;
+    return { near, far, spread, yaw: Math.atan(spread / SEGMENT_LENGTH) };
+  }
+
+  /**
+   * O eixo que a pista realmente tem: poligonal pelas amostras de fronteira.
+   * Depois da correcao a via e reta dentro de cada celula, entao quem anda
+   * sobre ela (atores, ponto de entrega) tem de ler daqui e nao da curva lisa
+   * — no miolo da celula as duas diferem pela flecha da corda.
+   */
+  private neighborhoodChordPose(z: number): NeighborhoodCurvePose {
+    if (!this.neighborhoodPath.urban) return { offsetX: 0, yaw: 0 };
+    const cellStart = this.neighborhoodCellStart(z);
+    const chord = this.neighborhoodChord(cellStart);
+    const ratio = (z - cellStart) / SEGMENT_LENGTH;
+    return { offsetX: chord.near + chord.spread * ratio, yaw: chord.yaw };
+  }
+
   private positionRoadSegments(): void {
     this.segments.forEach(segment => {
-      const pose = neighborhoodCurvePose(
-        this.neighborhoodPath.travelDistance + segment.position.z,
-        this.neighborhoodPath.travelDistance,
-        this.neighborhoodPath.progress,
-        this.neighborhoodPath.urban ? this.neighborhoodPath.routePhase : 0
+      if (!this.neighborhoodPath.urban) {
+        segment.position.x = 0;
+        segment.rotation.y = 0;
+        segment.scaling.z = 1;
+        return;
+      }
+      const chord = this.neighborhoodChord(
+        this.neighborhoodCellStart(segment.position.z)
       );
-      segment.position.x = this.neighborhoodPath.urban ? pose.offsetX : 0;
-      segment.rotation.y = this.neighborhoodPath.urban ? pose.yaw : 0;
+      // Babylon aplica escala, depois giro, depois translacao: a ponta local
+      // (0, 0, 12) cai em (12k*sen(giro), 0, 12k*cos(giro)). Com k = 1/cos o
+      // bloco continua medindo 24 em z (nenhum vao ao longo da via) e a ponta
+      // abre spread/2 em x — pousa exatamente sobre a amostra do vizinho.
+      segment.position.x = (chord.near + chord.far) / 2;
+      segment.rotation.y = chord.yaw;
+      segment.scaling.z =
+        Math.hypot(chord.spread, SEGMENT_LENGTH) / SEGMENT_LENGTH;
     });
   }
 
-  private positionActorOnNeighborhood(actor: RoadActor) {
-    const pose = neighborhoodCurvePose(
-      this.neighborhoodPath.travelDistance + actor.root.position.z,
-      this.neighborhoodPath.travelDistance,
-      this.neighborhoodPath.progress,
-      this.neighborhoodPath.urban ? this.neighborhoodPath.routePhase : 0
-    );
+  private positionActorOnNeighborhood(actor: RoadActor): NeighborhoodCurvePose {
+    const pose = this.neighborhoodChordPose(actor.root.position.z);
     actor.root.position.x =
-      (this.neighborhoodPath.urban ? pose.offsetX : 0) +
-      (LANE_POSITIONS[actor.laneIndex] ?? 0);
-    return this.neighborhoodPath.urban ? pose : { offsetX: 0, yaw: 0 };
+      pose.offsetX + (LANE_POSITIONS[actor.laneIndex] ?? 0);
+    return pose;
   }
 
+  /**
+   * Deixa de proposito na curva lisa: isto nao posiciona nada sobre o asfalto,
+   * e so a mira da camera 28 a frente. A guinada da corda e constante dentro
+   * da celula e salta na fronteira; o alvo da camera entra sem suavizacao no
+   * GameWorld, e o salto viraria tranco a cada 24 de percurso.
+   */
   getCameraCue(): { offsetX: number; yaw: number } {
     if (!this.neighborhoodPath.urban) return { offsetX: 0, yaw: 0 };
     return neighborhoodCurvePose(
@@ -1019,16 +1084,11 @@ export class RoadSystem {
     if (!pose.visible) return;
 
     root.position.z = pose.z;
-    const curvePose = neighborhoodCurvePose(
-      this.neighborhoodPath.travelDistance + pose.z,
-      this.neighborhoodPath.travelDistance,
-      this.neighborhoodPath.progress,
-      this.neighborhoodPath.urban ? this.neighborhoodPath.routePhase : 0
-    );
-    root.position.x =
-      12.35 + (this.neighborhoodPath.urban ? curvePose.offsetX : 0);
-    root.rotation.y =
-      Math.PI / 2 + (this.neighborhoodPath.urban ? curvePose.yaw : 0);
+    // A parada fica na calcada: tem de acompanhar o eixo da pista desenhada,
+    // nao a curva lisa, senao descola do meio-fio dentro da celula.
+    const curvePose = this.neighborhoodChordPose(pose.z);
+    root.position.x = 12.35 + curvePose.offsetX;
+    root.rotation.y = Math.PI / 2 + curvePose.yaw;
     const moving = pose.customerWalk > 0 && pose.customerReturn < 0.98;
     const walkCycle = Math.sin(this.visualTime * 10.5);
     courier.root.position.z = -4.9 + pose.customerWalk * 2.55;

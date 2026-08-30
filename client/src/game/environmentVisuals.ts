@@ -1,5 +1,5 @@
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
-import { Color3 } from "@babylonjs/core/Maths/math.color";
+import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh.pure";
 import type { Mesh } from "@babylonjs/core/Meshes/mesh";
@@ -23,10 +23,16 @@ interface SceneryCluster {
   root: TransformNode;
   tower: AbstractMesh;
   feature: AbstractMesh;
+  roofGable: AbstractMesh;
+  roofParapet: AbstractMesh;
+  roofShed: AbstractMesh;
+  roofProp: AbstractMesh;
   crown: AbstractMesh;
+  crownConic: AbstractMesh;
   accent: AbstractMesh;
   door: AbstractMesh;
   windowSecondary: AbstractMesh;
+  windowTertiary: AbstractMesh;
   trunk: AbstractMesh;
   planter: AbstractMesh;
   walkway: AbstractMesh;
@@ -40,15 +46,22 @@ interface SceneryCluster {
   lot: UrbanLot;
   side: -1 | 1;
   module: NeighborhoodModule;
+  style: SceneryStyle;
 }
 
 interface ScenerySources {
   tower: Mesh;
   feature: Mesh;
+  roofGable: Mesh;
+  roofParapet: Mesh;
+  roofShed: Mesh;
+  roofProp: Mesh;
   crown: Mesh;
+  crownConic: Mesh;
   accent: Mesh;
   door: Mesh;
   windowSecondary: Mesh;
+  windowTertiary: Mesh;
   trunk: Mesh;
   planter: Mesh;
   walkway: Mesh;
@@ -141,6 +154,419 @@ export function environmentPalette(terrain: RouteTerrain): EnvironmentPalette {
 }
 
 /**
+ * Paletas fechadas do bairro. A unica cor forte da tela continua sendo o ciano
+ * XB: parede, telhado e copa ficam em tons quebrados, escolhidos a mao, que
+ * nao competem com ele. Nada aqui e sorteado em tempo de execucao — a cor de
+ * um lote vem de um indice estavel, entao a rua tem memoria.
+ */
+export const SCENERY_WALL_COLORS = [
+  "#E9E0D2",
+  "#DCC9AB",
+  "#CBB8A2",
+  "#C6D0D6",
+  "#B7C3B3",
+  "#E4E7E4",
+  "#D3BBAA",
+  "#BEC8D1",
+] as const;
+
+export const SCENERY_ROOF_COLORS = [
+  "#4A555F",
+  "#39424B",
+  "#7E5140",
+  "#525E68",
+  "#61443A",
+  "#414B56",
+] as const;
+
+export const SCENERY_CANOPY_COLORS = [
+  "#3C6E45",
+  "#4E8149",
+  "#33603A",
+  "#5B8C4E",
+  "#456F3E",
+  "#6B7F45",
+] as const;
+
+export type SceneryRoofKind = "hip" | "gable" | "parapet" | "shed";
+export type SceneryCanopyKind = "round" | "conic";
+export type SceneryRoofProp = "none" | "chimney" | "tank" | "aerial";
+export type SceneryFenceKind = "picket" | "low-wall";
+
+/** Tudo o que distingue um lote do vizinho, derivado so do trecho e do lado. */
+export interface SceneryStyle {
+  segmentIndex: number;
+  side: -1 | 1;
+  wallColor: string;
+  roofColor: string;
+  canopyColor: string;
+  shrubColor: string;
+  roofKind: SceneryRoofKind;
+  roofQuarterTurn: boolean;
+  canopyKind: SceneryCanopyKind;
+  heightScale: number;
+  canopyScale: number;
+  canopyYaw: number;
+  canopyTilt: number;
+  windowCount: 2 | 3;
+  windowWidth: number;
+  windowHeight: number;
+  windowSpread: number;
+  windowLift: number;
+  fenceKind: SceneryFenceKind;
+  fenceHeight: number;
+  fenceLength: number;
+  roofProp: SceneryRoofProp;
+}
+
+// Cadencia, nao ruido: a forma do telhado e da arvore segue uma sequencia fixa
+// ao longo da rua, entao o quarteirao tem ritmo em vez de virar confete.
+const ROOF_CADENCE: readonly SceneryRoofKind[] = [
+  "hip",
+  "gable",
+  "shed",
+  "hip",
+  "gable",
+  "parapet",
+  "hip",
+  "shed",
+  "gable",
+  "hip",
+  "gable",
+  "shed",
+];
+
+const CANOPY_CADENCE: readonly SceneryCanopyKind[] = [
+  "round",
+  "round",
+  "conic",
+  "round",
+  "conic",
+  "round",
+  "conic",
+  "round",
+];
+
+const ROOF_PROPS: readonly SceneryRoofProp[] = [
+  "none",
+  "none",
+  "none",
+  "chimney",
+  "none",
+  "tank",
+  "none",
+  "none",
+  "aerial",
+  "chimney",
+  "none",
+  "none",
+];
+
+const wrap = (value: number, divisor: number): number =>
+  ((value % divisor) + divisor) % divisor;
+
+/**
+ * Mistura inteira estavel (xorshift-multiply). O sorteio nasce do lote — trecho
+ * e lado —, nunca de `uniqueId`, de `Math.random` ou do nome da malha: duas
+ * cargas seguidas da mesma rota tem de dar exatamente o mesmo bairro.
+ */
+const styleHash = (
+  segmentIndex: number,
+  side: -1 | 1,
+  salt: number
+): number => {
+  let hash = Math.imul(segmentIndex + 1, 0x2545f491);
+  hash ^= Math.imul(side < 0 ? 11 : 23, 0x9e3779b1);
+  hash ^= Math.imul(salt + 7, 0x85ebca6b);
+  hash = Math.imul(hash ^ (hash >>> 15), 0x2c1b3c6d);
+  hash = Math.imul(hash ^ (hash >>> 13), 0x297a2d39);
+  return (hash ^ (hash >>> 16)) >>> 0;
+};
+
+/**
+ * Escolha de paleta por passo primo com o tamanho da lista. Um sorteio puro
+ * empilha a mesma cor em varios lotes de um quarteirao curto — nove trechos por
+ * lado nao dao amostra para a media aparecer. O passo garante que as oito
+ * paredes, os seis telhados e as seis copas apareçam quase o mesmo tanto, sem
+ * abrir mao de ser deterministico.
+ */
+const strideFrom = <T>(
+  list: readonly T[],
+  segment: number,
+  sideIndex: number,
+  segmentStride: number,
+  sideStride: number
+): T =>
+  list[
+    wrap(segment * segmentStride + sideIndex * sideStride, list.length)
+  ] as T;
+
+const rangeFrom = (hash: number, min: number, max: number): number =>
+  min + (hash / 0x100000000) * (max - min);
+
+/** Estilo do lote: mesma entrada, mesma saida, em qualquer sessao. */
+export function sceneryStyleFor(
+  segmentIndex: number,
+  side: -1 | 1
+): SceneryStyle {
+  const segment = Number.isFinite(segmentIndex)
+    ? Math.max(0, Math.trunc(segmentIndex))
+    : 0;
+  const normalizedSide: -1 | 1 = side < 0 ? -1 : 1;
+  const sideIndex = normalizedSide < 0 ? 0 : 1;
+  const cadence = wrap(segment * 2 + sideIndex, ROOF_CADENCE.length);
+  const windowCount: 2 | 3 =
+    styleHash(segment, normalizedSide, 12) % 3 === 0 ? 3 : 2;
+
+  return {
+    segmentIndex: segment,
+    side: normalizedSide,
+    wallColor: strideFrom(SCENERY_WALL_COLORS, segment, sideIndex, 3, 5),
+    roofColor: strideFrom(SCENERY_ROOF_COLORS, segment, sideIndex, 5, 2),
+    canopyColor: strideFrom(SCENERY_CANOPY_COLORS, segment, sideIndex, 5, 3),
+    shrubColor: strideFrom(SCENERY_CANOPY_COLORS, segment, sideIndex, 1, 4),
+    roofKind: ROOF_CADENCE[cadence] as SceneryRoofKind,
+    roofQuarterTurn: styleHash(segment, normalizedSide, 5) % 2 === 0,
+    canopyKind: CANOPY_CADENCE[
+      wrap(segment * 3 + sideIndex, CANOPY_CADENCE.length)
+    ] as SceneryCanopyKind,
+    heightScale: rangeFrom(styleHash(segment, normalizedSide, 6), 0.86, 1.26),
+    canopyScale: rangeFrom(styleHash(segment, normalizedSide, 7), 0.78, 1.9),
+    canopyYaw: rangeFrom(styleHash(segment, normalizedSide, 8), 0, Math.PI * 2),
+    // +-8 graus: o suficiente para tirar a copa do prumo sem derrubar a arvore.
+    canopyTilt: rangeFrom(styleHash(segment, normalizedSide, 9), -0.14, 0.14),
+    windowCount,
+    windowWidth: rangeFrom(styleHash(segment, normalizedSide, 10), 0.62, 1.04),
+    windowHeight: rangeFrom(styleHash(segment, normalizedSide, 11), 0.58, 1.02),
+    windowSpread: rangeFrom(
+      styleHash(segment, normalizedSide, 13),
+      windowCount === 3 ? 1.42 : 1.02,
+      windowCount === 3 ? 1.78 : 1.46
+    ),
+    windowLift: rangeFrom(styleHash(segment, normalizedSide, 14), -0.22, 0.5),
+    fenceKind:
+      styleHash(segment, normalizedSide, 15) % 3 === 0 ? "low-wall" : "picket",
+    fenceHeight: rangeFrom(styleHash(segment, normalizedSide, 16), 0.62, 1.12),
+    fenceLength: rangeFrom(styleHash(segment, normalizedSide, 17), 1.7, 3.6),
+    roofProp: ROOF_PROPS[
+      wrap(segment * 5 + sideIndex * 7, ROOF_PROPS.length)
+    ] as SceneryRoofProp,
+  };
+}
+
+type Vec3 = readonly [number, number, number];
+
+/** Acumulador de geometria crua: posicoes, normais e indices, nada mais. */
+interface MeshDraft {
+  positions: number[];
+  normals: number[];
+  indices: number[];
+}
+
+const emptyDraft = (): MeshDraft => ({
+  positions: [],
+  normals: [],
+  indices: [],
+});
+
+/**
+ * Empurra um poligono convexo plano. A lista chega no sentido anti-horario
+ * visto de fora; o Babylon fecha o triangulo no sentido oposto ao da normal
+ * (conferido contra `CreateBox`), entao o leque sai invertido de proposito.
+ */
+const pushFace = (draft: MeshDraft, corners: Vec3[], normal: Vec3): void => {
+  const base = draft.positions.length / 3;
+  corners.forEach(corner => {
+    draft.positions.push(corner[0], corner[1], corner[2]);
+    draft.normals.push(normal[0], normal[1], normal[2]);
+  });
+  for (let i = 1; i < corners.length - 1; i += 1) {
+    draft.indices.push(base, base + i + 1, base + i);
+  }
+};
+
+/** Caixa alinhada aos eixos, com normais duras. */
+const pushBox = (
+  draft: MeshDraft,
+  width: number,
+  height: number,
+  depth: number,
+  center: Vec3 = [0, 0, 0]
+): void => {
+  const x0 = center[0] - width / 2;
+  const x1 = center[0] + width / 2;
+  const y0 = center[1] - height / 2;
+  const y1 = center[1] + height / 2;
+  const z0 = center[2] - depth / 2;
+  const z1 = center[2] + depth / 2;
+  pushFace(
+    draft,
+    [
+      [x1, y0, z0],
+      [x1, y1, z0],
+      [x1, y1, z1],
+      [x1, y0, z1],
+    ],
+    [1, 0, 0]
+  );
+  pushFace(
+    draft,
+    [
+      [x0, y0, z0],
+      [x0, y0, z1],
+      [x0, y1, z1],
+      [x0, y1, z0],
+    ],
+    [-1, 0, 0]
+  );
+  pushFace(
+    draft,
+    [
+      [x0, y1, z0],
+      [x0, y1, z1],
+      [x1, y1, z1],
+      [x1, y1, z0],
+    ],
+    [0, 1, 0]
+  );
+  pushFace(
+    draft,
+    [
+      [x0, y0, z0],
+      [x1, y0, z0],
+      [x1, y0, z1],
+      [x0, y0, z1],
+    ],
+    [0, -1, 0]
+  );
+  pushFace(
+    draft,
+    [
+      [x0, y0, z1],
+      [x1, y0, z1],
+      [x1, y1, z1],
+      [x0, y1, z1],
+    ],
+    [0, 0, 1]
+  );
+  pushFace(
+    draft,
+    [
+      [x0, y0, z0],
+      [x0, y1, z0],
+      [x1, y1, z0],
+      [x1, y0, z0],
+    ],
+    [0, 0, -1]
+  );
+};
+
+/**
+ * Perfil convexo desenhado no plano XY (sentido anti-horario visto de +Z) e
+ * puxado ao longo de Z. E daqui que saem as tres coberturas novas: duas aguas,
+ * platibanda e meia agua, cada uma com uma unica malha de origem.
+ */
+const pushExtrudedSection = (
+  draft: MeshDraft,
+  section: readonly (readonly [number, number])[],
+  depth: number
+): void => {
+  const half = depth / 2;
+  pushFace(
+    draft,
+    section.map(([x, y]) => [x, y, half] as Vec3),
+    [0, 0, 1]
+  );
+  pushFace(
+    draft,
+    [...section].reverse().map(([x, y]) => [x, y, -half] as Vec3),
+    [0, 0, -1]
+  );
+  section.forEach(([px, py], index) => {
+    const [qx, qy] = section[(index + 1) % section.length] as readonly [
+      number,
+      number,
+    ];
+    const dx = qx - px;
+    const dy = qy - py;
+    const length = Math.hypot(dx, dy) || 1;
+    pushFace(
+      draft,
+      [
+        [px, py, half],
+        [px, py, -half],
+        [qx, qy, -half],
+        [qx, qy, half],
+      ],
+      [dy / length, -dx / length, 0]
+    );
+  });
+};
+
+/** Copia a geometria de uma esfera temporaria deslocada — vira lobo de copa. */
+const pushMeshCopy = (
+  draft: MeshDraft,
+  source: Mesh,
+  offset: Vec3,
+  scale = 1
+): void => {
+  const positions = source.getVerticesData("position");
+  const normals = source.getVerticesData("normal");
+  const indices = source.getIndices();
+  if (!positions || !normals || !indices) return;
+  const base = draft.positions.length / 3;
+  for (let i = 0; i < positions.length; i += 3) {
+    draft.positions.push(
+      (positions[i] as number) * scale + offset[0],
+      (positions[i + 1] as number) * scale + offset[1],
+      (positions[i + 2] as number) * scale + offset[2]
+    );
+    draft.normals.push(
+      normals[i] as number,
+      normals[i + 1] as number,
+      normals[i + 2] as number
+    );
+  }
+  indices.forEach(index => draft.indices.push(base + index));
+};
+
+const NEUTRAL_TINT = new Color4(1, 1, 1, 1);
+const tintCache = new Map<string, Color4>();
+
+/**
+ * Cor de uma instancia. As paletas sao fechadas, entao o cache guarda no maximo
+ * uma duzia de objetos e o quadro nao gera lixo.
+ */
+const setInstanceTint = (mesh: AbstractMesh, color: string | null): void => {
+  // `new InstancedMesh` nao passa pela fabrica do Babylon, entao a instancia
+  // nasce sem o mapa de buffers e o quadro quebraria ao ler a cor. Criar aqui
+  // e o que casa o caminho direto com o buffer registrado na origem.
+  const holder = mesh as unknown as {
+    instancedBuffers?: Record<string, Color4>;
+  };
+  const buffers = (holder.instancedBuffers ??= {});
+  if (!color) {
+    buffers.color = NEUTRAL_TINT;
+    return;
+  }
+  let tint = tintCache.get(color);
+  if (!tint) {
+    const rgb = Color3.FromHexString(color);
+    tint = new Color4(rgb.r, rgb.g, rgb.b, 1);
+    tintCache.set(color, tint);
+  }
+  buffers.color = tint;
+};
+
+/** Troca a geometria da malha pelo rascunho, sem criar malha nova. */
+const applyDraft = (mesh: Mesh, draft: MeshDraft): void => {
+  mesh.setVerticesData("position", draft.positions, false);
+  mesh.setVerticesData("normal", draft.normals, false);
+  mesh.setIndices(draft.indices);
+  mesh.refreshBoundingInfo();
+};
+
+/**
  * Lightweight procedural art direction for the endless road. It deliberately
  * uses shared materials and low-poly silhouettes so the scene remains viable
  * on mobile GPUs while each route still reads as a distinct place.
@@ -155,6 +581,9 @@ export class EnvironmentVisuals {
   private readonly stars: TransformNode[] = [];
   private readonly sceneryMaterial: StandardMaterial;
   private readonly scenerySecondaryMaterial: StandardMaterial;
+  private readonly sceneryWallMaterial: StandardMaterial;
+  private readonly sceneryRoofMaterial: StandardMaterial;
+  private readonly sceneryCanopyMaterial: StandardMaterial;
   private readonly sceneryAccentMaterial: StandardMaterial;
   private readonly sceneryFoliageMaterial: StandardMaterial;
   private readonly sceneryWoodMaterial: StandardMaterial;
@@ -186,6 +615,19 @@ export class EnvironmentVisuals {
       "#18BFEA",
       0.36,
       "#12547A"
+    );
+    // Parede, telhado e copa saem dos materiais compartilhados e ganham um
+    // material proprio cada. E o que deixa a cor por instancia valer o tom
+    // escolhido: em rota urbana a base fica branca e quem manda e a instancia;
+    // fora dela a base volta a ser a cor do terreno e a instancia fica neutra.
+    // O terreno inicial e urbano, entao a base ja nasce branca: quem pinta e
+    // a instancia. `setTheme` devolve a cor do terreno assim que ele muda.
+    this.sceneryWallMaterial = this.material("scenery-wall", "#FFFFFF", 0.12);
+    this.sceneryRoofMaterial = this.material("scenery-roof", "#FFFFFF", 0.18);
+    this.sceneryCanopyMaterial = this.material(
+      "scenery-canopy",
+      "#FFFFFF",
+      0.08
     );
     this.sceneryFoliageMaterial = this.material(
       "scenery-foliage",
@@ -286,10 +728,16 @@ export class EnvironmentVisuals {
         shadow: `scenery-shadow-${index}-${sideIndex}`,
         tower: `scenery-tower-${index}-${sideIndex}`,
         feature: `scenery-feature-${index}-${sideIndex}`,
+        roofGable: `scenery-roof-gable-${index}-${sideIndex}`,
+        roofParapet: `scenery-roof-parapet-${index}-${sideIndex}`,
+        roofShed: `scenery-roof-shed-${index}-${sideIndex}`,
+        roofProp: `scenery-roof-prop-${index}-${sideIndex}`,
         crown: `scenery-crown-${index}-${sideIndex}`,
+        crownConic: `scenery-crown-conic-${index}-${sideIndex}`,
         accent: `scenery-detail-${index}-${sideIndex}`,
         door: `scenery-door-${index}-${sideIndex}`,
         windowSecondary: `scenery-window-secondary-${index}-${sideIndex}`,
+        windowTertiary: `scenery-window-tertiary-${index}-${sideIndex}`,
         trunk: `scenery-trunk-${index}-${sideIndex}`,
         planter: `scenery-planter-${index}-${sideIndex}`,
         walkway: `scenery-walkway-${index}-${sideIndex}`,
@@ -303,10 +751,16 @@ export class EnvironmentVisuals {
       let shadow: AbstractMesh;
       let tower: AbstractMesh;
       let feature: AbstractMesh;
+      let roofGable: AbstractMesh;
+      let roofParapet: AbstractMesh;
+      let roofShed: AbstractMesh;
+      let roofProp: AbstractMesh;
       let crown: AbstractMesh;
+      let crownConic: AbstractMesh;
       let accent: AbstractMesh;
       let door: AbstractMesh;
       let windowSecondary: AbstractMesh;
+      let windowTertiary: AbstractMesh;
       let trunk: AbstractMesh;
       let planter: AbstractMesh;
       let walkway: AbstractMesh;
@@ -320,12 +774,21 @@ export class EnvironmentVisuals {
         shadow = new InstancedMesh(names.shadow, sources.shadow);
         tower = new InstancedMesh(names.tower, sources.tower);
         feature = new InstancedMesh(names.feature, sources.feature);
+        roofGable = new InstancedMesh(names.roofGable, sources.roofGable);
+        roofParapet = new InstancedMesh(names.roofParapet, sources.roofParapet);
+        roofShed = new InstancedMesh(names.roofShed, sources.roofShed);
+        roofProp = new InstancedMesh(names.roofProp, sources.roofProp);
         crown = new InstancedMesh(names.crown, sources.crown);
+        crownConic = new InstancedMesh(names.crownConic, sources.crownConic);
         accent = new InstancedMesh(names.accent, sources.accent);
         door = new InstancedMesh(names.door, sources.door);
         windowSecondary = new InstancedMesh(
           names.windowSecondary,
           sources.windowSecondary
+        );
+        windowTertiary = new InstancedMesh(
+          names.windowTertiary,
+          sources.windowTertiary
         );
         trunk = new InstancedMesh(names.trunk, sources.trunk);
         planter = new InstancedMesh(names.planter, sources.planter);
@@ -356,9 +819,31 @@ export class EnvironmentVisuals {
           },
           this.scene
         );
-        const crownSource = MeshBuilder.CreateSphere(
-          names.crown,
-          { diameter: 1, segments: 6 },
+        // Tres coberturas novas, cada uma com uma malha de origem so. O perfil
+        // e desenhado em XY e puxado ao longo de Z: o frontao aponta para a rua.
+        const roofGableSource = this.sectionMesh(names.roofGable, [
+          [-0.5, -0.5],
+          [0.5, -0.5],
+          [0, 0.5],
+        ]);
+        const roofParapetSource = this.parapetRoofMesh(names.roofParapet);
+        const roofShedSource = this.sectionMesh(names.roofShed, [
+          [-0.5, -0.5],
+          [0.5, -0.5],
+          [0.5, 0.5],
+          [-0.5, -0.34],
+        ]);
+        const roofPropSource = MeshBuilder.CreateBox(
+          names.roofProp,
+          { size: 1 },
+          this.scene
+        );
+        // A copa redonda deixa de ser bola: tres lobos sobrepostos leem como
+        // arvore, uma esfera de 6 gomos ampliada le como bola facetada.
+        const crownSource = this.lobedCanopyMesh(names.crown);
+        const crownConicSource = MeshBuilder.CreateCylinder(
+          names.crownConic,
+          { height: 1, diameterTop: 0, diameterBottom: 1, tessellation: 7 },
           this.scene
         );
         const accentSource = MeshBuilder.CreateBox(
@@ -366,13 +851,17 @@ export class EnvironmentVisuals {
           { size: 1 },
           this.scene
         );
-        const doorSource = MeshBuilder.CreateBox(
-          names.door,
+        // Porta em duas profundidades: batente saliente e folha recuada, numa
+        // malha so. E o recuo do batente que faz a folha parar de parecer
+        // adesivo colado na fachada.
+        const doorSource = this.recessedDoorMesh(names.door);
+        const windowSecondarySource = MeshBuilder.CreateBox(
+          names.windowSecondary,
           { size: 1 },
           this.scene
         );
-        const windowSecondarySource = MeshBuilder.CreateBox(
-          names.windowSecondary,
+        const windowTertiarySource = MeshBuilder.CreateBox(
+          names.windowTertiary,
           { size: 1 },
           this.scene
         );
@@ -417,12 +906,18 @@ export class EnvironmentVisuals {
           this.scene
         );
         shadowSource.material = this.sceneryShadowMaterial;
-        towerSource.material = this.sceneryMaterial;
-        featureSource.material = this.scenerySecondaryMaterial;
-        crownSource.material = this.sceneryFoliageMaterial;
+        towerSource.material = this.sceneryWallMaterial;
+        featureSource.material = this.sceneryRoofMaterial;
+        roofGableSource.material = this.sceneryRoofMaterial;
+        roofParapetSource.material = this.sceneryRoofMaterial;
+        roofShedSource.material = this.sceneryRoofMaterial;
+        roofPropSource.material = this.scenerySecondaryMaterial;
+        crownSource.material = this.sceneryCanopyMaterial;
+        crownConicSource.material = this.sceneryCanopyMaterial;
         accentSource.material = this.sceneryAccentMaterial;
         doorSource.material = this.scenerySecondaryMaterial;
         windowSecondarySource.material = this.sceneryAccentMaterial;
+        windowTertiarySource.material = this.sceneryAccentMaterial;
         trunkSource.material = this.sceneryWoodMaterial;
         planterSource.material = this.sceneryMaterial;
         walkwaySource.material = this.sceneryPavementMaterial;
@@ -430,15 +925,33 @@ export class EnvironmentVisuals {
         lampPostSource.material = this.scenerySecondaryMaterial;
         lampHeadSource.material = this.sceneryAccentMaterial;
         parkedCarSource.material = this.sceneryVehicleMaterial;
-        shrubSource.material = this.sceneryFoliageMaterial;
+        shrubSource.material = this.sceneryCanopyMaterial;
+        // Buffer de cor por instancia: a origem registra e recebe cor tambem,
+        // senao ela sai branca no meio das instancias coloridas.
+        [
+          towerSource,
+          featureSource,
+          roofGableSource,
+          roofParapetSource,
+          roofShedSource,
+          crownSource,
+          crownConicSource,
+          shrubSource,
+        ].forEach(source => source.registerInstancedBuffer("color", 4));
         this.scenerySources = {
           shadow: shadowSource,
           tower: towerSource,
           feature: featureSource,
+          roofGable: roofGableSource,
+          roofParapet: roofParapetSource,
+          roofShed: roofShedSource,
+          roofProp: roofPropSource,
           crown: crownSource,
+          crownConic: crownConicSource,
           accent: accentSource,
           door: doorSource,
           windowSecondary: windowSecondarySource,
+          windowTertiary: windowTertiarySource,
           trunk: trunkSource,
           planter: planterSource,
           walkway: walkwaySource,
@@ -451,10 +964,16 @@ export class EnvironmentVisuals {
         shadow = shadowSource;
         tower = towerSource;
         feature = featureSource;
+        roofGable = roofGableSource;
+        roofParapet = roofParapetSource;
+        roofShed = roofShedSource;
+        roofProp = roofPropSource;
         crown = crownSource;
+        crownConic = crownConicSource;
         accent = accentSource;
         door = doorSource;
         windowSecondary = windowSecondarySource;
+        windowTertiary = windowTertiarySource;
         trunk = trunkSource;
         planter = planterSource;
         walkway = walkwaySource;
@@ -471,10 +990,16 @@ export class EnvironmentVisuals {
       shadow.scaling.y = 0.48;
       tower.parent = root;
       feature.parent = root;
+      roofGable.parent = root;
+      roofParapet.parent = root;
+      roofShed.parent = root;
+      roofProp.parent = root;
       crown.parent = root;
+      crownConic.parent = root;
       accent.parent = root;
       door.parent = root;
       windowSecondary.parent = root;
+      windowTertiary.parent = root;
       trunk.parent = root;
       planter.parent = root;
       walkway.parent = root;
@@ -488,10 +1013,16 @@ export class EnvironmentVisuals {
         shadow,
         tower,
         feature,
+        roofGable,
+        roofParapet,
+        roofShed,
+        roofProp,
         crown,
+        crownConic,
         accent,
         door,
         windowSecondary,
+        windowTertiary,
         trunk,
         planter,
         walkway,
@@ -507,10 +1038,16 @@ export class EnvironmentVisuals {
         root,
         tower,
         feature,
+        roofGable,
+        roofParapet,
+        roofShed,
+        roofProp,
         crown,
+        crownConic,
         accent,
         door,
         windowSecondary,
+        windowTertiary,
         trunk,
         planter,
         walkway,
@@ -524,6 +1061,7 @@ export class EnvironmentVisuals {
         lot,
         side: side < 0 ? -1 : 1,
         module: neighborhoodModule,
+        style: sceneryStyleFor(index, side < 0 ? -1 : 1),
       });
     });
     this.configureClusters();
@@ -888,6 +1426,19 @@ export class EnvironmentVisuals {
             : 192;
 
     this.skyMaterial.emissiveColor.copyFrom(sky.scale(0.9));
+    // Onde a instancia manda na cor, a base fica branca; onde nao manda, a
+    // base volta a ser a cor do terreno e o resultado e o de sempre.
+    const tintedNeighborhood = terrain === "urban";
+    const tintedFoliage = terrain === "urban" || terrain === "highway";
+    this.sceneryWallMaterial.diffuseColor = tintedNeighborhood
+      ? Color3.White()
+      : Color3.FromHexString(palette.scenery);
+    this.sceneryRoofMaterial.diffuseColor = tintedNeighborhood
+      ? Color3.White()
+      : Color3.FromHexString(palette.scenerySecondary);
+    this.sceneryCanopyMaterial.diffuseColor = tintedFoliage
+      ? Color3.White()
+      : Color3.FromHexString("#2E6B45");
     this.sceneryMaterial.diffuseColor = Color3.FromHexString(palette.scenery);
     this.scenerySecondaryMaterial.diffuseColor = Color3.FromHexString(
       palette.scenerySecondary
@@ -964,6 +1515,9 @@ export class EnvironmentVisuals {
     [
       this.sceneryMaterial,
       this.scenerySecondaryMaterial,
+      this.sceneryWallMaterial,
+      this.sceneryRoofMaterial,
+      this.sceneryCanopyMaterial,
       this.sceneryAccentMaterial,
       this.sceneryFoliageMaterial,
       this.sceneryWoodMaterial,
@@ -980,18 +1534,35 @@ export class EnvironmentVisuals {
   }
 
   private configureClusters(): void {
+    const urban = this.terrain === "urban";
+    // A cor por instancia so faz sentido onde a peca e casa e arvore. Num
+    // trecho orbital a mesma paleta viraria creme na lua, entao la a instancia
+    // volta a ser neutra e o material carrega a cor do terreno, como antes.
+    const tintBuildings = urban;
+    const tintFoliage = urban || this.terrain === "highway";
     this.clusters.forEach(cluster => {
       const parkOccupiesSide =
         this.terrain === "urban" && cluster.module.parkSide === cluster.side;
       cluster.root.setEnabled(!parkOccupiesSide);
+      const style = cluster.style;
       const size = 0.92 + cluster.variant * 0.035;
+      const roof = this.roofFor(cluster, urban);
       cluster.tower.setEnabled(true);
-      cluster.feature.setEnabled(true);
-      cluster.crown.setEnabled(true);
+      cluster.feature.setEnabled(roof === cluster.feature);
+      cluster.roofGable.setEnabled(roof === cluster.roofGable);
+      cluster.roofParapet.setEnabled(roof === cluster.roofParapet);
+      cluster.roofShed.setEnabled(roof === cluster.roofShed);
+      const conicCanopy = urban && style.canopyKind === "conic";
+      cluster.crown.setEnabled(!conicCanopy);
+      cluster.crownConic.setEnabled(conicCanopy);
       cluster.accent.setEnabled(true);
       const urbanDetails = this.terrain === "urban";
+      cluster.roofProp.setEnabled(urbanDetails && style.roofProp !== "none");
       cluster.door.setEnabled(urbanDetails);
       cluster.windowSecondary.setEnabled(urbanDetails);
+      cluster.windowTertiary.setEnabled(
+        urbanDetails && style.windowCount === 3
+      );
       cluster.trunk.setEnabled(urbanDetails);
       cluster.planter.setEnabled(urbanDetails);
       cluster.walkway.setEnabled(urbanDetails);
@@ -1002,20 +1573,29 @@ export class EnvironmentVisuals {
       cluster.shrub.setEnabled(urbanDetails);
       cluster.root.scaling.setAll(size);
       cluster.shadow.scaling.set(1, 0.54, 1);
-      cluster.tower.rotation.set(0, 0, 0);
-      cluster.feature.rotation.set(0, 0, 0);
-      cluster.crown.rotation.set(0, 0, 0);
-      cluster.accent.rotation.set(0, 0, 0);
-      cluster.door.rotation.set(0, 0, 0);
-      cluster.windowSecondary.rotation.set(0, 0, 0);
-      cluster.trunk.rotation.set(0, 0, 0);
-      cluster.planter.rotation.set(0, 0, 0);
-      cluster.walkway.rotation.set(0, 0, 0);
-      cluster.fence.rotation.set(0, 0, 0);
-      cluster.lampPost.rotation.set(0, 0, 0);
-      cluster.lampHead.rotation.set(0, 0, 0);
-      cluster.parkedCar.rotation.set(0, 0, 0);
-      cluster.shrub.rotation.set(0, 0, 0);
+      [
+        cluster.tower,
+        cluster.feature,
+        cluster.roofGable,
+        cluster.roofParapet,
+        cluster.roofShed,
+        cluster.roofProp,
+        cluster.crown,
+        cluster.crownConic,
+        cluster.accent,
+        cluster.door,
+        cluster.windowSecondary,
+        cluster.windowTertiary,
+        cluster.trunk,
+        cluster.planter,
+        cluster.walkway,
+        cluster.fence,
+        cluster.lampPost,
+        cluster.lampHead,
+        cluster.parkedCar,
+        cluster.shrub,
+      ].forEach(part => part.rotation.set(0, 0, 0));
+      this.tintCluster(cluster, tintBuildings, tintFoliage);
 
       if (this.terrain === "urban") {
         const { lot } = cluster;
@@ -1025,7 +1605,11 @@ export class EnvironmentVisuals {
           lot.position.z
         );
         cluster.root.rotation.y = lot.rotationY;
-        const wallHeight = lot.wallHeight;
+        // A casa cresce e encolhe pelo topo: o pe fica cravado no mesmo plano,
+        // senao uma variacao de altura afunda a fachada ou a poe flutuando.
+        const groundY = 0.08;
+        const wallHeight = lot.wallHeight * style.heightScale;
+        const wallTop = groundY + wallHeight;
         const wallWidth = lot.wallWidth;
         const wallDepth = lot.wallDepth;
         const facadeZ = -wallDepth / 2 - 0.085;
@@ -1033,43 +1617,122 @@ export class EnvironmentVisuals {
         const treeZ = lot.treeOffsetZ;
 
         cluster.tower.scaling.set(wallWidth, wallHeight, wallDepth);
-        cluster.tower.position.set(0, wallHeight / 2 + 0.08, 0);
-        cluster.feature.scaling.set(
-          wallWidth * 1.1,
-          lot.roofHeight,
-          wallDepth * 1.1
+        cluster.tower.position.set(0, groundY + wallHeight / 2, 0);
+
+        // Beiral: a cobertura avanca sobre a parede em vez de encostar rente.
+        const eave = 0.36;
+        const roofHeight =
+          lot.roofHeight * (style.roofKind === "parapet" ? 0.62 : 1);
+        const roofBase = wallTop - 0.07;
+        const roofSpanX = wallWidth + eave;
+        const roofSpanZ = wallDepth + eave;
+        roof.position.set(0, roofBase + roofHeight / 2, 0);
+        if (roof === cluster.feature) {
+          // A piramide de 4 lados tem diagonal 1, nao lado 1: sem a raiz de
+          // dois o "beiral" viraria um telhado menor que a casa.
+          roof.scaling.set(
+            roofSpanX * Math.SQRT2,
+            roofHeight,
+            roofSpanZ * Math.SQRT2
+          );
+          roof.rotation.y = Math.PI / 4;
+        } else if (style.roofQuarterTurn) {
+          roof.scaling.set(roofSpanZ, roofHeight, roofSpanX);
+          roof.rotation.y = Math.PI / 2;
+        } else {
+          roof.scaling.set(roofSpanX, roofHeight, roofSpanZ);
+        }
+
+        // O acessorio nasce dentro da cobertura e sai por cima dela: assim ele
+        // atravessa a agua do telhado em vez de pairar sobre a cumeeira.
+        const propBase = roofBase + roofHeight * 0.3;
+        if (style.roofProp === "chimney") {
+          cluster.roofProp.scaling.set(0.3, 1.1, 0.3);
+          cluster.roofProp.position.set(
+            wallWidth * 0.27,
+            propBase + 0.55,
+            wallDepth * 0.2
+          );
+        } else if (style.roofProp === "tank") {
+          cluster.roofProp.scaling.set(0.64, 0.72, 0.64);
+          cluster.roofProp.position.set(
+            wallWidth * 0.16,
+            propBase + 0.36,
+            -wallDepth * 0.14
+          );
+        } else if (style.roofProp === "aerial") {
+          cluster.roofProp.scaling.set(0.07, 1.35, 0.07);
+          cluster.roofProp.position.set(
+            -wallWidth * 0.28,
+            propBase + 0.6,
+            wallDepth * 0.08
+          );
+        }
+
+        // Janela deixa de ser adesivo repetido: muda quantidade, tamanho e
+        // altura de casa para casa, sempre pelo mesmo indice do lote.
+        const windowY = Math.min(
+          Math.max(1.5 + style.windowLift, 1.12),
+          wallTop - style.windowHeight / 2 - 0.28
         );
-        cluster.feature.position.set(
+        cluster.accent.scaling.set(style.windowWidth, style.windowHeight, 0.1);
+        cluster.accent.position.set(-style.windowSpread, windowY, facadeZ);
+        cluster.windowSecondary.scaling.set(
+          style.windowWidth,
+          style.windowHeight,
+          0.1
+        );
+        cluster.windowSecondary.position.set(
+          style.windowSpread,
+          windowY,
+          facadeZ
+        );
+        cluster.windowTertiary.scaling.set(
+          style.windowWidth * 0.66,
+          style.windowHeight * 0.7,
+          0.1
+        );
+        cluster.windowTertiary.position.set(
           0,
-          wallHeight + 0.08 + lot.roofHeight / 2,
-          0
+          Math.min(windowY + 0.72, wallTop - 0.3),
+          facadeZ
         );
-        cluster.feature.rotation.y = Math.PI / 4;
 
-        cluster.accent.scaling.set(0.94, 0.9, 0.1);
-        cluster.accent.position.set(-1.25, 1.62, facadeZ);
-        cluster.windowSecondary.scaling.set(0.94, 0.9, 0.1);
-        cluster.windowSecondary.position.set(1.25, 1.62, facadeZ);
-        cluster.door.scaling.set(0.76, 1.55, 0.12);
-        cluster.door.position.set(0, 0.78, facadeZ - 0.015);
+        // O batente avanca; a folha fica no fundo do vao.
+        cluster.door.scaling.set(0.92, 1.62, 0.34);
+        cluster.door.position.set(0, groundY + 0.79, facadeZ - 0.07);
 
-        cluster.trunk.scaling.set(0.34, 1.38, 0.34);
-        cluster.trunk.position.set(treeX, 0.72, treeZ);
-        cluster.crown.scaling.set(
-          2.04 + (cluster.variant % 2) * 0.28,
-          1.62 + (cluster.variant % 3) * 0.08,
-          1.72
+        const trunkHeight = 1.38 * (0.72 + 0.44 * style.canopyScale);
+        const trunkTop = 0.03 + trunkHeight;
+        cluster.trunk.scaling.set(0.34, trunkHeight, 0.34);
+        cluster.trunk.position.set(treeX, 0.03 + trunkHeight / 2, treeZ);
+        const canopy = conicCanopy ? cluster.crownConic : cluster.crown;
+        const canopyHeight = (conicCanopy ? 2.32 : 1.74) * style.canopyScale;
+        canopy.scaling.set(
+          (conicCanopy ? 1.42 : 2.04) * style.canopyScale,
+          canopyHeight,
+          (conicCanopy ? 1.42 : 1.78) * style.canopyScale
         );
-        cluster.crown.position.set(treeX, 1.74, treeZ);
+        canopy.position.set(treeX, trunkTop + canopyHeight * 0.31, treeZ);
+        canopy.rotation.y = style.canopyYaw;
+        canopy.rotation.z = style.canopyTilt;
         cluster.planter.scaling.set(1.38, 0.3, 1.08);
         cluster.planter.position.set(treeX, 0.15, treeZ);
 
         cluster.walkway.scaling.set(1.15, 0.12, 2.65);
         cluster.walkway.position.set(0, 0.06, facadeZ - 1.34);
-        cluster.fence.scaling.set(0.14, 0.88, wallDepth + 2.7);
+        const lowWall = style.fenceKind === "low-wall";
+        const fenceHeight = lowWall
+          ? style.fenceHeight * 0.58
+          : style.fenceHeight;
+        cluster.fence.scaling.set(
+          lowWall ? 0.3 : 0.14,
+          fenceHeight,
+          wallDepth + style.fenceLength
+        );
         cluster.fence.position.set(
           treeX > 0 ? -wallWidth / 2 - 0.82 : wallWidth / 2 + 0.82,
-          0.44,
+          fenceHeight / 2 + 0.02,
           -0.3
         );
         const lampX = treeX > 0 ? -3.7 : 3.7;
@@ -1079,17 +1742,19 @@ export class EnvironmentVisuals {
         cluster.lampHead.position.set(lampX, 3.5, facadeZ - 2.42);
         cluster.parkedCar.scaling.set(1.72, 0.72, 3.05);
         cluster.parkedCar.position.set(-treeX * 0.62, 0.38, facadeZ - 3.1);
-        cluster.shrub.scaling.set(1.2, 0.66, 0.82);
+        cluster.shrub.scaling.set(
+          1.02 + 0.24 * style.canopyScale,
+          0.5 + 0.18 * style.canopyScale,
+          0.7 + 0.16 * style.canopyScale
+        );
+        cluster.shrub.rotation.y = style.canopyYaw * 0.6;
         cluster.shrub.position.set(treeX * 0.55, 0.34, facadeZ - 1.5);
 
         cluster.shadow.scaling.set(1.52, 0.68, 1);
 
         if (cluster.module.commercial) {
-          cluster.feature.rotation.y = 0;
-          cluster.feature.scaling.set(wallWidth * 1.08, 0.32, wallDepth * 1.08);
-          cluster.feature.position.y = wallHeight + 0.24;
           cluster.accent.scaling.set(2.45, 0.62, 0.1);
-          cluster.accent.position.set(0, 2.6, facadeZ - 0.03);
+          cluster.accent.position.set(0, wallTop - 0.42, facadeZ - 0.03);
         }
         if (cluster.module.destinationEmphasis > 0) {
           cluster.accent.scaling.set(1.5, 1.2, 0.12);
@@ -1103,6 +1768,7 @@ export class EnvironmentVisuals {
         cluster.feature.setEnabled(false);
         cluster.crown.scaling.set(4.1, 3, 3.45);
         cluster.crown.position.y = cluster.tower.scaling.y + 0.75;
+        cluster.crown.rotation.y = style.canopyYaw;
         cluster.accent.setEnabled(false);
       } else if (this.terrain === "industrial") {
         cluster.root.rotation.y = 0;
@@ -1124,6 +1790,7 @@ export class EnvironmentVisuals {
         cluster.feature.rotation.y = Math.PI / 4;
         cluster.crown.scaling.set(2.8, 1.5, 2.2);
         cluster.crown.position.set(-0.85, 0.92, -0.25);
+        cluster.crown.rotation.y = style.canopyYaw;
         cluster.accent.setEnabled(false);
       } else if (this.terrain === "orbital") {
         cluster.root.rotation.y = 0;
@@ -1148,6 +1815,43 @@ export class EnvironmentVisuals {
         cluster.accent.rotation.z = 0.2;
       }
     });
+  }
+
+  /** Cobertura que este lote usa; fora do urbano so existe a piramide. */
+  private roofFor(cluster: SceneryCluster, urban: boolean): AbstractMesh {
+    if (!urban) return cluster.feature;
+    // Comercio continua de laje: a platibanda faz o papel do antigo telhado
+    // achatado que o modulo comercial ja pedia.
+    if (cluster.module.commercial) return cluster.roofParapet;
+    if (cluster.style.roofKind === "gable") return cluster.roofGable;
+    if (cluster.style.roofKind === "parapet") return cluster.roofParapet;
+    if (cluster.style.roofKind === "shed") return cluster.roofShed;
+    return cluster.feature;
+  }
+
+  /**
+   * Cor por instancia. A origem tambem recebe a sua — ela desenha junto com o
+   * lote e sairia branca no meio das instancias coloridas.
+   */
+  private tintCluster(
+    cluster: SceneryCluster,
+    tintBuildings: boolean,
+    tintFoliage: boolean
+  ): void {
+    const style = cluster.style;
+    setInstanceTint(cluster.tower, tintBuildings ? style.wallColor : null);
+    [
+      cluster.feature,
+      cluster.roofGable,
+      cluster.roofParapet,
+      cluster.roofShed,
+    ].forEach(part =>
+      setInstanceTint(part, tintBuildings ? style.roofColor : null)
+    );
+    [cluster.crown, cluster.crownConic].forEach(part =>
+      setInstanceTint(part, tintFoliage ? style.canopyColor : null)
+    );
+    setInstanceTint(cluster.shrub, tintFoliage ? style.shrubColor : null);
   }
 
   private configureWeatherStreaks(): void {
@@ -1296,6 +2000,68 @@ export class EnvironmentVisuals {
       root.setEnabled(false);
       this.streaks.push({ root, phase: index * 0.73 });
     }
+  }
+
+  /** Cobertura tirada de um perfil convexo puxado ao longo de Z. */
+  private sectionMesh(
+    name: string,
+    section: readonly (readonly [number, number])[]
+  ): Mesh {
+    const mesh = MeshBuilder.CreateBox(name, { size: 1 }, this.scene);
+    const draft = emptyDraft();
+    pushExtrudedSection(draft, section, 1);
+    applyDraft(mesh, draft);
+    return mesh;
+  }
+
+  /**
+   * Laje com mureta em volta. Um perfil convexo unico nao consegue o vazio do
+   * meio, entao a platibanda sai de cinco caixas na mesma malha: a laje recuada
+   * aparece por dentro do parapeito em vez de virar um bloco macico.
+   */
+  private parapetRoofMesh(name: string): Mesh {
+    const mesh = MeshBuilder.CreateBox(name, { size: 1 }, this.scene);
+    const draft = emptyDraft();
+    pushBox(draft, 1, 0.34, 1, [0, -0.33, 0]);
+    pushBox(draft, 1, 0.66, 0.12, [0, 0.17, -0.44]);
+    pushBox(draft, 1, 0.66, 0.12, [0, 0.17, 0.44]);
+    pushBox(draft, 0.12, 0.66, 0.76, [-0.44, 0.17, 0]);
+    pushBox(draft, 0.12, 0.66, 0.76, [0.44, 0.17, 0]);
+    applyDraft(mesh, draft);
+    return mesh;
+  }
+
+  /**
+   * Copa de tres lobos. Uma esfera de 6 gomos ampliada le como bola facetada;
+   * tres lobos deslocados leem como arvore neste tracado de poucos poligonos.
+   */
+  private lobedCanopyMesh(name: string): Mesh {
+    const mesh = MeshBuilder.CreateBox(name, { size: 1 }, this.scene);
+    const lobe = MeshBuilder.CreateSphere(
+      `${name}-lobe`,
+      { diameter: 1, segments: 5 },
+      this.scene
+    );
+    const draft = emptyDraft();
+    pushMeshCopy(draft, lobe, [0, 0.09, 0], 0.86);
+    pushMeshCopy(draft, lobe, [-0.29, -0.13, 0.08], 0.62);
+    pushMeshCopy(draft, lobe, [0.27, -0.16, -0.11], 0.68);
+    applyDraft(mesh, draft);
+    lobe.dispose();
+    return mesh;
+  }
+
+  /** Batente saliente com folha recuada, numa malha unica. */
+  private recessedDoorMesh(name: string): Mesh {
+    const mesh = MeshBuilder.CreateBox(name, { size: 1 }, this.scene);
+    const draft = emptyDraft();
+    pushBox(draft, 0.16, 1, 1, [-0.42, 0, 0]);
+    pushBox(draft, 0.16, 1, 1, [0.42, 0, 0]);
+    pushBox(draft, 0.68, 0.16, 1, [0, 0.42, 0]);
+    // A folha recua dois tercos da espessura: e a sombra do vao que aparece.
+    pushBox(draft, 0.68, 0.84, 0.35, [0, -0.08, 0.325]);
+    applyDraft(mesh, draft);
+    return mesh;
   }
 
   private material(
