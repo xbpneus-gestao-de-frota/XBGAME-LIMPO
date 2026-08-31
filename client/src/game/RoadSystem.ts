@@ -991,12 +991,15 @@ export class RoadSystem {
     bodyMaterial: StandardMaterial,
     detailMaterial: StandardMaterial
   ): DeliveryPersonVisual {
+    // Medidas de gente adulta, na escala do jogo (1 m = 2,3 unidades).
+    // Altura total 4,140 = 1,80 m, a mesma do entregador que vem do arquivo.
+    // Antes esta figura media 2,560 = 1,113 m: parecia crianca ao lado dele.
     const root = new TransformNode(`${name}-root`, this.scene);
     root.parent = parent;
 
     const shadow = MeshBuilder.CreateDisc(
       `${name}-shadow`,
-      { radius: 0.62, tessellation: 16 },
+      { radius: 0.72, tessellation: 16 },
       this.scene
     );
     shadow.parent = root;
@@ -1006,70 +1009,74 @@ export class RoadSystem {
     shadow.material = this.shadowMaterial;
     shadow.isPickable = false;
 
+    // Tronco: do quadril (0,84 m) ao ombro (1,58 m).
     const body = MeshBuilder.CreateCylinder(
       `${name}-body`,
       {
-        height: 1.15,
-        diameterTop: 0.7,
-        diameterBottom: 0.92,
+        height: 1.702,
+        diameterTop: 1.012,
+        diameterBottom: 0.828,
         tessellation: 10,
       },
       this.scene
     );
     body.parent = root;
-    body.position.y = 1.28;
+    body.position.y = 2.783;
     body.material = bodyMaterial;
     body.isPickable = false;
 
     const vest = MeshBuilder.CreateBox(
       `${name}-vest`,
-      { width: 0.58, height: 0.62, depth: 0.1 },
+      { width: 0.736, height: 0.828, depth: 0.115 },
       this.scene
     );
     vest.parent = root;
-    vest.position.set(0, 1.34, -0.41);
+    vest.position.set(0, 2.852, -0.483);
     vest.material = detailMaterial;
     vest.isPickable = false;
 
+    // Cabeca de 0,24 m: o topo cai exatamente em 4,140 (1,80 m).
     const head = MeshBuilder.CreateSphere(
       `${name}-head`,
-      { diameter: 0.72, segments: 8 },
+      { diameter: 0.552, segments: 8 },
       this.scene
     );
     head.parent = root;
-    head.position.y = 2.2;
+    head.position.y = 3.864;
     head.material = this.lineMaterial;
     head.isPickable = false;
 
-    [-0.22, 0.22].forEach((x, index) => {
+    // Pernas: sola exatamente em 0, topo no quadril (0,85 m).
+    [-0.207, 0.207].forEach((x, index) => {
       const leg = MeshBuilder.CreateBox(
         `${name}-leg-${index}`,
-        { width: 0.2, height: 0.82, depth: 0.24 },
+        { width: 0.311, height: 1.96, depth: 0.368 },
         this.scene
       );
       leg.parent = root;
-      leg.position.set(x, 0.48, 0);
+      leg.position.set(x, 0.98, 0);
       leg.material = this.darkMaterial;
       leg.isPickable = false;
     });
 
+    // Bracos: do ombro (1,47 m) ao punho (0,85 m).
     const leftArm = MeshBuilder.CreateBox(
       `${name}-left-arm`,
-      { width: 0.2, height: 0.86, depth: 0.22 },
+      { width: 0.265, height: 1.426, depth: 0.299 },
       this.scene
     );
     leftArm.parent = root;
-    leftArm.position.set(-0.55, 1.36, 0);
+    leftArm.position.set(-0.635, 2.668, 0);
     leftArm.material = bodyMaterial;
     leftArm.isPickable = false;
 
     const rightArm = MeshBuilder.CreateBox(
       `${name}-right-arm`,
-      { width: 0.2, height: 0.86, depth: 0.22 },
+      { width: 0.265, height: 1.426, depth: 0.299 },
       this.scene
     );
     rightArm.parent = root;
-    rightArm.position.set(0.55, 1.36, 0);
+    rightArm.position.set(0.635, 2.668, 0);
     rightArm.material = bodyMaterial;
     rightArm.isPickable = false;
 
@@ -1103,10 +1110,10 @@ export class RoadSystem {
     customer.leftArm.rotation.x = -pose.parcelProgress * 0.45;
 
     const targetX = 0.78;
-    const targetY = 1.48;
+    const targetY = 2.35;
     const targetZ = -2.05;
     const parcelStartX = courier.root.position.x;
-    const parcelStartY = courier.root.position.y + 1.45;
+    const parcelStartY = courier.root.position.y + 2.3;
     const parcelStartZ = courier.root.position.z - 0.36;
     parcel.position.set(
       parcelStartX + (targetX - parcelStartX) * pose.parcelProgress,
