@@ -82,8 +82,10 @@ export async function createGameScene(
   scene.imageProcessingConfiguration.toneMappingEnabled = true;
   scene.imageProcessingConfiguration.toneMappingType =
     ImageProcessingConfiguration.TONEMAPPING_ACES;
-  scene.imageProcessingConfiguration.exposure = 1.04;
-  scene.imageProcessingConfiguration.contrast = 1.12;
+  // Contraste alto compensava a falta de luz direcional; com o sol mais forte
+  // ele so fechava as sombras e tirava cor das paredes claras.
+  scene.imageProcessingConfiguration.exposure = 1.0;
+  scene.imageProcessingConfiguration.contrast = 1.06;
 
   const camera = new FreeCamera(
     "chase-camera",
@@ -95,18 +97,28 @@ export async function createGameScene(
   camera.maxZ = 280;
   camera.setTarget(new Vector3(0, 1.35, 9.5));
 
+  /**
+   * Ceu em cima, grama embaixo. O `groundColor` era um azul quase preto: toda
+   * face virada para baixo — beiral, lateral de casa na sombra, meio-fio —
+   * recebia quase nada, e o bairro inteiro lia frio e sujo. Devolvendo o
+   * verde do gramado como luz de retorno, a parte na sombra ganha a cor do
+   * chao em vez de um cinza azulado.
+   */
   const ambient = new HemisphericLight("ambient", new Vector3(0, 1, 0), scene);
-  ambient.intensity = 0.82;
-  ambient.diffuse = Color3.FromHexString("#EDF5F6");
+  ambient.intensity = 0.68;
+  ambient.diffuse = Color3.FromHexString("#CFE3F2");
   ambient.specular = Color3.FromHexString("#8FA4AF");
-  ambient.groundColor = Color3.FromHexString("#091222");
+  ambient.groundColor = Color3.FromHexString("#2E4636");
 
   // Mais lateral do que antes: com a câmera atrás da bicicleta, um sol quase
   // frontal jogava a sombra para debaixo dela e ela não aparecia.
+  // Sol de dia e quente; o branco azulado de antes deixava o telhado verde
+  // com cara de plastico. Mais forte tambem: quem separa o lado claro do lado
+  // escuro numa peca de poucas faces e a luz direcional, nao o contraste.
   const sun = new DirectionalLight("sun", new Vector3(-0.72, -1, 0.18), scene);
   sun.position = new Vector3(24, 32, -8);
-  sun.intensity = 1.02;
-  sun.diffuse = Color3.FromHexString("#EDF5F6");
+  sun.intensity = 1.28;
+  sun.diffuse = Color3.FromHexString("#FFF3DE");
   sun.specular = Color3.FromHexString("#8FA4AF");
 
   const rim = new DirectionalLight(
@@ -115,7 +127,7 @@ export async function createGameScene(
     scene
   );
   rim.position = new Vector3(-20, 18, 30);
-  rim.intensity = 0.24;
+  rim.intensity = 0.2;
   rim.diffuse = Color3.FromHexString("#18BFEA");
   rim.specular = Color3.FromHexString("#12547A");
 
@@ -187,8 +199,10 @@ export async function createGameScene(
   };
   // A rua real chega depois da cena montada, então a lista de superfícies que
   // recebem sombra é reaplicada junto com a dos objetos que a projetam.
+  // XB_Via sao as 100 pecas do circuito e circuit-ground e a grama sob ele:
+  // sem os dois a sombra da bicicleta sumia justamente no mundo novo.
   const RECEIVER_PATTERN =
-    /^(?:asphalt|road-batch|urban-batch|terrain|XB_Road)/;
+    /^(?:asphalt|road-batch|urban-batch|terrain|XB_Road|XB_Via|circuit-ground)/;
   const applyReceivers = (enabled: boolean): void => {
     scene.meshes.forEach(mesh => {
       if (RECEIVER_PATTERN.test(mesh.name)) mesh.receiveShadows = enabled;

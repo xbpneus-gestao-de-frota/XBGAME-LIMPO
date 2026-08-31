@@ -162,7 +162,8 @@ export class RoadSystem {
     chao.position.y = -0.24;
     chao.material = this.shoulderMaterial;
     chao.isPickable = false;
-    chao.receiveShadows = false;
+    // A grama recebe a sombra da bicicleta; sem isto o jogador flutua.
+    chao.receiveShadows = true;
     // Um plano deste tamanho some no descarte quando a camera olha para baixo
     // do centro dele; sem isto o chao pisca.
     chao.alwaysSelectAsActiveMesh = true;
