@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFile, readdir } from "node:fs/promises";
+import { gzipSync } from "node:zlib";
 import path from "node:path";
 
 const GLB_DIR = path.resolve(process.cwd(), "client/public/assets/glb");
@@ -7,10 +8,13 @@ const GLB_DIR = path.resolve(process.cwd(), "client/public/assets/glb");
 // planejadas, mas fora de client/public: o jogador nao baixa 311 KB de
 // geometria que o runtime nunca carrega.
 const RESERVE_DIR = path.resolve(process.cwd(), "assets-source/glb");
-const RUNTIME_SOURCE = path.resolve(
-  process.cwd(),
-  "client/src/game/GltfAssetRuntime.ts"
-);
+// Dois carregadores citam .glb hoje: o das pecas soltas e o do circuito
+// fechado. A invariante e sobre o que o JOGO carrega, nao sobre um arquivo —
+// deixar so o primeiro aqui deixaria a peca do circuito entrar sem guarda.
+const RUNTIME_SOURCES = [
+  path.resolve(process.cwd(), "client/src/game/GltfAssetRuntime.ts"),
+  path.resolve(process.cwd(), "client/src/game/CircuitTrack.ts"),
+];
 const WORKER_SOURCE = path.resolve(process.cwd(), "client/public/sw-v320.js");
 
 const glbNames = (source: string): string[] =>
@@ -69,7 +73,9 @@ describe("kit de assets glTF", () => {
   // runtime carrega. Uma peca a mais e peso morto no download; uma a menos e
   // 404 no meio da partida.
   it("o pacote embarcado e exatamente o que o runtime carrega", async () => {
-    const runtime = await readFile(RUNTIME_SOURCE, "utf8");
+    const runtime = (
+      await Promise.all(RUNTIME_SOURCES.map(file => readFile(file, "utf8")))
+    ).join("\n");
     const loaded = [...new Set(glbNames(runtime))].sort();
     expect(loaded.length).toBeGreaterThan(0);
     expect((await readdir(GLB_DIR)).sort()).toEqual(loaded);
@@ -147,14 +153,36 @@ describe("kit de assets glTF", () => {
     expect(fileBytes).toBeLessThan(1_100_000);
   });
 
+  // O orcamento e sobre o que CHEGA ao telefone, nao sobre o que esta no
+  // disco. O circuito de 800 m tem 1,3 MB de geometria em ponto flutuante que
+  // comprime cinco para um; medir o arquivo cru diria 2,2 MB e mandaria cortar
+  // o que nao precisa ser cortado. O servidor comprime (Content-Encoding:
+  // gzip) desde que este teste passou a medir assim — um sem o outro e numero
+  // que mente calado.
   it("o kit inteiro cabe folgado no orcamento de download", async () => {
     const files = await readdir(GLB_DIR);
-    let total = 0;
+    let entregue = 0;
+    let cru = 0;
     for (const file of files) {
       const { fileBytes } = await readGlb(file);
-      total += fileBytes;
+      cru += fileBytes;
+      const buffer = await readFile(path.join(GLB_DIR, file));
+      entregue += gzipSync(buffer, { level: 9 }).byteLength;
     }
-    expect(total).toBeLessThan(1_000_000);
+    expect(entregue).toBeLessThan(1_000_000);
+    // Teto do arquivo cru tambem, para o .glb nao inchar sem ninguem ver: o
+    // que comprime bem hoje pode parar de comprimir amanha.
+    expect(cru).toBeLessThan(3_000_000);
+  });
+
+  it("o servidor entrega o kit comprimido, senao o orcamento acima e mentira", async () => {
+    const servidor = await readFile(
+      path.resolve(process.cwd(), "server/standalone-server.mjs"),
+      "utf8"
+    );
+    expect(servidor).toContain('"Content-Encoding": "gzip"');
+    expect(servidor).toContain('".glb"');
+    expect(servidor).toContain('Vary: "Accept-Encoding"');
   });
 
   it("o pre-cache do worker cobre o que o runtime carrega, e nada alem", async () => {
@@ -162,7 +190,9 @@ describe("kit de assets glTF", () => {
     const precached = [...worker.matchAll(/"\/assets\/glb\/([^"]+)"/g)]
       .map(match => match[1]!)
       .sort();
-    const runtime = await readFile(RUNTIME_SOURCE, "utf8");
+    const runtime = (
+      await Promise.all(RUNTIME_SOURCES.map(file => readFile(file, "utf8")))
+    ).join("\n");
     expect(precached).toEqual([...new Set(glbNames(runtime))].sort());
     const onDisk = new Set(await readdir(GLB_DIR));
     precached.forEach(file => expect(onDisk.has(file)).toBe(true));

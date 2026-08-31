@@ -5,6 +5,7 @@ import { Mesh } from "@babylonjs/core/Meshes/mesh";
 import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { Scene } from "@babylonjs/core/scene";
+import { CircuitTrack, UNIDADES_POR_METRO } from "./CircuitTrack";
 import { LANE_POSITIONS } from "./config";
 import { deliveryStopPose } from "./deliveryExperience";
 import {
@@ -80,6 +81,14 @@ export class RoadSystem {
   private readonly shadowMaterial: StandardMaterial;
   private readonly signalMaterial: StandardMaterial;
   private readonly deliveryStop: DeliveryStopVisual;
+  /**
+   * O circuito de 800 m vindo do Unreal. Enquanto ele nao carrega, a pista
+   * procedural continua no ar: arquivo que falta nao pode deixar o jogo sem
+   * chao.
+   */
+  private circuit: CircuitTrack | null = null;
+  /** Grama sob o circuito: o arquivo do Unreal nao traz chao. */
+  private circuitGround: Mesh | null = null;
   private spawnCursor = 150;
   private seed = 73_381;
   private visualTime = 0;
@@ -114,6 +123,59 @@ export class RoadSystem {
     this.createRoad();
     this.deliveryStop = this.createDeliveryStop();
     this.createActors();
+    void this.enableCircuit();
+  }
+
+  /**
+   * Troca a esteira de nove segmentos pelo circuito fechado. So desliga a
+   * pista procedural DEPOIS que o arquivo carregou e o eixo foi lido — se
+   * qualquer coisa falhar, o jogo fica exatamente como estava.
+   */
+  async enableCircuit(): Promise<boolean> {
+    if (this.circuit) return this.circuit.isReady;
+    const pista = new CircuitTrack(this.scene);
+    const ok = await pista.load();
+    if (!ok) return false;
+    this.circuit = pista;
+    this.segments.forEach(segmento => segmento.setEnabled(false));
+    this.createCircuitGround();
+    return true;
+  }
+
+  /**
+   * O arquivo do circuito traz rua, casas e quintal — e nao traz chao. Sem
+   * este plano, tudo que nao e peca aparece como o fundo do ceu: o jogador ve
+   * azul entre as casas onde devia ver grama.
+   *
+   * O plano fica parado na origem porque o jogador tambem fica: quem anda e o
+   * mundo. 1.200 unidades de lado cobrem 260 m para cada lado, bem alem do
+   * fim da neblina (228), entao a borda nunca entra no quadro.
+   */
+  private createCircuitGround(): void {
+    if (this.circuitGround) return;
+    const chao = MeshBuilder.CreateGround(
+      "circuit-ground",
+      { width: 1200, height: 1200, subdivisions: 1 },
+      this.scene
+    );
+    // Logo abaixo do asfalto do circuito, que assenta em -0,138.
+    chao.position.y = -0.24;
+    chao.material = this.shoulderMaterial;
+    chao.isPickable = false;
+    chao.receiveShadows = false;
+    // Um plano deste tamanho some no descarte quando a camera olha para baixo
+    // do centro dele; sem isto o chao pisca.
+    chao.alwaysSelectAsActiveMesh = true;
+    this.circuitGround = chao;
+  }
+
+  /** Quanto da volta ja foi percorrido, de 0 a 1. Zero sem circuito. */
+  get circuitLapFraction(): number {
+    return this.circuit?.lapFraction ?? 0;
+  }
+
+  get circuitLapLength(): number {
+    return this.circuit?.lapLength ?? 0;
   }
 
   setEra(vehicle: VehicleConfig): void {
@@ -171,6 +233,7 @@ export class RoadSystem {
   }
 
   reset(seedKey = "default"): void {
+    this.circuit?.reset();
     this.spawnCursor = 150;
     this.seed = this.hash(seedKey) || 73_381;
     this.visualTime = 0;
@@ -239,6 +302,9 @@ export class RoadSystem {
   ): void {
     const movement = speed * delta;
     this.visualTime += delta;
+    // A volta anda em unidades; a velocidade do jogo vem em metros por
+    // segundo. Sem a conversao o jogador rodaria 2,3 vezes mais devagar.
+    this.circuit?.advance(movement * UNIDADES_POR_METRO);
     this.neighborhoodPath = advanceNeighborhoodPath(
       this.neighborhoodPath,
       movement,
@@ -438,6 +504,10 @@ export class RoadSystem {
       this.shadowMaterial,
       this.signalMaterial,
     ].forEach(material => material.dispose());
+    this.circuit?.dispose();
+    this.circuit = null;
+    this.circuitGround?.dispose();
+    this.circuitGround = null;
   }
 
   private createRoad(): void {

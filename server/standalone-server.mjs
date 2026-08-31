@@ -1,5 +1,7 @@
 import { createReadStream, existsSync } from "node:fs";
-import { realpath, stat } from "node:fs/promises";
+import { readFile, realpath, stat } from "node:fs/promises";
+import { gzip } from "node:zlib";
+import { promisify } from "node:util";
 import { createServer } from "node:http";
 import path from "node:path";
 import process from "node:process";
@@ -291,10 +293,66 @@ function streamFile(response, filePath, options) {
   stream.pipe(response);
 }
 
+const comprimir = promisify(gzip);
+
+/**
+ * O circuito de 800 m sai do Unreal com 1,3 MB de geometria em ponto
+ * flutuante, e ponto flutuante repetido comprime cinco para um: 1.309 KB
+ * viram 267 KB. Sem esta camada o jogador baixa o arquivo cru e o orcamento
+ * de 1 MB do kit vira mentira — o teste mediria um numero que nao e o que
+ * chega ao telefone.
+ *
+ * Comprimir e caro (dezenas de milissegundos no arquivo grande), entao o
+ * resultado fica guardado por caminho e data do arquivo. Trocar o .glb muda a
+ * data e invalida a entrada sozinho.
+ */
+const COMPRIMIVEL = new Set([
+  ".css",
+  ".glb",
+  ".html",
+  ".js",
+  ".json",
+  ".map",
+  ".mjs",
+  ".svg",
+  ".txt",
+  ".webmanifest",
+]);
+const COMPRIMIR_A_PARTIR_DE = 1024;
+const LIMITE_DO_CACHE = 24;
+const cacheComprimido = new Map();
+
+function aceitaGzip(request) {
+  const cabecalho = request.headers["accept-encoding"];
+  if (typeof cabecalho !== "string") return false;
+  return /\bgzip\b/i.test(cabecalho);
+}
+
+async function corpoComprimido(filePath, mtimeMs) {
+  const chave = `${filePath}:${Math.trunc(mtimeMs)}`;
+  const guardado = cacheComprimido.get(chave);
+  if (guardado) return guardado;
+  const bruto = await readFile(filePath);
+  const pronto = await comprimir(bruto, { level: 9 });
+  if (cacheComprimido.size >= LIMITE_DO_CACHE) {
+    const primeira = cacheComprimido.keys().next().value;
+    cacheComprimido.delete(primeira);
+  }
+  cacheComprimido.set(chave, pronto);
+  return pronto;
+}
+
 async function sendFile(request, response, filePath, urlPath) {
   const details = await stat(filePath);
   const cache = cacheControl(urlPath);
-  const etag = `"${details.size.toString(16)}-${Math.trunc(details.mtimeMs).toString(16)}"`;
+  // Pedido com faixa continua sem compressao: faixa e sobre bytes do arquivo
+  // cru, e misturar as duas coisas entrega pedaco errado sem erro nenhum.
+  const comprime =
+    !request.headers.range &&
+    details.size >= COMPRIMIR_A_PARTIR_DE &&
+    COMPRIMIVEL.has(path.extname(filePath).toLowerCase()) &&
+    aceitaGzip(request);
+  const etag = `"${details.size.toString(16)}-${Math.trunc(details.mtimeMs).toString(16)}${comprime ? "-gz" : ""}"`;
   const lastModified = new Date(
     Math.floor(details.mtimeMs / 1000) * 1000
   ).toUTCString();
@@ -350,6 +408,21 @@ async function sendFile(request, response, filePath, urlPath) {
       return;
     }
     streamFile(response, filePath, { end: range.end, start: range.start });
+    return;
+  }
+
+  if (comprime) {
+    const corpo = await corpoComprimido(filePath, details.mtimeMs);
+    response.writeHead(200, {
+      "Cache-Control": cache,
+      "Content-Encoding": "gzip",
+      "Content-Length": corpo.byteLength,
+      "Content-Type": contentType,
+      ETag: etag,
+      "Last-Modified": lastModified,
+      Vary: "Accept-Encoding",
+    });
+    response.end(request.method === "HEAD" ? undefined : corpo);
     return;
   }
 

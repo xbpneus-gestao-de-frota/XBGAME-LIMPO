@@ -25,6 +25,7 @@ const PRECACHE_URLS = [
   "/assets/glb/XB_Road_Cross.glb",
   "/assets/glb/XB_Road_T.glb",
   "/assets/glb/entregador_web.glb",
+  "/assets/glb/XB_Circuito_Vestido.glb",
 ];
 
 // Uma escrita de cache pode falhar por cota (QuotaExceededError) ou por a
