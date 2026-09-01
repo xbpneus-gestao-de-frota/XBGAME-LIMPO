@@ -87,17 +87,20 @@ describe("Turbo Borracha XB visual contract", () => {
     mutable.onObstacle("pothole");
     expect(world.getSnapshot().run.integrity).toBe(100);
 
-    for (
-      let frame = 0;
-      frame < 240 && world.getSnapshot().mode === "running";
-      frame += 1
-    ) {
+    // O teto de 240 quadros valia enquanto a rota inaugural tinha 5 s. Com o
+    // piso de 30 s ela nao acaba aqui, e as tres afirmacoes do fim deixaram de
+    // medir o turbo: passaram a medir se um piloto que nunca desvia sobrevive
+    // a meio minuto de cones — que e outro assunto, e mora em runIntegrity.
+    // O que este teste garante e o turbo, e isso continua garantido acima:
+    // acelera, quebra o obstaculo e nao tira integridade enquanto esta ligado.
+    for (let frame = 0; frame < 240; frame += 1) {
       world.update(1 / 60);
     }
-    const result = world.getSnapshot().lastResult;
-    expect(result?.success).toBe(true);
-    expect(result?.perfectRoute).toBe(true);
-    expect(result?.turboActivations).toBe(1);
+    const depois = world.getSnapshot().run;
+    expect(depois.turboActivations).toBe(1);
+    // Nenhum arranhao: o turbo quebra o que aparece pela frente em vez de
+    // cobrar integridade.
+    expect(depois.integrity).toBe(100);
 
     world.dispose();
     rendering.dispose();

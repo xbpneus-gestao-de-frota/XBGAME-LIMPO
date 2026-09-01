@@ -313,7 +313,9 @@ describe("CampaignStore bicycle-company MVP", () => {
     expect(store.value.buildingLevels.garage).toBe(1);
 
     const preview = store.previewRoute("primeiro-pedal").plan!;
-    expect(preview.duration).toBe(5);
+    // 5 s era a rota inaugural antes do piso de 30 s: ela acabava antes de o
+    // jogador chegar na primeira curva do circuito.
+    expect(preview.duration).toBe(30);
     expect(preview.grossReward).toBe(10);
     expect(preview.operatingCost).toBe(0);
     expect(preview.xpReward).toBe(1);

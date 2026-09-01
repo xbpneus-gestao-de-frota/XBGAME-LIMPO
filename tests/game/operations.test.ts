@@ -22,6 +22,7 @@ import {
   bikePartUpgradeCost,
   companyLevelFromXp,
   companyXpRequiredForLevel,
+  DURACAO_MINIMA_SEGUNDOS,
 } from "../../client/src/game/progression";
 import { createDefaultCampaignState } from "../../client/src/game/GameState";
 import {
@@ -31,12 +32,22 @@ import {
 } from "../../client/src/game/simulation";
 
 describe("pure campaign rules", () => {
-  it("defines the 5/8/15/30 second bicycle opening and long vehicle runway", () => {
+  // A abertura era 5/8/15/30 s, escrita quando a pista era uma esteira reta e
+  // curta. Com o circuito de 800 m no lugar dela, uma entrega de 5 s acabava
+  // antes da primeira curva. O piso de 30 s mora em DURACAO_MINIMA_SEGUNDOS,
+  // num lugar so, e este teste guarda que ele vale para TODAS as rotas — nao
+  // so para as quatro primeiras.
+  it("nao deixa nenhuma rota nascer abaixo do piso de 30 segundos", () => {
+    expect(DURACAO_MINIMA_SEGUNDOS).toBe(30);
     expect(
       ROUTES.filter(route => route.regionId === "divinopolis")
         .slice(0, 4)
         .map(route => route.durationSeconds)
-    ).toEqual([5, 8, 15, 30]);
+    ).toEqual([30, 30, 30, 30]);
+    const curtas = ROUTES.filter(
+      route => route.durationSeconds < DURACAO_MINIMA_SEGUNDOS
+    );
+    expect(curtas.map(route => route.id)).toEqual([]);
     expect(VEHICLE_UNLOCK_LEVELS).toEqual({
       bike: 1,
       moto: 20,

@@ -581,7 +581,18 @@ export const REGIONS: readonly RegionConfig[] = [
   },
 ] as const;
 
-export const ROUTES: readonly RouteConfig[] = [
+/**
+ * Piso de duracao de rota, em segundos. Com o circuito de verdade no lugar da
+ * esteira, uma entrega de 5 s acabava antes de o jogador chegar na primeira
+ * curva: ele nao via a volta, nao via o bairro e nao dava tempo de a coleta e
+ * a entrega acontecerem em lugares diferentes.
+ *
+ * O piso mora aqui, uma vez, em cima da tabela — assim nenhuma rota nova
+ * nasce curta demais por esquecimento.
+ */
+export const DURACAO_MINIMA_SEGUNDOS = 30;
+
+const ROTAS_ESCRITAS: readonly RouteConfig[] = [
   {
     id: "primeiro-pedal",
     regionId: "divinopolis",
@@ -861,6 +872,17 @@ export const ROUTES: readonly RouteConfig[] = [
     difficulty: 5,
   },
 ] as const;
+
+/**
+ * A tabela acima e a escrita a mao; esta e a que o jogo usa. O piso e
+ * aplicado aqui, num lugar so, em vez de espalhado por cinquenta numeros que
+ * alguem esqueceria de atualizar.
+ */
+export const ROUTES: readonly RouteConfig[] = ROTAS_ESCRITAS.map(rota =>
+  rota.durationSeconds >= DURACAO_MINIMA_SEGUNDOS
+    ? rota
+    : { ...rota, durationSeconds: DURACAO_MINIMA_SEGUNDOS }
+);
 
 export function companyLevelFromXp(xp: number): number {
   const safeXp = Math.max(0, Number.isFinite(xp) ? xp : 0);

@@ -1,5 +1,16 @@
 export const GAME_ASSETS = {
-  reference: "/assets/fleet-key-art-v3.webp",
+  // Arte de abertura: o entregador e os dois mascotes no portao da trilha.
+  reference: "/assets/XB_Abertura_Jornada.webp",
+  // A mesma cena continuada para os lados e para cima e para baixo. Servem de
+  // fundo para a arte nunca ficar cercada de preto: em tela deitada entra a
+  // larga, em tela em pe entra a alta.
+  referenceWide: "/assets/XB_Abertura_Larga.webp",
+  referenceTall: "/assets/XB_Abertura_Alta.webp",
+  // Arte em pe: a mesma trilha com a cidade XB ao fundo, feita na proporcao do
+  // celular. Entra no lugar da quadrada quando a tela e mais alta que larga.
+  referenceVertical: "/assets/XB_Abertura_Vertical.webp",
+  referenceVerticalTall: "/assets/XB_Abertura_Vertical_Alta.webp",
+  soundtrack: "/assets/XB_Trilha_Abertura.mp3",
   driver: "/assets/driver-mascot-v3.webp",
   logo: "/assets/logo-xb-mark-v3.webp",
   brandLockup: "/assets/logo-xb-metal-v3.webp",

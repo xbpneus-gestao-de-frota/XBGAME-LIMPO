@@ -99,12 +99,17 @@ class MockAudioContext implements FeedbackAudioContext {
 }
 
 describe("optional game feedback", () => {
-  it("keeps sound and vibration opt-in by default", () => {
+  /*
+   * O som passou a sair ligado quando a trilha entrou no jogo: abrir o jogo e
+   * ouvir a musica. A vibracao nao acompanhou de proposito — som se desliga
+   * com um toque, vibracao incomoda antes de a pessoa achar o interruptor.
+   */
+  it("sai com som ligado e vibracao desligada", () => {
     expect(loadFeedbackPreferences(new MemoryStorage())).toEqual(
       DEFAULT_FEEDBACK_PREFERENCES
     );
     expect(DEFAULT_FEEDBACK_PREFERENCES).toEqual({
-      soundEnabled: false,
+      soundEnabled: true,
       vibrationEnabled: false,
     });
   });
@@ -150,11 +155,18 @@ describe("optional game feedback", () => {
     expect(isFeedbackAllowed("vibration", preferences, context)).toBe(false);
   });
 
-  it("does not create audio or vibrate before explicit opt-in", async () => {
+  /*
+   * Este teste guardava "nada acontece antes de a pessoa pedir". Metade disso
+   * mudou quando a trilha entrou: o som passou a sair ligado. A outra metade
+   * continua valendo e e ela que esta aqui — com o som desligado nao se cria
+   * nem contexto de audio, e a vibracao nao dispara nem com o som ligado.
+   */
+  it("com som desligado nao cria audio nem vibra", async () => {
     const audioFactory = vi.fn(() => new MockAudioContext());
     const vibrate = vi.fn(() => true);
     const feedback = new GameFeedback({
       storage: null,
+      initialPreferences: { soundEnabled: false, vibrationEnabled: false },
       audioContextFactory: audioFactory,
       vibrate,
       contextProvider: () => activeContext,
@@ -164,6 +176,19 @@ describe("optional game feedback", () => {
       vibrationPlayed: false,
     });
     expect(audioFactory).not.toHaveBeenCalled();
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it("nao vibra so porque o som saiu ligado de fabrica", async () => {
+    const vibrate = vi.fn(() => true);
+    const feedback = new GameFeedback({
+      storage: null,
+      audioContextFactory: () => new MockAudioContext(),
+      vibrate,
+      contextProvider: () => activeContext,
+    });
+    const resultado = await feedback.trigger("button");
+    expect(resultado.vibrationPlayed).toBe(false);
     expect(vibrate).not.toHaveBeenCalled();
   });
 

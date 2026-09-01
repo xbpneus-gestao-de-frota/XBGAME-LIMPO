@@ -5,8 +5,15 @@ export interface FeedbackPreferences {
   vibrationEnabled: boolean;
 }
 
+/**
+ * O som sai ligado: o jogo abre com a trilha tocando, como jogo faz. Quem nao
+ * quiser desliga em AJUSTES, e a escolha fica guardada no aparelho.
+ *
+ * A vibracao continua desligada de fabrica — ela nao enfeita nada, so mexe no
+ * corpo de quem esta jogando, e isso e para a pessoa pedir.
+ */
 export const DEFAULT_FEEDBACK_PREFERENCES: Readonly<FeedbackPreferences> = {
-  soundEnabled: false,
+  soundEnabled: true,
   vibrationEnabled: false,
 };
 

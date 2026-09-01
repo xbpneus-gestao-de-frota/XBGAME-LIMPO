@@ -4,6 +4,7 @@
  * mantém toda a interação de gestão fora do motor gráfico.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties } from "react";
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import {
   ArrowLeft,
@@ -32,6 +33,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { GAME_ASSETS } from "@/game/assets";
+import { criarTrilhaSonora, type TrilhaSonora } from "@/game/music";
 import BaseScreen from "./BaseScreen";
 import ExperienceSettings from "./ExperienceSettings";
 import RoutesScreen from "./RoutesScreen";
@@ -124,119 +126,61 @@ function StatChip({
   );
 }
 
-function MenuScreen({
-  snapshot,
-  handle,
-}: {
-  snapshot: GameSnapshot;
-  handle: GameHandle;
-}) {
-  const vehicle = getVehicle(snapshot.campaign.selectedVehicleId);
-  const hasProgress = snapshot.campaign.deliveries > 0;
-
+/**
+ * Tela de entrada. Uma unica arte, do tamanho que ela nasceu, com tres pontos
+ * animados por cima: o mapa projetado sobre o mascote, o mostrador na mao dele
+ * e as luzes da caixa de fios. As posicoes sao porcentagens medidas na propria
+ * imagem — trocar a arte exige remedir os tres pontos.
+ */
+function MenuScreen({ handle }: { handle: GameHandle }) {
   return (
     <section
-      className="game-screen menu-screen"
-      data-era={vehicle.id}
-      style={{ backgroundImage: `url(${GAME_ASSETS.reference})` }}
-      aria-labelledby="menu-title"
+      className="game-screen entrada"
+      aria-label="XB PNEUS - inicio da jornada"
     >
-      <div className="screen-image-shade" />
-      <header className="menu-header">
-        <BrandLockup artwork />
-        <div className="menu-header__status">
-          <span className="signal-dot" />
-          CAMPANHA LOCAL
+      <div className="entrada__fundo" aria-hidden="true" />
+      <div className="entrada__palco">
+        {/*
+         * A cena continuada mora DENTRO do palco, e nao numa camada da tela
+         * inteira. E de proposito: assim ela e medida em porcentagem do proprio
+         * palco e nunca sai do lugar. Quando era fundo de tela, bastava a
+         * janela ter uma forma em que a arte nao encostasse nas bordas para as
+         * duas copias saírem de registro e aparecerem sobrepostas.
+         */}
+        <picture className="entrada__ambiente" aria-hidden="true">
+          <source
+            media="(min-aspect-ratio: 3 / 4)"
+            srcSet={GAME_ASSETS.referenceWide}
+          />
+          <img src={GAME_ASSETS.referenceVerticalTall} alt="" />
+        </picture>
+        <picture className="entrada__quadro">
+          {/* Tela em pe recebe a arte em pe; deitada, a quadrada. Cada forma
+              de tela ganha a arte desenhada para ela. */}
+          <source
+            media="(max-aspect-ratio: 3 / 4)"
+            srcSet={GAME_ASSETS.referenceVertical}
+          />
+          <img
+            className="entrada__arte"
+            src={GAME_ASSETS.reference}
+            alt="Entregador da XB PNEUS de bicicleta no portao da trilha, ao lado dos dois mascotes da equipe"
+          />
+        </picture>
+        <div className="entrada__vida" aria-hidden="true">
+          <span className="entrada__mapa" />
+          <span className="entrada__pino" />
+          <span className="entrada__relogio" />
+          <span className="entrada__aro" />
+          <span className="entrada__led entrada__led--a" />
+          <span className="entrada__led entrada__led--b" />
+          <span className="entrada__led entrada__led--c" />
+          <span className="entrada__led entrada__led--d" />
         </div>
-      </header>
-
-      <main className="menu-layout">
-        <div className="menu-copy">
-          <p className="eyebrow">
-            <span>01</span> UMA EMPRESA. SEIS ERAS.
-          </p>
-          <h1 id="menu-title">
-            DO <em>PEDAL</em>
-            <br />
-            AO PLANETA.
-          </h1>
-          <p className="menu-lead">
-            Comece com uma bicicleta. Domine cada rota, evolua seus pneus e
-            construa uma operação capaz de mover novos mundos.
-          </p>
-
-          <div className="menu-actions">
-            <button
-              className="xb-button xb-button--primary"
-              onClick={() => handle.goBase()}
-            >
-              <Flag size={19} />
-              {hasProgress ? "CONTINUAR NA CENTRAL" : "ENTRAR NA CENTRAL"}
-            </button>
-            <button
-              className="xb-button xb-button--ghost"
-              onClick={() => handle.goGarage()}
-            >
-              <Wrench size={18} /> GARAGEM & EVOLUÇÃO
-            </button>
-          </div>
-
-          <div className="menu-stats">
-            <StatChip
-              icon={<Coins size={19} />}
-              label="CAIXA"
-              value={`${formatCredits(snapshot.campaign.credits)}`}
-            />
-            <StatChip
-              icon={<Star size={19} />}
-              label="REPUTAÇÃO"
-              value={money.format(snapshot.campaign.reputation)}
-            />
-            <StatChip
-              icon={<PackageCheck size={19} />}
-              label="ENTREGAS"
-              value={money.format(snapshot.campaign.deliveries)}
-            />
-          </div>
-        </div>
-
-        <aside className="menu-progression">
-          <div className="progression-label">
-            <span>SEU PRÓXIMO QUILÔMETRO</span>
-            <strong>{vehicle.era}</strong>
-          </div>
-          <figure className="menu-mascot">
-            <span className="menu-mascot__halo" aria-hidden="true" />
-            <img
-              src={GAME_ASSETS.driver}
-              alt="Mascote XB PNEUS em uniforme azul-marinho fazendo sinal de positivo"
-            />
-            <figcaption>
-              <small>MASCOTE XB · EQUIPE OFICIAL</small>
-              <strong>PRONTO PARA A ROTA</strong>
-            </figcaption>
-          </figure>
-          <div className="current-contract-card">
-            <span className="card-index">
-              ROTA {String(vehicle.order + 1).padStart(2, "0")}
-            </span>
-            <div>
-              <MapPinned size={25} />
-              <span>
-                <small>CONTRATO ATIVO</small>
-                <strong>{vehicle.route}</strong>
-              </span>
-            </div>
-            <p>{vehicle.description}</p>
-          </div>
-        </aside>
-      </main>
-
-      <footer className="menu-footer">
-        <span>← → ou A D para dirigir</span>
-        <span>ESPAÇO ativa o Turbo Borracha XB</span>
-        <span className="footer-motto">ADERÊNCIA • RESISTÊNCIA • ESCALA</span>
-      </footer>
+      </div>
+      <button className="entrada__jogar" onClick={() => handle.goBase()}>
+        PLAY GAME
+      </button>
     </section>
   );
 }
@@ -1132,6 +1076,7 @@ export default function GameCanvas() {
   const handleRef = useRef<GameHandle | null>(null);
   const engineRef = useRef<Engine | null>(null);
   const feedbackRef = useRef<GameFeedback | null>(null);
+  const trilhaRef = useRef<TrilhaSonora | null>(null);
   const modeRef = useRef<string>("loading");
   const [qualityPreference, setQualityPreference] = useState<QualityPreference>(
     loadQualityPreference
@@ -1152,6 +1097,27 @@ export default function GameCanvas() {
   useEffect(() => {
     qualitySettingsRef.current = qualitySettings;
   }, [qualitySettings]);
+
+  /*
+   * A trilha nasce uma vez so e vive enquanto a tela do jogo viver. Se ela
+   * fosse criada de novo a cada mudanca de preferencia, a musica recomecaria
+   * do zero toda vez que alguem mexesse no interruptor.
+   */
+  useEffect(() => {
+    const trilha = criarTrilhaSonora({
+      criarAudio: caminho => new Audio(caminho),
+      janela: window,
+      documento: document,
+    });
+    trilhaRef.current = trilha;
+    trilha.definirLigada(feedbackPreferences.soundEnabled);
+    return () => {
+      trilhaRef.current = null;
+      trilha.encerrar();
+    };
+    // A trilha acompanha o interruptor por definirLigada, sem recriar o audio.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const feedback = new GameFeedback({
@@ -1183,6 +1149,7 @@ export default function GameCanvas() {
   const changeFeedback = (preferences: FeedbackPreferences) => {
     setFeedbackPreferences(preferences);
     feedbackRef.current?.setPreferences(preferences);
+    trilhaRef.current?.definirLigada(preferences.soundEnabled);
     if (preferences.soundEnabled) void feedbackRef.current?.unlockAudio();
   };
 
@@ -1297,7 +1264,11 @@ export default function GameCanvas() {
         });
         return createGameScene(engine, canvas, {
           glow: settings.preset !== "performance",
-          shadows: settings.preset !== "performance",
+          // Sombra projetada e o que faz a luz parecer luz: sem ela, sol de
+          // fim de tarde e so um filtro laranja. A area de sombra e fixa e
+          // pequena em volta do jogador, que nunca sai da origem, entao o
+          // custo e limitado e vale ate no preset de desempenho.
+          shadows: true,
         });
       })
       .then(handle => {
@@ -1480,16 +1451,14 @@ export default function GameCanvas() {
           </span>
         </div>
       ) : (
-        <div className="game-ui">
+        <div className="game-ui" data-mode={snapshot.mode}>
           {snapshot.mode === "base" && (
             <BaseScreen snapshot={snapshot} handle={handle} />
           )}
           {snapshot.mode === "routes" && (
             <RoutesScreen snapshot={snapshot} handle={handle} />
           )}
-          {snapshot.mode === "menu" && (
-            <MenuScreen snapshot={snapshot} handle={handle} />
-          )}
+          {snapshot.mode === "menu" && <MenuScreen handle={handle} />}
           {snapshot.mode === "garage" && (
             <GarageScreen snapshot={snapshot} handle={handle} />
           )}

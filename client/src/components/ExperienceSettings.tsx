@@ -185,8 +185,8 @@ export default function ExperienceSettings({
             <span className="experience-settings-heading">
               <Volume2 aria-hidden="true" />
               <span>
-                <strong>EFEITOS SONOROS</strong>
-                <small>SINTÉTICOS E DISCRETOS</small>
+                <strong>SOM DO JOGO</strong>
+                <small>MÚSICA E EFEITOS</small>
               </span>
             </span>
             <input

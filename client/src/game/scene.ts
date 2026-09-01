@@ -75,8 +75,18 @@ export async function createGameScene(
   scene.skipPointerMovePicking = true;
   scene.constantlyUpdateMeshUnderPointer = false;
   scene.clearColor = Color4.FromHexString("#0D1B33FF");
-  scene.ambientColor = Color3.FromHexString("#0D1B33");
-  scene.fogMode = Scene.FOGMODE_LINEAR;
+  // Esta cor multiplica a parcela de ambiente de CADA material da cena. Ela
+  // estava num azul-marinho quase preto, e era ela que puxava as casas
+  // proximas para o cinza-azulado por baixo de um ceu dourado: a cidade nao
+  // batia com a propria luz dela. Trocada por um marrom claro e morno, a
+  // sombra das fachadas passa a ter a cor do fim de tarde.
+  scene.ambientColor = Color3.FromHexString("#6B5136");
+  // Sem neblina. Ela existia para esconder a borda do mundo quando a pista
+  // era uma esteira de 216 unidades; com o circuito fechado nao ha borda para
+  // esconder — ha cidade — e a neblina so apagava o outro lado da volta.
+  // Os valores de alcance continuam sendo escritos pelo tema do ambiente, e
+  // voltam a valer no dia em que o modo for religado.
+  scene.fogMode = Scene.FOGMODE_NONE;
   scene.fogStart = 62;
   scene.fogEnd = 184;
   scene.imageProcessingConfiguration.toneMappingEnabled = true;
@@ -84,8 +94,19 @@ export async function createGameScene(
     ImageProcessingConfiguration.TONEMAPPING_ACES;
   // Contraste alto compensava a falta de luz direcional; com o sol mais forte
   // ele so fechava as sombras e tirava cor das paredes claras.
-  scene.imageProcessingConfiguration.exposure = 1.0;
-  scene.imageProcessingConfiguration.contrast = 1.06;
+  scene.imageProcessingConfiguration.exposure = 1.2;
+  scene.imageProcessingConfiguration.contrast = 1.04;
+  // Vinheta discreta: escurece so os cantos e puxa o olho para o meio da
+  // pista. Sem ela o quadro inteiro tem o mesmo peso e a rua nao conduz o
+  // olhar para lugar nenhum.
+  scene.imageProcessingConfiguration.vignetteEnabled = true;
+  scene.imageProcessingConfiguration.vignetteWeight = 0.9;
+  scene.imageProcessingConfiguration.vignetteStretch = 0.5;
+  scene.imageProcessingConfiguration.vignetteCameraFov = 0.9;
+  // Vinheta morna, nao azul: a borda escura tem de ser da mesma familia do
+  // fim de tarde, senao o canto do quadro puxa para a noite.
+  scene.imageProcessingConfiguration.vignetteColor =
+    Color4.FromHexString("#1C0C06FF");
 
   const camera = new FreeCamera(
     "chase-camera",
@@ -105,31 +126,43 @@ export async function createGameScene(
    * chao em vez de um cinza azulado.
    */
   const ambient = new HemisphericLight("ambient", new Vector3(0, 1, 0), scene);
-  ambient.intensity = 0.68;
-  ambient.diffuse = Color3.FromHexString("#CFE3F2");
+  ambient.intensity = 0.9;
+  ambient.diffuse = Color3.FromHexString("#F2D6B6");
   ambient.specular = Color3.FromHexString("#8FA4AF");
-  ambient.groundColor = Color3.FromHexString("#2E4636");
+  ambient.groundColor = Color3.FromHexString("#A8804C");
 
-  // Mais lateral do que antes: com a câmera atrás da bicicleta, um sol quase
-  // frontal jogava a sombra para debaixo dela e ela não aparecia.
-  // Sol de dia e quente; o branco azulado de antes deixava o telhado verde
-  // com cara de plastico. Mais forte tambem: quem separa o lado claro do lado
-  // escuro numa peca de poucas faces e a luz direcional, nao o contraste.
-  const sun = new DirectionalLight("sun", new Vector3(-0.72, -1, 0.18), scene);
-  sun.position = new Vector3(24, 32, -8);
-  sun.intensity = 1.28;
-  sun.diffuse = Color3.FromHexString("#FFF3DE");
-  sun.specular = Color3.FromHexString("#8FA4AF");
+  /**
+   * Sol de fim de tarde: BAIXO e A FRENTE do jogador, um pouco a esquerda.
+   *
+   * Quase a pino, como estava antes, tudo recebia a mesma luz e nada tinha
+   * silhueta: casa sem lado claro nem lado escuro, entregador chapado contra
+   * o fundo. Vindo de frente e rasante, o sol contorna o entregador de luz —
+   * o contraluz que separa o personagem do cenario, que e o truque mais
+   * velho do desenho animado — e acende a fachada do lado de la da rua.
+   */
+  const sun = new DirectionalLight(
+    "sun",
+    new Vector3(-0.38, -0.82, 0.42),
+    scene
+  );
+  sun.position = new Vector3(30, 40, -26);
+  sun.intensity = 1.5;
+  sun.diffuse = Color3.FromHexString("#FFCF96");
+  sun.specular = Color3.FromHexString("#FFE0B0");
 
   const rim = new DirectionalLight(
     "rim-light",
-    new Vector3(0.72, -0.62, -0.4),
+    new Vector3(-0.22, -0.42, 0.88),
     scene
   );
   rim.position = new Vector3(-20, 18, 30);
-  rim.intensity = 0.2;
-  rim.diffuse = Color3.FromHexString("#18BFEA");
-  rim.specular = Color3.FromHexString("#12547A");
+  // Preenchimento frio por tras. As costas do entregador sao o que a camera
+  // ve o tempo todo, e com o sol de frente elas virariam um vulto preto.
+  // Frio de proposito: e o contrario do dourado do sol, e e esse par quente
+  // e frio que faz a cena parecer desenho em vez de foto.
+  rim.intensity = 0.4;
+  rim.diffuse = Color3.FromHexString("#7FA8D8");
+  rim.specular = Color3.FromHexString("#3A6C96");
 
   // O azul XB da bicicleta e dos coletáveis é emissivo de verdade — vem assim
   // do material original. Sem uma camada de brilho esse valor era desperdiçado.
@@ -164,9 +197,28 @@ export async function createGameScene(
    */
   let shadows: ShadowGenerator | null = null;
   let shadowTick = 0;
+  /**
+   * O que projeta sombra. Ate agora era so a bicicleta, e por isso a luz nao
+   * parecia luz: sol de fim de tarde sem sombra de casa no chao e apenas um
+   * filtro laranja. A sombra comprida atravessando a rua e o que faz o olho
+   * acreditar na hora do dia.
+   *
+   * O jogador fica parado na origem — quem anda e o mundo —, entao a area de
+   * sombra pode ser fixa e pequena em volta do zero, e por isso ela sai
+   * nitida em vez de virar borrao esticado sobre 300 m de circuito.
+   */
+  const CASTER_PATTERN =
+    /^(?:XB_C_Casa|XB_C_Poste|XB_C_Cerca|XB_C_Arvore|XB_C_Lixeira|building-)/;
   const collectCasters = (): AbstractMesh[] => {
     const out: AbstractMesh[] = [];
     const seen = new Set<number>();
+    scene.meshes.forEach(mesh => {
+      if (!CASTER_PATTERN.test(mesh.name)) return;
+      if (mesh.getTotalVertices() === 0) return;
+      if (seen.has(mesh.uniqueId)) return;
+      seen.add(mesh.uniqueId);
+      out.push(mesh);
+    });
     ["player-vehicle", "xb-courier"].forEach(name => {
       const root = scene.getTransformNodeByName(name);
       if (!root) return;
@@ -202,7 +254,7 @@ export async function createGameScene(
   // XB_Via sao as 100 pecas do circuito e circuit-ground e a grama sob ele:
   // sem os dois a sombra da bicicleta sumia justamente no mundo novo.
   const RECEIVER_PATTERN =
-    /^(?:asphalt|road-batch|urban-batch|terrain|XB_Road|XB_Via|circuit-ground)/;
+    /^(?:asphalt|road-batch|urban-batch|terrain|XB_Road|XB_Via|circuit-ground|XB_C_Casa|XB_C_Quintal|building-)/;
   const applyReceivers = (enabled: boolean): void => {
     scene.meshes.forEach(mesh => {
       if (RECEIVER_PATTERN.test(mesh.name)) mesh.receiveShadows = enabled;
@@ -215,7 +267,16 @@ export async function createGameScene(
     scene.autoClear = true;
     scene.skipPointerMovePicking = true;
     if (enabled && !shadows) {
-      shadows = new ShadowGenerator(1024, sun);
+      // A area de sombra e fixa em volta da origem, entao 2048 aqui dao
+      // textura de sobra: cada ponto do mapa cobre pouco mais de 2 cm.
+      sun.autoUpdateExtends = false;
+      sun.orthoLeft = -52;
+      sun.orthoRight = 52;
+      sun.orthoTop = 52;
+      sun.orthoBottom = -52;
+      sun.shadowMinZ = 1;
+      sun.shadowMaxZ = 180;
+      shadows = new ShadowGenerator(2048, sun);
       // A projeção acompanha só a bicicleta, então o mapa cobre poucos metros:
       // um desfoque grande viraria uma mancha enorme no asfalto. Filtragem
       // percentual dá contato nítido e não vaza para fora do enquadramento.
@@ -223,7 +284,8 @@ export async function createGameScene(
       shadows.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
       shadows.bias = 0.006;
       shadows.normalBias = 0.02;
-      shadows.darkness = 0.2;
+      // Sombra de fim de tarde nao e buraco preto: e a cor do ceu no chao.
+      shadows.darkness = 0.42;
       shadows.transparencyShadow = false;
       refreshCasters();
       applyReceivers(true);

@@ -1,4 +1,5 @@
 import { StandardMaterial } from "@babylonjs/core/Materials/standardMaterial";
+import { Texture } from "@babylonjs/core/Materials/Textures/texture";
 import { Color3, Color4 } from "@babylonjs/core/Maths/math.color";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { InstancedMesh } from "@babylonjs/core/Meshes/instancedMesh.pure";
@@ -93,8 +94,8 @@ export interface EnvironmentPalette {
 
 const TERRAIN_PALETTES: Record<RouteTerrain, EnvironmentPalette> = {
   urban: {
-    road: "#30363B",
-    shoulder: "#3E7B46",
+    road: "#3A3630",
+    shoulder: "#5E8A47",
     scenery: "#E4E9EB",
     scenerySecondary: "#40566C",
     accent: "#18BFEA",
@@ -597,6 +598,9 @@ export class EnvironmentVisuals {
   private readonly streakMaterial: StandardMaterial;
   private readonly starMaterial: StandardMaterial;
   private readonly sun: ReturnType<typeof MeshBuilder.CreateDisc>;
+  /** Ceu pintado, no lugar da cor chapada de fundo. */
+  private readonly backdrop: Mesh;
+  private readonly backdropMaterial: StandardMaterial;
   private readonly clouds: TransformNode[] = [];
   private terrain: RouteTerrain = "urban";
   private weather: WeatherCondition = "clear";
@@ -672,6 +676,37 @@ export class EnvironmentVisuals {
     dome.infiniteDistance = true;
     dome.isPickable = false;
     this.skyMaterial.backFaceCulling = false;
+
+    this.backdropMaterial = new StandardMaterial("sky-backdrop-mat", scene);
+    // Ceu nao recebe luz: ele E luz. Com iluminacao ligada, o mesmo sol que
+    // acende a cidade escureceria metade do horizonte.
+    this.backdropMaterial.disableLighting = true;
+    this.backdropMaterial.diffuseColor = Color3.Black();
+    this.backdropMaterial.specularColor = Color3.Black();
+    this.backdropMaterial.emissiveTexture = new Texture(
+      "/assets/XB_Fundo_Cidade.webp",
+      scene
+    );
+    this.backdropMaterial.backFaceCulling = false;
+    // A esfera do ceu e vista por dentro: sem isto o Babylon a descarta
+    // achando que o jogador esta olhando as costas dela.
+    this.backdrop = MeshBuilder.CreateSphere(
+      "sky-backdrop",
+      { diameter: 460, segments: 32, sideOrientation: 1 },
+      scene
+    );
+    this.backdrop.material = this.backdropMaterial;
+    // Distancia infinita: a esfera acompanha a camera e nunca e cortada pelo
+    // alcance dela, por mais longe que o jogador va na volta.
+    this.backdrop.infiniteDistance = true;
+    this.backdrop.applyFog = false;
+    this.backdrop.isPickable = false;
+    this.backdrop.renderingGroupId = 0;
+    // SEM PAI. `infiniteDistance` funciona trocando a translacao da matriz de
+    // mundo pela posicao da camera; com um pai, a matriz do pai entra depois e
+    // desfaz a troca — a esfera fica parada no mundo, sai do alcance da camera
+    // e o jogador ve a cor chapada de fundo, sem erro nenhum na tela.
+    this.backdrop.setEnabled(false);
 
     this.sun = MeshBuilder.CreateDisc(
       "horizon-sun",
@@ -1393,7 +1428,11 @@ export class EnvironmentVisuals {
       vehicle.id === "fleet" || vehicle.id === "planetary"
         ? "#091222"
         : terrain === "urban"
-          ? "#68C9F2"
+          ? // Fim de tarde: o azul de meio-dia (#68C9F2) nao combina com a luz
+            // baixa e quente do cenario. Esta cor vale por dois — e o fundo do
+            // ceu E a cor da neblina, entao o fundo do bairro passa a brilhar
+            // morno em vez de sumir num azul frio.
+            "#F0B27A"
           : "#3F91BD";
     const skyByWeather: Record<WeatherCondition, string> = {
       clear: clearSky,
@@ -1453,7 +1492,14 @@ export class EnvironmentVisuals {
     );
 
     const isSevere = weather === "storm" || weather === "rain";
-    this.sun.setEnabled(!isSevere && weather !== "dust");
+    // O ceu pintado so entra onde ele faz sentido: bairro, tempo bom. Chuva,
+    // poeira e rota espacial continuam com o ceu de cor chapada, que e o que
+    // aquelas cenas pedem.
+    const ceuPintado = terrain === "urban" && !isSevere && weather !== "dust";
+    this.backdrop.setEnabled(ceuPintado);
+    // Com o ceu pintado, o disco de sol e as nuvens soltas sobram: o proprio
+    // desenho ja tem sol e nuvem, e duas de cada uma briga com a outra.
+    this.sun.setEnabled(!isSevere && weather !== "dust" && !ceuPintado);
     this.sunMaterial.emissiveColor = Color3.FromHexString(
       weather === "cold" ? "#18BFEA" : "#EDF5F6"
     );
@@ -1472,7 +1518,7 @@ export class EnvironmentVisuals {
     const spaceRoute = terrain === "orbital" || terrain === "planetary";
     this.stars.forEach(star => star.setEnabled(spaceRoute && !isSevere));
     // Rota orbital/planetaria nao tem atmosfera: nuvem ali e artefato visual.
-    this.cloudsVisible = !spaceRoute;
+    this.cloudsVisible = !spaceRoute && !ceuPintado;
     this.clouds.forEach(cloud => cloud.setEnabled(this.cloudsVisible));
     this.configureWeatherStreaks();
     this.configureClusters();
@@ -1892,11 +1938,15 @@ export class EnvironmentVisuals {
     const rim = this.scene.getLightByName("rim-light");
     const severe = weather === "storm" || weather === "rain";
     const urbanDaylight = terrain === "urban" && !severe;
+    // AQUI e onde a luz do jogo e decidida de verdade. O que scene.ts monta na
+    // abertura e sobrescrito por este bloco a cada rota — foi assim que um sol
+    // dourado escrito la chegou branco e frio na tela, sem erro nenhum. Quem
+    // quiser mudar a luz muda aqui.
     this.scene.imageProcessingConfiguration.exposure = urbanDaylight
-      ? 1.16
+      ? 1.12
       : 1.04;
     this.scene.imageProcessingConfiguration.contrast = urbanDaylight
-      ? 1.05
+      ? 1.04
       : 1.12;
     if (ambient) {
       ambient.intensity = severe
@@ -1906,8 +1956,10 @@ export class EnvironmentVisuals {
           : urbanDaylight
             ? 1.08
             : 0.86;
+      // Fim de tarde: a luz que desce do ceu tambem e quente. Branco azulado
+      // (#F3FAFD) deixava a cidade cinza por baixo de um ceu dourado.
       ambient.diffuse = urbanDaylight
-        ? Color3.FromHexString("#F3FAFD")
+        ? Color3.FromHexString("#F6E3C8")
         : sky.scale(0.38).add(Color3.FromHexString("#EDF5F6").scale(0.58));
     }
     if (sun) {
@@ -1917,17 +1969,23 @@ export class EnvironmentVisuals {
           : weather === "rain"
             ? 0.62
             : urbanDaylight
-              ? 1.2
+              ? 1.55
               : 1.02;
       sun.diffuse = Color3.FromHexString(
-        weather === "cold" ? "#BFE9FA" : "#F7FBFF"
+        weather === "cold" ? "#BFE9FA" : urbanDaylight ? "#FFCF96" : "#F7FBFF"
       );
     }
     if (rim) {
+      // Preenchimento frio por tras, o contrario do dourado do sol. E esse par
+      // quente e frio que separa o entregador do fundo sem precisar de mais luz.
       rim.intensity =
-        terrain === "orbital" || terrain === "planetary" ? 0.42 : 0.24;
+        terrain === "orbital" || terrain === "planetary" ? 0.42 : 0.4;
       rim.diffuse = Color3.FromHexString(
-        terrain === "orbital" || terrain === "planetary" ? "#18BFEA" : "#12547A"
+        terrain === "orbital" || terrain === "planetary"
+          ? "#18BFEA"
+          : urbanDaylight
+            ? "#7FA8D8"
+            : "#12547A"
       );
     }
   }

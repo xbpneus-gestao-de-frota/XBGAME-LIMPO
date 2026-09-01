@@ -147,6 +147,11 @@ export class RoadSystem {
     // de verdade no circuito, e deixar a parada velha no ar punha uma loja
     // de mentira em cima do bairro.
     this.deliveryStop.root.setEnabled(false);
+    // Caixa, pneu, cone e buraco eram colocados pela curva falsa da
+    // esteira. No circuito de verdade eles caem fora da pista e ficam
+    // boiando na rua. Saem daqui e voltam quando tiverem endereco na volta,
+    // como a coleta e a entrega ja tem.
+    this.actors.forEach(ator => ator.root.setEnabled(false));
     this.buildRoute();
     return true;
   }
@@ -157,14 +162,18 @@ export class RoadSystem {
    * azul entre as casas onde devia ver grama.
    *
    * O plano fica parado na origem porque o jogador tambem fica: quem anda e o
-   * mundo. 1.200 unidades de lado cobrem 260 m para cada lado, bem alem do
-   * fim da neblina (228), entao a borda nunca entra no quadro.
+   * mundo.
+   *
+   * 320 unidades de lado, e nao 1.200: a esfera do ceu tem raio 230, e um chao
+   * maior que ela passa NA FRENTE do ceu no horizonte — foi assim que o
+   * panorama pintado ficou invisivel, escondido por tras do proprio gramado.
+   * Onde o chao acaba, a planicie desenhada do panorama continua.
    */
   private createCircuitGround(): void {
     if (this.circuitGround) return;
     const chao = MeshBuilder.CreateGround(
       "circuit-ground",
-      { width: 1200, height: 1200, subdivisions: 1 },
+      { width: 320, height: 320, subdivisions: 1 },
       this.scene
     );
     // Logo abaixo do asfalto do circuito, que assenta em -0,138.
@@ -321,7 +330,7 @@ export class RoadSystem {
       const pose = this.positionActorOnNeighborhood(actor);
       actor.root.rotation.y = pose.yaw;
       actor.resolved = false;
-      actor.root.setEnabled(true);
+      actor.root.setEnabled(!this.circuit);
     });
   }
 
@@ -413,6 +422,11 @@ export class RoadSystem {
       const zNow = actor.root.position.z;
       const zPrev = zNow + movement;
       if (
+        // Desligado nao machuca. Sem esta guarda, tirar a caixa e o cone da
+        // vista do circuito deixava os dois batendo INVISIVEIS: a integridade
+        // caia sozinha, sem nada na tela para explicar. Numero que mente
+        // calado tem irmao — objeto que bate calado.
+        !this.circuit &&
         !actor.resolved &&
         zNow < actor.collisionDepth &&
         zPrev > -actor.collisionDepth &&
@@ -1635,7 +1649,8 @@ export class RoadSystem {
     actor.laneIndex = Math.floor(this.random() * 3) as 0 | 1 | 2;
     this.positionActorOnNeighborhood(actor);
     actor.resolved = false;
-    actor.root.setEnabled(true);
+    // No circuito eles ficam fora ate terem endereco de verdade na volta.
+    actor.root.setEnabled(!this.circuit);
   }
 
   private random(): number {

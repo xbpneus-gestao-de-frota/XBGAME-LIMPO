@@ -153,7 +153,10 @@ describe("integridade e coleta durante a rota pilotada", () => {
 
     runToTheEnd(world, frames);
     const result = world.getSnapshot().lastResult!;
-    expect(result.success).toBe(true);
+    // O assunto deste teste e o bau cheio, e ele continua cheio no fim. Terminar
+    // vivo deixou de ser garantido quando a rota passou de 15 s para o piso de
+    // 30 s: aqui ninguem desvia, e meio minuto de cone derruba a integridade.
+    // Isso e a rota mais longa cobrando pilotagem, nao um defeito do bau.
     expect(result.cargo).toBe(BIKE_CARGO_LIMIT);
   });
 
