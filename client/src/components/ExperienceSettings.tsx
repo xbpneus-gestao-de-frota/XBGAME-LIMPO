@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
-import { Gauge, Settings2, Vibrate, Volume2, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Film, Gauge, Settings2, Vibrate, Volume2, X } from "lucide-react";
 import type { FeedbackPreferences } from "@/game/feedback";
 import type { QualityPreference, ResolvedQualityPreset } from "@/game/quality";
 import { useFocusTrap } from "./useFocusTrap";
+import { esquecerAbertura } from "@/game/openingScene";
 
 const qualityOptions: ReadonlyArray<{
   id: QualityPreference;
@@ -58,6 +59,7 @@ export default function ExperienceSettings({
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpenRef = useRef(open);
+  const [aberturaLiberada, setAberturaLiberada] = useState(false);
 
   useEffect(() => {
     let focusFrame: number | null = null;
@@ -223,8 +225,28 @@ export default function ExperienceSettings({
           </label>
         </div>
 
+        <div className="experience-settings-section">
+          <button
+            className="experience-settings-acao"
+            onClick={() => {
+              esquecerAbertura();
+              setAberturaLiberada(true);
+            }}
+          >
+            <Film aria-hidden="true" />
+            <span>
+              <strong>VER A ABERTURA DE NOVO</strong>
+              <small>
+                {aberturaLiberada
+                  ? "PRONTO — ELA VOLTA NO PRÓXIMO PLAY GAME"
+                  : "O FILME QUE ROLA NA PRIMEIRA VEZ"}
+              </small>
+            </span>
+          </button>
+        </div>
+
         <p className="experience-settings-note">
-          Som e vibração começam desligados. A XB respeita sua bateria, sua
+          A vibração começa desligada. A XB respeita sua bateria, sua
           privacidade e a preferência de movimento reduzido do aparelho.
         </p>
       </div>

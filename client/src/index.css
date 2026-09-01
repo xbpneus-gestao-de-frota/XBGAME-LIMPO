@@ -7509,3 +7509,50 @@ body {
     animation: none;
   }
 }
+
+/* Botao de acao dentro dos ajustes (rever a abertura). */
+.experience-settings-acao {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgb(140 200 230 / 20%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 4%);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.experience-settings-acao:hover {
+  border-color: rgb(24 191 234 / 60%);
+  background: rgb(24 191 234 / 10%);
+}
+
+.experience-settings-acao svg {
+  width: 20px;
+  flex: 0 0 auto;
+  color: #18bfea;
+}
+
+.experience-settings-acao strong {
+  display: block;
+  font:
+    800 0.72rem/1.3 var(--font-body, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.1em;
+}
+
+.experience-settings-acao small {
+  display: block;
+  margin-top: 0.2rem;
+  color: #93a9b8;
+  font:
+    600 0.62rem/1.3 var(--font-body, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.08em;
+}
