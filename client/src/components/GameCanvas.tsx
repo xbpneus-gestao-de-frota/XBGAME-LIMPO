@@ -3,7 +3,7 @@
  * técnicas assimétricas e telemetria legível. React moldura a cena Babylon e
  * mantém toda a interação de gestão fora do motor gráfico.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import {
@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { GAME_ASSETS } from "@/game/assets";
 import { criarTrilhaSonora, type TrilhaSonora } from "@/game/music";
+import { deveRodarAbertura, marcarAberturaVista } from "@/game/openingScene";
 import BaseScreen from "./BaseScreen";
 import ExperienceSettings from "./ExperienceSettings";
 import RoutesScreen from "./RoutesScreen";
@@ -122,6 +123,103 @@ function StatChip({
         <small>{label}</small>
         <strong>{value}</strong>
       </span>
+    </div>
+  );
+}
+
+/**
+ * O filme de abertura. Cobre tudo, roda uma vez na vida do aparelho e sai.
+ *
+ * Tres cuidados que nao aparecem na tela mas decidem se isto presta:
+ *
+ * 1. PULAR existe desde o primeiro segundo. Filme que prende a pessoa vira
+ *    obstaculo, e este roda justamente na hora em que ela quer e entrar.
+ * 2. Se o video nao carregar — arquivo faltando, formato recusado, internet
+ *    caindo — o jogo entra assim mesmo. Uma abertura nunca pode ser porta
+ *    trancada. Por isso o prazo de espera e o aviso de erro terminam a cena.
+ * 3. Navegador nenhum deixa comecar com som antes de um gesto. Tenta-se com
+ *    som; recusado, o filme roda mudo e o primeiro toque devolve o audio.
+ */
+function OpeningScene({ onFinish }: { onFinish(assistida: boolean): void }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [mudo, setMudo] = useState(false);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    let vivo = true;
+    const soltar: Array<() => void> = [];
+
+    const liberarSom = () => {
+      if (!vivo) return;
+      const atual = videoRef.current;
+      if (!atual) return;
+      atual.muted = false;
+      setMudo(false);
+    };
+
+    video.muted = false;
+    const tentativa = video.play();
+    if (tentativa && typeof tentativa.catch === "function") {
+      void tentativa.catch(() => {
+        if (!vivo) return;
+        const atual = videoRef.current;
+        if (!atual) return;
+        atual.muted = true;
+        setMudo(true);
+        void atual.play().catch(() => onFinish(false));
+        window.addEventListener("pointerdown", liberarSom, { once: true });
+        window.addEventListener("keydown", liberarSom, { once: true });
+        soltar.push(() => {
+          window.removeEventListener("pointerdown", liberarSom);
+          window.removeEventListener("keydown", liberarSom);
+        });
+      });
+    }
+
+    // Rede ruim ou arquivo grande: depois disto o jogo entra sem o filme.
+    const prazo = window.setTimeout(() => {
+      if (vivo && (videoRef.current?.readyState ?? 0) < 2) onFinish(false);
+    }, 8000);
+    soltar.push(() => window.clearTimeout(prazo));
+
+    return () => {
+      vivo = false;
+      soltar.forEach(fechar => fechar());
+    };
+  }, [onFinish]);
+
+  return (
+    <div
+      className="abertura"
+      role="presentation"
+      style={
+        {
+          "--abertura-cartaz": `url(${GAME_ASSETS.openingClipPoster})`,
+        } as CSSProperties
+      }
+    >
+      <video
+        ref={videoRef}
+        className="abertura__filme"
+        poster={GAME_ASSETS.openingClipPoster}
+        playsInline
+        preload="auto"
+        onEnded={() => onFinish(true)}
+        /*
+         * Erro nao marca como vista. Se o aparelho nao soube tocar o filme, a
+         * pessoa nao assistiu — e nao seria justo tirar dela a abertura para
+         * sempre por causa de um codec que faltava naquele dia.
+         */
+        onError={() => onFinish(false)}
+      >
+        <source src={GAME_ASSETS.openingClipWebm} type="video/webm" />
+        <source src={GAME_ASSETS.openingClip} type="video/mp4" />
+      </video>
+      {mudo && <span className="abertura__aviso">TOQUE PARA O SOM</span>}
+      <button className="abertura__pular" onClick={() => onFinish(true)}>
+        PULAR
+      </button>
     </div>
   );
 }
@@ -1089,6 +1187,11 @@ export default function GameCanvas() {
   const [feedbackPreferences, setFeedbackPreferences] =
     useState<FeedbackPreferences>(loadFeedbackPreferences);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  /*
+   * Decidido uma vez, na primeira pintura: se isto fosse recalculado a cada
+   * volta do React, marcar como vista faria o filme sumir no meio.
+   */
+  const [mostrarAbertura, setMostrarAbertura] = useState(deveRodarAbertura);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [engineError, setEngineError] = useState(false);
   const [contextLost, setContextLost] = useState(false);
@@ -1110,7 +1213,7 @@ export default function GameCanvas() {
       documento: document,
     });
     trilhaRef.current = trilha;
-    trilha.definirLigada(feedbackPreferences.soundEnabled);
+    trilha.definirLigada(feedbackPreferences.soundEnabled && !mostrarAbertura);
     return () => {
       trilhaRef.current = null;
       trilha.encerrar();
@@ -1146,10 +1249,25 @@ export default function GameCanvas() {
     );
   };
 
+  const encerrarAbertura = useCallback((assistida: boolean) => {
+    setMostrarAbertura(visivel => {
+      if (visivel && assistida) marcarAberturaVista();
+      return false;
+    });
+  }, []);
+
+  /* A musica esperava o filme acabar; agora pode entrar. */
+  useEffect(() => {
+    if (mostrarAbertura) return;
+    trilhaRef.current?.definirLigada(feedbackPreferences.soundEnabled);
+  }, [mostrarAbertura, feedbackPreferences.soundEnabled]);
+
   const changeFeedback = (preferences: FeedbackPreferences) => {
     setFeedbackPreferences(preferences);
     feedbackRef.current?.setPreferences(preferences);
-    trilhaRef.current?.definirLigada(preferences.soundEnabled);
+    trilhaRef.current?.definirLigada(
+      preferences.soundEnabled && !mostrarAbertura
+    );
     if (preferences.soundEnabled) void feedbackRef.current?.unlockAudio();
   };
 
@@ -1478,6 +1596,7 @@ export default function GameCanvas() {
           {snapshot.mode === "complete" && (
             <CompleteScreen snapshot={snapshot} handle={handle} />
           )}
+          {mostrarAbertura && <OpeningScene onFinish={encerrarAbertura} />}
           {snapshot.isDemo && (
             <div className="demo-badge" role="status">
               <CircleGauge size={14} /> DEMONSTRAÇÃO AUTOMÁTICA

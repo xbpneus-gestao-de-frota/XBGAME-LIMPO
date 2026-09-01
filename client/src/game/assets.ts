@@ -11,6 +11,11 @@ export const GAME_ASSETS = {
   referenceVertical: "/assets/XB_Abertura_Vertical.webp",
   referenceVerticalTall: "/assets/XB_Abertura_Vertical_Alta.webp",
   soundtrack: "/assets/XB_Trilha_Abertura.mp3",
+  // Filme de abertura: roda uma vez so, na primeira vez que a pessoa entra.
+  openingClip: "/assets/XB_Abertura_Cena.mp4",
+  // Mesmo filme em outro formato: ha navegador que nao traz o codec do mp4.
+  openingClipWebm: "/assets/XB_Abertura_Cena.webm",
+  openingClipPoster: "/assets/XB_Abertura_Cena.webp",
   driver: "/assets/driver-mascot-v3.webp",
   logo: "/assets/logo-xb-mark-v3.webp",
   brandLockup: "/assets/logo-xb-metal-v3.webp",
