@@ -128,7 +128,15 @@ function StatChip({
 }
 
 /**
- * O filme de abertura. Cobre tudo, roda uma vez na vida do aparelho e sai.
+ * O filme de abertura. Nao abre o jogo: ele responde ao PLAY GAME.
+ *
+ * A ordem foi escolhida pelo Fernando e faz diferenca. A pessoa ve a arte
+ * parada, aperta o botao, o botao some e a MESMA cena comeca a se mexer —
+ * parece que o quadro ganhou vida, e nao que um comercial passou na frente do
+ * jogo. Por isso o filme entra por cima da tela de entrada, aparecendo devagar,
+ * em vez de trocar de tela.
+ *
+ * Roda uma vez na vida do aparelho. Da segunda vez, o botao leva direto.
  *
  * Tres cuidados que nao aparecem na tela mas decidem se isto presta:
  *
@@ -230,7 +238,7 @@ function OpeningScene({ onFinish }: { onFinish(assistida: boolean): void }) {
  * e as luzes da caixa de fios. As posicoes sao porcentagens medidas na propria
  * imagem — trocar a arte exige remedir os tres pontos.
  */
-function MenuScreen({ handle }: { handle: GameHandle }) {
+function MenuScreen({ onPlay }: { onPlay(): void }) {
   return (
     <section
       className="game-screen entrada"
@@ -276,7 +284,7 @@ function MenuScreen({ handle }: { handle: GameHandle }) {
           <span className="entrada__led entrada__led--d" />
         </div>
       </div>
-      <button className="entrada__jogar" onClick={() => handle.goBase()}>
+      <button className="entrada__jogar" onClick={onPlay}>
         PLAY GAME
       </button>
     </section>
@@ -1191,7 +1199,12 @@ export default function GameCanvas() {
    * Decidido uma vez, na primeira pintura: se isto fosse recalculado a cada
    * volta do React, marcar como vista faria o filme sumir no meio.
    */
-  const [mostrarAbertura, setMostrarAbertura] = useState(deveRodarAbertura);
+  /*
+   * O filme so comeca quando a pessoa aperta PLAY GAME — por isso nasce
+   * desligado, e nao com deveRodarAbertura(). Quem pergunta se ainda ha filme
+   * a ver e o clique, na hora do clique.
+   */
+  const [filmeRodando, setFilmeRodando] = useState(false);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [engineError, setEngineError] = useState(false);
   const [contextLost, setContextLost] = useState(false);
@@ -1213,7 +1226,7 @@ export default function GameCanvas() {
       documento: document,
     });
     trilhaRef.current = trilha;
-    trilha.definirLigada(feedbackPreferences.soundEnabled && !mostrarAbertura);
+    trilha.definirLigada(feedbackPreferences.soundEnabled);
     return () => {
       trilhaRef.current = null;
       trilha.encerrar();
@@ -1249,25 +1262,40 @@ export default function GameCanvas() {
     );
   };
 
-  const encerrarAbertura = useCallback((assistida: boolean) => {
-    setMostrarAbertura(visivel => {
-      if (visivel && assistida) marcarAberturaVista();
-      return false;
-    });
+  /*
+   * PLAY GAME: na primeira vez chama o filme; depois, entra direto.
+   * Vai pelo ref e nao pelo `handle`, que so existe mais abaixo no render —
+   * assim estas duas funcoes nascem estaveis e nao mudam a cada pintura.
+   */
+  const comecarJornada = useCallback(() => {
+    if (deveRodarAbertura()) {
+      setFilmeRodando(true);
+      return;
+    }
+    handleRef.current?.goBase();
   }, []);
 
-  /* A musica esperava o filme acabar; agora pode entrar. */
+  const encerrarAbertura = useCallback((assistida: boolean) => {
+    if (assistida) marcarAberturaVista();
+    setFilmeRodando(false);
+    handleRef.current?.goBase();
+  }, []);
+
+  /*
+   * A trilha sai de cena enquanto o filme roda e volta quando ele acaba. Sem
+   * isto os dois tocariam juntos: o clique no PLAY GAME e o mesmo gesto que
+   * libera o som da musica no navegador.
+   */
   useEffect(() => {
-    if (mostrarAbertura) return;
-    trilhaRef.current?.definirLigada(feedbackPreferences.soundEnabled);
-  }, [mostrarAbertura, feedbackPreferences.soundEnabled]);
+    trilhaRef.current?.definirLigada(
+      feedbackPreferences.soundEnabled && !filmeRodando
+    );
+  }, [filmeRodando, feedbackPreferences.soundEnabled]);
 
   const changeFeedback = (preferences: FeedbackPreferences) => {
     setFeedbackPreferences(preferences);
     feedbackRef.current?.setPreferences(preferences);
-    trilhaRef.current?.definirLigada(
-      preferences.soundEnabled && !mostrarAbertura
-    );
+    trilhaRef.current?.definirLigada(preferences.soundEnabled && !filmeRodando);
     if (preferences.soundEnabled) void feedbackRef.current?.unlockAudio();
   };
 
@@ -1576,7 +1604,7 @@ export default function GameCanvas() {
           {snapshot.mode === "routes" && (
             <RoutesScreen snapshot={snapshot} handle={handle} />
           )}
-          {snapshot.mode === "menu" && <MenuScreen handle={handle} />}
+          {snapshot.mode === "menu" && <MenuScreen onPlay={comecarJornada} />}
           {snapshot.mode === "garage" && (
             <GarageScreen snapshot={snapshot} handle={handle} />
           )}
@@ -1596,7 +1624,7 @@ export default function GameCanvas() {
           {snapshot.mode === "complete" && (
             <CompleteScreen snapshot={snapshot} handle={handle} />
           )}
-          {mostrarAbertura && <OpeningScene onFinish={encerrarAbertura} />}
+          {filmeRodando && <OpeningScene onFinish={encerrarAbertura} />}
           {snapshot.isDemo && (
             <div className="demo-badge" role="status">
               <CircleGauge size={14} /> DEMONSTRAÇÃO AUTOMÁTICA

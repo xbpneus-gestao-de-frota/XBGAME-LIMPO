@@ -7403,6 +7403,18 @@ body {
   overflow: hidden;
   background: #04070c;
   pointer-events: auto;
+  /* Aparece devagar por cima da arte parada: e o que faz o quadro parecer
+     ganhar vida em vez de o jogo trocar de tela. */
+  animation: abertura-entra 0.45s ease-out both;
+}
+
+@keyframes abertura-entra {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /*
@@ -7492,6 +7504,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .abertura,
   .abertura__aviso {
     animation: none;
   }
