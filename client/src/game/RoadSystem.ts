@@ -6,6 +6,7 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { Scene } from "@babylonjs/core/scene";
 import { CircuitTrack, UNIDADES_POR_METRO } from "./CircuitTrack";
+import { montarRota, type Rota } from "./deliveryRoute";
 import { LANE_POSITIONS } from "./config";
 import { deliveryStopPose } from "./deliveryExperience";
 import {
@@ -89,6 +90,8 @@ export class RoadSystem {
   private circuit: CircuitTrack | null = null;
   /** Grama sob o circuito: o arquivo do Unreal nao traz chao. */
   private circuitGround: Mesh | null = null;
+  /** A entrega da vez: de onde sai, onde coleta, onde entrega. */
+  private route: Rota | null = null;
   private spawnCursor = 150;
   private seed = 73_381;
   private visualTime = 0;
@@ -139,6 +142,12 @@ export class RoadSystem {
     this.circuit = pista;
     this.segments.forEach(segmento => segmento.setEnabled(false));
     this.createCircuitGround();
+    // A parada procedural — loja, portao e as duas figuras — era o unico
+    // lugar de entrega que existia. Agora a coleta e a entrega tem endereco
+    // de verdade no circuito, e deixar a parada velha no ar punha uma loja
+    // de mentira em cima do bairro.
+    this.deliveryStop.root.setEnabled(false);
+    this.buildRoute();
     return true;
   }
 
@@ -168,6 +177,64 @@ export class RoadSystem {
     // do centro dele; sem isto o chao pisca.
     chao.alwaysSelectAsActiveMesh = true;
     this.circuitGround = chao;
+  }
+
+  /**
+   * Sorteia a entrega da vez e planta as duas balizas: uma no comercio da
+   * coleta, outra na casa da entrega. Elas ficam penduradas DENTRO do
+   * circuito, entao viajam junto com o mundo e chegam sozinhas ao jogador.
+   */
+  private buildRoute(): void {
+    const pista = this.circuit;
+    if (!pista) return;
+    this.route = montarRota(pista.places, pista.lapLength, () => this.random());
+    if (!this.route) return;
+    this.plantBeacon("coleta", this.route.coleta, this.accentMaterial);
+    this.plantBeacon("entrega", this.route.entrega, this.signalMaterial);
+  }
+
+  /**
+   * Baliza de meio-fio: um anel deitado e um facho fino. Medidas em metro,
+   * porque tudo dentro do circuito e metro — o no de cima e que multiplica.
+   */
+  private plantBeacon(
+    papel: string,
+    lugar: { distancia: number; lado: 1 | -1 },
+    material: StandardMaterial
+  ): void {
+    const pista = this.circuit;
+    if (!pista) return;
+    const raiz = new TransformNode(`circuit-beacon-${papel}`, this.scene);
+    pista.attach(raiz);
+    // 4,2 m do eixo: fora do asfalto (3,00) e da guia (3,35), em cima da
+    // calcada, sem encostar no poste que mora a 3,62.
+    const ponto = pista.roadsideLocal(lugar.distancia, lugar.lado, 4.2);
+    raiz.position.set(ponto.x, 0.08, ponto.z);
+
+    const anel = MeshBuilder.CreateTorus(
+      `circuit-beacon-${papel}-ring`,
+      { diameter: 2.4, thickness: 0.12, tessellation: 24 },
+      this.scene
+    );
+    anel.parent = raiz;
+    anel.rotation.x = Math.PI / 2;
+    anel.material = material;
+    anel.isPickable = false;
+
+    const facho = MeshBuilder.CreateCylinder(
+      `circuit-beacon-${papel}-beam`,
+      { height: 6, diameter: 0.16, tessellation: 8 },
+      this.scene
+    );
+    facho.parent = raiz;
+    facho.position.y = 3;
+    facho.material = material;
+    facho.isPickable = false;
+  }
+
+  /** A entrega da vez, para quem precisar mostrar na tela. */
+  get deliveryRoute(): Rota | null {
+    return this.route;
   }
 
   /** Quanto da volta ja foi percorrido, de 0 a 1. Zero sem circuito. */
@@ -1158,7 +1225,9 @@ export class RoadSystem {
     const pose = deliveryStopPose(this.runProgress);
     const { root, courier, customer, parcel, marker, markerCore } =
       this.deliveryStop;
-    root.setEnabled(pose.visible);
+    // Com o circuito no ar a parada procedural nao volta: a coleta e a
+    // entrega tem endereco de verdade agora.
+    root.setEnabled(pose.visible && !this.circuit);
     if (!pose.visible) return;
 
     root.position.z = pose.z;

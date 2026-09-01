@@ -55,6 +55,33 @@ interface Ponto {
   z: number;
 }
 
+/**
+ * Os quatro comercios do bairro, batizados. A chave e o nome da malha dentro
+ * do arquivo; a ordem aqui nao importa, quem manda e onde eles cairam na
+ * volta — medido, nao escolhido.
+ */
+const COMERCIOS: Record<string, { nome: string; papel: PapelDoLugar }> = {
+  "building-k": { nome: "Mercado XB", papel: "comercio" },
+  "building-skyscraper-a": { nome: "Base XB", papel: "base" },
+  "building-n": { nome: "Hospital", papel: "comercio" },
+  "building-l": { nome: "Pizzaria", papel: "comercio" },
+};
+
+export type PapelDoLugar = "base" | "comercio" | "casa";
+
+export interface LugarNaVolta {
+  /** Nome da malha no arquivo. */
+  chave: string;
+  nome: string;
+  papel: PapelDoLugar;
+  /** Distancia do inicio da volta ate a frente do lugar, em unidades. */
+  distancia: number;
+  /** +1 a direita de quem anda, -1 a esquerda. */
+  lado: 1 | -1;
+  /** Posicao dentro do circuito, antes da escala — para pendurar coisas la. */
+  local: Ponto;
+}
+
 export interface PoseNaVolta {
   x: number;
   z: number;
@@ -73,6 +100,7 @@ export class CircuitTrack {
   private comprimento = 0;
   private percorrido = 0;
   private pronto = false;
+  private lugares: LugarNaVolta[] = [];
 
   constructor(scene: Scene) {
     this.scene = scene;
@@ -115,6 +143,7 @@ export class CircuitTrack {
         if (!no.parent) no.parent = this.root;
       });
       this.extrairEixo();
+      this.extrairLugares();
       if (this.pontos.length < 4) {
         this.dispose();
         return false;
@@ -160,6 +189,99 @@ export class CircuitTrack {
       soma += Math.hypot(proximo.x - atual.x, proximo.z - atual.z);
     }
     this.comprimento = soma;
+  }
+
+  /**
+   * Acha os comercios e as casas, e mede onde cada um cai na volta. Ninguem
+   * escreve distancia a mao: se a peca mudar de lugar no mapa, a distancia
+   * muda junto. Numero escrito a mao e numero que mente calado.
+   */
+  private extrairLugares(): void {
+    const achados: LugarNaVolta[] = [];
+    this.scene.meshes.forEach(malha => {
+      const comercio = Object.keys(COMERCIOS).find(chave =>
+        malha.name.startsWith(chave)
+      );
+      const casa = malha.name.includes("_Casa_");
+      if (!comercio && !casa) return;
+      malha.computeWorldMatrix(true);
+      const centro = malha.getAbsolutePosition();
+      const medida = this.medirNaVolta(centro.x, centro.z);
+      achados.push({
+        chave: malha.name,
+        nome: comercio ? COMERCIOS[comercio]!.nome : "Residencia",
+        papel: comercio ? COMERCIOS[comercio]!.papel : "casa",
+        distancia: medida.distancia,
+        lado: medida.lado,
+        local: {
+          x: centro.x / ESCALA_CIRCUITO,
+          z: centro.z / ESCALA_CIRCUITO,
+        },
+      });
+    });
+    achados.sort((a, b) => a.distancia - b.distancia);
+    this.lugares = achados;
+  }
+
+  /** Projeta um ponto no eixo da via: onde ele cai na volta e de que lado. */
+  private medirNaVolta(
+    px: number,
+    pz: number
+  ): { distancia: number; lado: 1 | -1 } {
+    let melhor = Number.POSITIVE_INFINITY;
+    let distancia = 0;
+    let lado: 1 | -1 = 1;
+    const total = this.pontos.length;
+    for (let i = 0; i < total; i += 1) {
+      const a = this.pontos[i]!;
+      const b = this.pontos[(i + 1) % total]!;
+      const vx = b.x - a.x;
+      const vz = b.z - a.z;
+      const l2 = vx * vx + vz * vz;
+      const t =
+        l2 > 0
+          ? Math.max(0, Math.min(1, ((px - a.x) * vx + (pz - a.z) * vz) / l2))
+          : 0;
+      const qx = a.x + t * vx;
+      const qz = a.z + t * vz;
+      const d = Math.hypot(px - qx, pz - qz);
+      if (d < melhor) {
+        melhor = d;
+        distancia = this.acumulado[i]! + t * Math.hypot(vx, vz);
+        lado = vx * (pz - a.z) - vz * (px - a.x) > 0 ? 1 : -1;
+      }
+    }
+    return { distancia, lado };
+  }
+
+  /** Comercios, base e casas, ja com a distancia medida na volta. */
+  get places(): readonly LugarNaVolta[] {
+    return this.lugares;
+  }
+
+  /**
+   * Um ponto na beira da via, dentro do circuito e antes da escala: serve para
+   * pendurar marcacao no meio-fio do lado certo. `afastamento` vai em metro,
+   * porque o interior do circuito e metro — a escala mora no no de cima.
+   */
+  roadsideLocal(
+    distancia: number,
+    lado: 1 | -1,
+    afastamento: number
+  ): { x: number; z: number } {
+    const pose = this.poseAt(distancia);
+    // Para um rumo a, a direita de quem anda e (cos a, -sen a).
+    const cos = Math.cos(pose.rumo);
+    const sen = Math.sin(pose.rumo);
+    return {
+      x: pose.x / ESCALA_CIRCUITO + lado * afastamento * cos,
+      z: pose.z / ESCALA_CIRCUITO - lado * afastamento * sen,
+    };
+  }
+
+  /** Pendura um no dentro do circuito, para ele viajar junto com o mundo. */
+  attach(no: TransformNode): void {
+    no.parent = this.root;
   }
 
   /** Onde o jogador esta na volta, e para onde a via aponta ali. */
@@ -230,6 +352,7 @@ export class CircuitTrack {
     this.malhas = [];
     this.pontos = [];
     this.acumulado = [];
+    this.lugares = [];
     this.root.dispose();
   }
 }
