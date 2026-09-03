@@ -13,6 +13,7 @@ import type {
   WeatherCondition,
 } from "./types";
 import { bikePartEffects } from "./progression";
+import { CLASSE_DO_VEICULO, FROTA, REPASSE } from "./freight";
 
 export interface TireCompoundConfig {
   id: TireCompoundId;
@@ -132,16 +133,69 @@ const TERRAIN_BY_ROUTE: Record<string, RouteTerrain> = {
   "rede-solar-final": "planetary",
 };
 
+/**
+ * O custo de rodar um quilometro, por veiculo.
+ *
+ * Estes numeros eram inventados. Agora eles saem da tabela de frete, que tem
+ * fonte anotada linha a linha (ANP, ANTT, CONAB) — assim o que a rota rende e
+ * o que ela custa vem do mesmo livro, e nao de dois palpites diferentes.
+ *
+ *   fuelEnergy  = combustivel
+ *   reserve     = pneu + manutencao + depreciacao
+ *   labor       = o repasse ao condutor, pela parte por quilometro do frete
+ *
+ * Sobre o `labor`: o repasse de verdade e uma fatia do frete inteiro, e o
+ * frete tem uma parte fixa (a saida) que nao depende da distancia. Aqui so
+ * entra a parte por km, que e exata; a parte fixa (R$ 1,05 numa bicicleta,
+ * R$ 98,63 numa carreta) fica de fora e por isso este custo e um pouco
+ * conservador. A conta exata do repasse mora em `fecharConta`, no freight.ts.
+ *
+ * O veiculo planetario herda a carreta, como o freight.ts ja explica: nao
+ * existe tabela de frete marciana, e inventar uma seria mentir com numero. O
+ * que encarece a era planetaria e a distancia, nao a tarifa. Antes ele
+ * custava 9,80/km contra um frete de 6,67/km — ou seja, TODA rota planetaria
+ * dava prejuizo, e o fim do jogo era um buraco no caixa.
+ */
+const custoPorKmDoVeiculo = (
+  veiculo: VehicleId
+): { fuelEnergy: number; labor: number; reserve: number } => {
+  const tabela = FROTA[CLASSE_DO_VEICULO[veiculo]];
+  return {
+    fuelEnergy: tabela.custo.combustivel,
+    labor: tabela.fretePorKm * REPASSE.transportadora,
+    reserve:
+      tabela.custo.pneus + tabela.custo.manutencao + tabela.custo.depreciacao,
+  };
+};
+
 const VEHICLE_COST_RATES: Record<
   VehicleId,
   { fuelEnergy: number; labor: number; reserve: number }
 > = {
-  bike: { fuelEnergy: 0.08, labor: 0.1, reserve: 0.04 },
-  moto: { fuelEnergy: 0.22, labor: 0.14, reserve: 0.08 },
-  van: { fuelEnergy: 0.65, labor: 0.22, reserve: 0.16 },
-  truck: { fuelEnergy: 1.45, labor: 0.4, reserve: 0.45 },
-  fleet: { fuelEnergy: 2.1, labor: 0.55, reserve: 0.62 },
-  planetary: { fuelEnergy: 6.8, labor: 1.2, reserve: 1.8 },
+  bike: custoPorKmDoVeiculo("bike"),
+  moto: custoPorKmDoVeiculo("moto"),
+  van: custoPorKmDoVeiculo("van"),
+  truck: custoPorKmDoVeiculo("truck"),
+  fleet: custoPorKmDoVeiculo("fleet"),
+  planetary: custoPorKmDoVeiculo("planetary"),
+};
+
+/**
+ * Pedagio por quilometro, pelo alcance da rota.
+ *
+ * ESTIMADO: nao existe media publicada de R$/km de pedagio no Brasil — o
+ * valor depende de quantas pracas a rota cruza e de quantos eixos o veiculo
+ * tem. Estes numeros representam trechos pedagiados cobrindo parte da rota.
+ *
+ * O valor antigo de rota mundial (1,10/km) sozinho comia 1.430 numa travessia
+ * de 1.300 km, mais do que o custo do caminhao inteiro, e achatava o fim do
+ * jogo: uma carreta de 1.300 km sobrava menos que um caminhao de 300 km.
+ */
+const PEDAGIO_POR_KM: Readonly<Record<RegionScale, number>> = {
+  city: 0,
+  state: 0.06,
+  country: 0.12,
+  world: 0.2,
 };
 
 const WEATHER_LABELS: Record<WeatherCondition, string> = {
@@ -304,18 +358,22 @@ export const operatingCosts = (
           ? 1.28
           : 1;
   const fitFactor = fit === "ideal" ? 0.94 : fit === "risky" ? 1.2 : 1;
-  const tollRate =
-    scale === "city"
-      ? 0
-      : scale === "state"
-        ? 0.08
-        : scale === "country"
-          ? 0.2
-          : 1.1;
+  const tollRate = PEDAGIO_POR_KM[scale];
   const fuelEnergy = Math.round(
     distance * rates.fuelEnergy * terrainFactor * fitFactor
   );
   const tolls = Math.round(distance * tollRate);
+  /*
+   * A mao de obra da rota, que hoje e cobrada em toda saida — pilotada pelo
+   * jogador ou nao.
+   *
+   * DECISAO EM ABERTO: pelo modelo de frete, quem pilota o proprio veiculo
+   * nao paga repasse a ninguem, entao uma rota pilotada pelo jogador deveria
+   * sair sem esta linha. Isso nao foi feito ainda de proposito: a previsao da
+   * rota e a mesma para pilotar e para despachar, e separar as duas muda o
+   * que a tela mostra antes de a pessoa escolher. E decisao de tela, e a tela
+   * vem depois.
+   */
   const labor = Math.round(distance * rates.labor * (1 + difficulty * 0.04));
   const maintenanceReserve = Math.round(
     distance * rates.reserve * terrainFactor * (fit === "risky" ? 1.3 : 1)

@@ -6,7 +6,7 @@ import { MeshBuilder } from "@babylonjs/core/Meshes/meshBuilder";
 import { TransformNode } from "@babylonjs/core/Meshes/transformNode";
 import type { Scene } from "@babylonjs/core/scene";
 import { CircuitTrack, UNIDADES_POR_METRO } from "./CircuitTrack";
-import { montarRota, type Rota } from "./deliveryRoute";
+import { montarRota, pacotesNaBolsa, type Rota } from "./deliveryRoute";
 import { LANE_POSITIONS } from "./config";
 import { deliveryStopPose } from "./deliveryExperience";
 import {
@@ -92,6 +92,12 @@ export class RoadSystem {
   private circuitGround: Mesh | null = null;
   /** A entrega da vez: de onde sai, onde coleta, onde entrega. */
   private route: Rota | null = null;
+  /**
+   * Quantos quilos a bolsa aguenta hoje. Quem sabe disso e a campanha (o nivel
+   * do bau na garagem); aqui so se recebe. Zero e a mochila do comeco: uma
+   * porta por corrida.
+   */
+  private capacidadeDaBolsaKg = 0;
   private spawnCursor = 150;
   private seed = 73_381;
   private visualTime = 0;
@@ -189,17 +195,45 @@ export class RoadSystem {
   }
 
   /**
-   * Sorteia a entrega da vez e planta as duas balizas: uma no comercio da
-   * coleta, outra na casa da entrega. Elas ficam penduradas DENTRO do
-   * circuito, entao viajam junto com o mundo e chegam sozinhas ao jogador.
+   * Sorteia a entrega da vez e planta uma baliza em cada parada. Elas ficam
+   * penduradas DENTRO do circuito, entao viajam junto com o mundo e chegam
+   * sozinhas ao jogador.
+   *
+   * Quantas paradas dependem da bolsa: mochila pequena e uma coleta e uma
+   * porta; da bolsa de duas em diante entram duas portas, e as vezes duas
+   * coletas antes delas.
    */
+  /**
+   * A campanha avisa quando a bolsa muda de tamanho. A rota da vez continua
+   * como esta — trocar as portas no meio da corrida seria trapaca; a bolsa
+   * nova vale da proxima saida em diante.
+   */
+  setCapacidadeDaBolsa(kg: number): void {
+    this.capacidadeDaBolsaKg = Number.isFinite(kg) && kg > 0 ? kg : 0;
+  }
+
   private buildRoute(): void {
     const pista = this.circuit;
     if (!pista) return;
-    this.route = montarRota(pista.places, pista.lapLength, () => this.random());
+    this.route = montarRota(
+      pista.places,
+      pista.lapLength,
+      () => this.random(),
+      pacotesNaBolsa(this.capacidadeDaBolsaKg)
+    );
     if (!this.route) return;
-    this.plantBeacon("coleta", this.route.coleta, this.accentMaterial);
-    this.plantBeacon("entrega", this.route.entrega, this.signalMaterial);
+    /*
+     * Uma baliza por parada, na cor do que se faz nela: coleta e entrega
+     * precisam ser diferentes a distancia, senao o jogador para no lugar
+     * errado e so descobre quando nada acontece.
+     */
+    this.route.paradas.forEach((parada, ordem) => {
+      this.plantBeacon(
+        `${parada.tipo}-${ordem + 1}`,
+        parada.lugar,
+        parada.tipo === "coleta" ? this.accentMaterial : this.signalMaterial
+      );
+    });
   }
 
   /**

@@ -244,7 +244,7 @@ export default function BaseScreen({
   const journey = journeyCopy(snapshot, level);
   const operations = operationsSummary(
     snapshot.campaign.operationalPointsCapacity,
-    snapshot.campaign.bikeFleetSize,
+    snapshot.campaign.vehicleFleet,
     snapshot.campaign.hiredCouriers
   );
   const bikeCost = secondBikeCost(snapshot.campaign.bikeFleetSize);

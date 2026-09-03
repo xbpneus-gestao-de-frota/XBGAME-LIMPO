@@ -12,6 +12,12 @@ import type {
   RegionScale,
   VehicleId,
 } from "./types";
+import {
+  CLASSE_DO_VEICULO,
+  FROTA,
+  freteDaRotaDaCarreira,
+} from "./freight";
+import { custoDeContratar, custoDeUmaUnidade } from "./hiring";
 
 export interface BuildingConfig {
   id: BuildingId;
@@ -45,6 +51,8 @@ export interface RouteConfig {
   durationSeconds: number;
   /** Distância operacional do contrato; independente do tempo comprimido de gameplay. */
   distanceKm: number;
+  /** Quantos volumes saem nesta viagem. É o que a conta de frete cobra por item. */
+  volumes: number;
   baseReward: number;
   xpReward: number;
   reputationReward: number;
@@ -592,15 +600,27 @@ export const REGIONS: readonly RegionConfig[] = [
  */
 export const DURACAO_MINIMA_SEGUNDOS = 30;
 
-const ROTAS_ESCRITAS: readonly RouteConfig[] = [
+type RotaEscrita = Omit<
+  RouteConfig,
+  "baseReward" | "durationSeconds" | "volumes"
+> & {
+  /**
+   * Quantos volumes saem nesta viagem. Sem valor, o veiculo sai lotado — rota
+   * de campanha e contrato fechado, e ninguem manda uma carreta rodar mil
+   * quilometros com meia carga.
+   */
+  volumes?: number;
+};
+
+const ROTAS_ESCRITAS: readonly RotaEscrita[] = [
   {
     id: "primeiro-pedal",
+    // Um kit de reparo. A primeira saida leva um volume so.
+    volumes: 1,
     regionId: "divinopolis",
     name: "Primeira Entrega XB",
     cargo: "Kit de reparo",
-    durationSeconds: 5,
     distanceKm: 1,
-    baseReward: 10,
     xpReward: 1,
     reputationReward: 1,
     requiredVehicle: "bike",
@@ -611,12 +631,12 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
   },
   {
     id: "bairro-expresso",
+    // Um lanche quente, e ele nao espera companhia.
+    volumes: 1,
     regionId: "divinopolis",
     name: "Giro do Bairro",
     cargo: "Lanche quente",
-    durationSeconds: 8,
     distanceKm: 2,
-    baseReward: 18,
     xpReward: 2,
     reputationReward: 1,
     requiredVehicle: "bike",
@@ -629,12 +649,12 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
   },
   {
     id: "mercado-pequeno",
+    // Duas sacolas de compras do bairro.
+    volumes: 2,
     regionId: "divinopolis",
     name: "Mercado Pequeno",
     cargo: "Compras do bairro",
-    durationSeconds: 15,
     distanceKm: 4,
-    baseReward: 42,
     xpReward: 4,
     reputationReward: 2,
     requiredVehicle: "bike",
@@ -649,9 +669,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "divinopolis",
     name: "Bairro Distante",
     cargo: "Pacote frágil",
-    durationSeconds: 30,
     distanceKm: 8,
-    baseReward: 95,
     xpReward: 8,
     reputationReward: 4,
     requiredVehicle: "bike",
@@ -666,9 +684,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "belo-horizonte",
     name: "Capital no Mesmo Dia",
     cargo: "Rodas compactas",
-    durationSeconds: 15,
     distanceKm: 18,
-    baseReward: 680,
     xpReward: 55,
     reputationReward: 24,
     requiredVehicle: "bike",
@@ -680,9 +696,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "belo-horizonte",
     name: "Anel Urbano",
     cargo: "Pneus express",
-    durationSeconds: 30,
     distanceKm: 42,
-    baseReward: 920,
     xpReward: 72,
     reputationReward: 31,
     requiredVehicle: "moto",
@@ -694,9 +708,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "minas-gerais",
     name: "Triângulo de Carga",
     cargo: "Lote utilitário",
-    durationSeconds: 20,
     distanceKm: 120,
-    baseReward: 1_450,
     xpReward: 98,
     reputationReward: 44,
     requiredVehicle: "moto",
@@ -708,9 +720,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "minas-gerais",
     name: "Serra Segura",
     cargo: "Composto de aderência",
-    durationSeconds: 24,
     distanceKm: 150,
-    baseReward: 1_880,
     xpReward: 118,
     reputationReward: 52,
     requiredVehicle: "van",
@@ -722,9 +732,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "sudeste",
     name: "Eixo Sudeste",
     cargo: "Carga consolidada",
-    durationSeconds: 30,
     distanceKm: 240,
-    baseReward: 2_650,
     xpReward: 150,
     reputationReward: 70,
     requiredVehicle: "van",
@@ -736,9 +744,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "sudeste",
     name: "Rota Industrial",
     cargo: "Pneus de carga",
-    durationSeconds: 36,
     distanceKm: 300,
-    baseReward: 3_300,
     xpReward: 178,
     reputationReward: 82,
     requiredVehicle: "truck",
@@ -750,9 +756,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "brasil",
     name: "Brasil Norte–Sul",
     cargo: "Frota comercial",
-    durationSeconds: 42,
     distanceKm: 500,
-    baseReward: 4_600,
     xpReward: 220,
     reputationReward: 105,
     requiredVehicle: "truck",
@@ -764,9 +768,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "brasil",
     name: "Transamazônica XB",
     cargo: "Pneus todo-terreno",
-    durationSeconds: 50,
     distanceKm: 700,
-    baseReward: 5_800,
     xpReward: 260,
     reputationReward: 122,
     requiredVehicle: "truck",
@@ -778,9 +780,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "america-sul",
     name: "Corredor dos Andes",
     cargo: "Carga internacional",
-    durationSeconds: 58,
     distanceKm: 950,
-    baseReward: 7_200,
     xpReward: 310,
     reputationReward: 145,
     requiredVehicle: "truck",
@@ -792,9 +792,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "euro-africa",
     name: "Ponte Atlântica",
     cargo: "Módulos globais",
-    durationSeconds: 68,
     distanceKm: 1300,
-    baseReward: 9_600,
     xpReward: 380,
     reputationReward: 180,
     requiredVehicle: "fleet",
@@ -806,9 +804,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "rede-global",
     name: "Revezamento Global",
     cargo: "Carga autônoma",
-    durationSeconds: 78,
     distanceKm: 1800,
-    baseReward: 13_500,
     xpReward: 480,
     reputationReward: 230,
     requiredVehicle: "fleet",
@@ -820,9 +816,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "lua",
     name: "Ponte Lunar",
     cargo: "Habitat pressurizado",
-    durationSeconds: 90,
     distanceKm: 2100,
-    baseReward: 19_000,
     xpReward: 620,
     reputationReward: 310,
     requiredVehicle: "planetary",
@@ -834,9 +828,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "marte",
     name: "Corredor Ares",
     cargo: "Unidade de energia",
-    durationSeconds: 110,
     distanceKm: 2800,
-    baseReward: 28_000,
     xpReward: 820,
     reputationReward: 420,
     requiredVehicle: "planetary",
@@ -848,9 +840,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "europa-lua",
     name: "Criocorredor Europa",
     cargo: "Laboratório subglacial",
-    durationSeconds: 122,
     distanceKm: 3500,
-    baseReward: 36_500,
     xpReward: 980,
     reputationReward: 510,
     requiredVehicle: "planetary",
@@ -862,9 +852,7 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
     regionId: "rede-solar",
     name: "Rede Solar XB",
     cargo: "Núcleo logístico",
-    durationSeconds: 135,
     distanceKm: 4200,
-    baseReward: 48_000,
     xpReward: 1_200,
     reputationReward: 650,
     requiredVehicle: "planetary",
@@ -878,11 +866,63 @@ const ROTAS_ESCRITAS: readonly RouteConfig[] = [
  * aplicado aqui, num lugar so, em vez de espalhado por cinquenta numeros que
  * alguem esqueceria de atualizar.
  */
-export const ROUTES: readonly RouteConfig[] = ROTAS_ESCRITAS.map(rota =>
-  rota.durationSeconds >= DURACAO_MINIMA_SEGUNDOS
-    ? rota
-    : { ...rota, durationSeconds: DURACAO_MINIMA_SEGUNDOS }
-);
+/**
+ * Quanto tempo a rota leva, em segundos de jogo.
+ *
+ * A duracao era escrita a mao rota por rota, e por isso saiu torta: a entrega
+ * de 8 km levava 30 s e a de 18 km levava 15 s — a rota mais longa terminava
+ * antes. Agora ela sai da distancia, e essa inversao nao pode mais acontecer.
+ *
+ * A curva e `5 + 1,415 x km^0,543`, ajustada em cima da propria tabela que o
+ * Fernando ja aprovou: de 300 km para cima ela devolve praticamente os mesmos
+ * numeros de antes (300 km -> 36 s, 4.200 km -> 135 s). Ela nao e o tempo
+ * real da viagem, e nem tenta ser: 18 km de bicicleta levam 1h12 de verdade,
+ * e ninguem espera 1h12 olhando para a tela. O tempo do jogo e comprimido, e
+ * comprimido cada vez mais conforme a distancia cresce — e por isso o
+ * expoente e menor que 1.
+ *
+ * O pagamento NAO passa por aqui. Ele vem da distancia, pela conta de frete.
+ * Esta funcao decide so quanto tempo a barra demora a encher.
+ */
+export const duracaoDaRota = (km: number): number =>
+  Math.max(
+    DURACAO_MINIMA_SEGUNDOS,
+    Math.round(5 + 1.415 * Math.pow(Math.max(0, km), 0.543))
+  );
+
+/**
+ * A tabela de rotas, ja com o preco e o tempo calculados.
+ *
+ * ── POR QUE O PRECO NAO E MAIS ESCRITO A MAO ──────────────────────────────
+ *
+ * Cada rota tinha um `baseReward` digitado. Funcionava enquanto o jogo era so
+ * bicicleta; quando chegou a carreta, ficou impossivel: ninguem sabe de
+ * cabeca quanto vale um frete de 1.300 km, e o numero chutado ou paga demais
+ * ou paga de menos sem ninguem perceber. A tabela antiga pagava 680 numa
+ * entrega de bicicleta de 18 km — dezessete vezes o frete real — enquanto as
+ * rotas de carreta ja estavam certas. O jogo tinha duas economias diferentes
+ * dentro dele, e so a de baixo estava inflada.
+ *
+ * Agora o preco de toda rota, do pedal a Marte, sai da mesma conta de frete:
+ * parte fixa + distancia + volumes, com os numeros de fonte anotada no
+ * freight.ts. Uma rota nova nasce com o preco certo sem ninguem decidir nada.
+ *
+ * A era da bicicleta fica mesmo mais pobre por corrida — e essa e a ideia. O
+ * dinheiro do inicio nao vem de uma entrega valer muito; vem de colocar mais
+ * gente pedalando ao mesmo tempo, que e o jogo que o Fernando descreveu.
+ */
+export const ROUTES: readonly RouteConfig[] = ROTAS_ESCRITAS.map(rota => {
+  const classe = CLASSE_DO_VEICULO[rota.requiredVehicle];
+  const volumes = rota.volumes ?? FROTA[classe].capacidade;
+  return {
+    ...rota,
+    volumes,
+    baseReward: Math.round(
+      freteDaRotaDaCarreira(rota.requiredVehicle, rota.distanceKm, volumes)
+    ),
+    durationSeconds: duracaoDaRota(rota.distanceKm),
+  };
+});
 
 export function companyLevelFromXp(xp: number): number {
   const safeXp = Math.max(0, Number.isFinite(xp) ? xp : 0);
@@ -997,16 +1037,19 @@ export function bikePartEffects(levels: BikePartLevels): BikePartEffects {
   };
 }
 
+/**
+ * O preco da proxima bicicleta e da proxima contratacao de ciclista.
+ *
+ * Continuam existindo porque meia duzia de lugares ja os chamavam pelo nome,
+ * mas os dois agora sao apenas o caso "bicicleta" da conta geral do
+ * hiring.ts, que vale para toda classe. Nao ha mais dois precos possiveis
+ * para a mesma coisa.
+ */
 export const secondBikeCost = (bikeFleetSize: number): number =>
-  Math.round(
-    SECOND_BIKE_BASE_COST *
-      Math.pow(1.8, Math.max(0, Math.floor(bikeFleetSize) - 1))
-  );
+  custoDeUmaUnidade("bike", bikeFleetSize);
 
 export const courierHireCost = (courierCount: number): number =>
-  Math.round(
-    FIRST_COURIER_BASE_COST * Math.pow(1.65, Math.max(0, courierCount))
-  );
+  custoDeContratar("bike", courierCount);
 
 export const operationalPointsUsed = (
   couriers: readonly HiredCourier[]
@@ -1022,9 +1065,26 @@ export const operationalPointsAvailable = (
 ): number =>
   Math.max(0, Math.floor(capacity) - operationalPointsUsed(couriers));
 
+const VEHICLE_IDS_DA_FROTA: readonly VehicleId[] = [
+  "bike",
+  "moto",
+  "van",
+  "truck",
+  "fleet",
+  "planetary",
+];
+
+/**
+ * O retrato da operacao: quanto a central aguenta, quanto ja esta em uso.
+ *
+ * `automatedSlots` deixou de ser "bicicletas menos a do jogador": a XB agora
+ * tem moto, van, caminhao e carreta, e cada operador contratado ja saiu com
+ * uma unidade reservada para ele no momento da contratacao. Entao o numero de
+ * rotas que rodam sozinhas e o numero de operadores — de qualquer classe.
+ */
 export const operationsSummary = (
   capacity: number,
-  bikeFleetSize: number,
+  frota: Readonly<Record<VehicleId, number>>,
   couriers: readonly HiredCourier[]
 ): OperationsSummary => {
   const used = operationalPointsUsed(couriers);
@@ -1032,14 +1092,34 @@ export const operationsSummary = (
     capacity: Math.max(0, Math.floor(capacity)),
     used,
     available: Math.max(0, Math.floor(capacity) - used),
-    bikeUnits: Math.max(1, Math.floor(bikeFleetSize)),
+    bikeUnits: Math.max(1, Math.floor(frota.bike ?? 1)),
     couriers: couriers.length,
-    automatedSlots: Math.max(
-      0,
-      Math.min(Math.max(0, Math.floor(bikeFleetSize) - 1), couriers.length)
-    ),
+    /*
+     * Quantas rotas rodam sozinhas de verdade: por classe, o menor entre as
+     * unidades livres (a primeira e sempre do jogador) e os operadores
+     * daquela classe. Prometer automacao que nao existe e pior que nao
+     * prometer nada — a pessoa despacha, nada sai, e ela nao sabe por que.
+     */
+    automatedSlots: VEHICLE_IDS_DA_FROTA.reduce((total, veiculo) => {
+      const livres = Math.max(0, Math.floor(frota[veiculo] ?? 0) - 1);
+      const daClasse = couriers.filter(
+        operador => operador.vehicleId === veiculo
+      ).length;
+      return total + Math.min(livres, daClasse);
+    }, 0),
   };
 };
+
+/** Quantas unidades a empresa tem, somando todas as classes. */
+export const totalDaFrota = (
+  frota: Readonly<Record<VehicleId, number>>
+): number =>
+  VEHICLE_IDS_DA_FROTA.reduce(
+    (total, veiculo) => total + Math.max(0, Math.floor(frota[veiculo] ?? 0)),
+    0
+  );
+
+
 
 export function previousRegion(regionId: string): RegionConfig | undefined {
   const index = REGIONS.findIndex(region => region.id === regionId);

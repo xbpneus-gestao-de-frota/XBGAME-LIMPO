@@ -80,6 +80,17 @@ export interface LugarNaVolta {
   lado: 1 | -1;
   /** Posicao dentro do circuito, antes da escala — para pendurar coisas la. */
   local: Ponto;
+  /**
+   * O numero do lugar na rua. Casas e comercios tem numeracao propria: Casa 1
+   * a Casa 61, Comercio 1 a Comercio 3.
+   *
+   * A numeracao segue a rua, do inicio da volta em diante — a Casa 1 e a
+   * primeira depois da linha, a 61 e a ultima. E de proposito: assim "coleta
+   * no comercio 2, entrega nas casas 8, 12 e 34" ja diz a ordem das paradas,
+   * do mesmo jeito que um numero de rua diz de que lado do quarteirao fica a
+   * porta. A base nao entra na conta: ela e uma so.
+   */
+  numero?: number;
 }
 
 export interface PoseNaVolta {
@@ -220,6 +231,28 @@ export class CircuitTrack {
       });
     });
     achados.sort((a, b) => a.distancia - b.distancia);
+    /*
+     * Numera casas e comercios na ordem da rua, depois de ordenar. Nada de
+     * numero escrito a mao: mover uma peca no mapa renumera o bairro sozinho.
+     *
+     * O comercio guarda o nome proprio — Mercado, Hospital, Pizzaria dizem o
+     * que a pessoa vai buscar la, e isso e roteiro. O numero entra ao lado,
+     * para o jogo poder falar de posicao sem perder o nome.
+     */
+    let proximaCasa = 0;
+    let proximoComercio = 0;
+    achados.forEach(lugar => {
+      if (lugar.papel === "casa") {
+        proximaCasa += 1;
+        lugar.numero = proximaCasa;
+        lugar.nome = `Casa ${proximaCasa}`;
+        return;
+      }
+      if (lugar.papel === "comercio") {
+        proximoComercio += 1;
+        lugar.numero = proximoComercio;
+      }
+    });
     this.lugares = achados;
   }
 

@@ -347,17 +347,27 @@ describe("CampaignStore bicycle-company MVP", () => {
       store.collectDelivery(delivery.instanceId, delivery.completesAt);
     }
     expect(store.companyLevel).toBe(2);
-    expect(store.value.credits).toBe(46);
+    /*
+     * Eram 46 (10 + 18 + 18) enquanto o premio de cada rota era digitado a
+     * mao. Agora o premio sai da conta de frete de verdade — 10 + 12 + 12 —
+     * e o comeco ficou apertado de proposito: o dinheiro do inicio tem de vir
+     * de colocar mais gente pedalando, e nao de uma entrega de bairro valer
+     * quase um salario.
+     */
+    expect(store.value.credits).toBe(34);
 
     // A carga (60 XB$, nivel 3) ainda esta fora de alcance no nivel 2.
     const tooEarly = store.upgradeBikePart("cargo");
     expect(tooEarly.ok).toBe(false);
     expect(tooEarly.message).toContain("nível 3");
-    expect(store.value.credits).toBe(46);
+    expect(store.value.credits).toBe(34);
 
+    // O pneu de 30 continua cabendo no fim do circuito de abertura — de
+    // raspao, com 4 sobrando. Se um dia nao couber mais, este teste avisa
+    // antes de alguem descobrir jogando.
     const upgraded = store.upgradeBikePart("tire");
     expect(upgraded.ok).toBe(true);
-    expect(store.value.credits).toBe(16);
+    expect(store.value.credits).toBe(4);
     expect(store.value.bikePartLevels.tire).toBe(1);
     // Sem o bau, o Mercado Pequeno continua bloqueado — e diz por que.
     expect(store.previewRoute("mercado-pequeno").message).toContain("Carga");
@@ -406,18 +416,33 @@ describe("CampaignStore bicycle-company MVP", () => {
       reputation: 20,
     });
     const store = new CampaignStore();
-    expect(secondBikeCost(1)).toBe(180);
-    expect(courierHireCost(0)).toBe(250);
+    /*
+     * Eram 180 escritos a mao. Agora o preco sai da conta de frete — oito
+     * viagens do que a bicicleta da de lucro — e devolve 177. Os tres XB$ de
+     * diferenca sao a prova de que o numero antigo estava certo: a regra que
+     * faltava so o explicou.
+     */
+    expect(secondBikeCost(1)).toBe(177);
+    // Mesma historia: eram 250 na mao, sao 243 pela conta — onze viagens do
+    // lucro que o ciclista traz.
+    expect(courierHireCost(0)).toBe(243);
     expect(store.buyBikeUnit()).toMatchObject({ ok: true, bikeFleetSize: 2 });
     expect(store.hireCourier(500)).toMatchObject({
       ok: true,
       courierId: "courier-1",
-      operationalPointsAvailable: 4,
+      operationalPointsAvailable: 5,
     });
+    /*
+     * A capacidade era 5 e ficava 5 para sempre: cinco ciclistas e nada mais,
+     * em qualquer nivel, com qualquer predio. Agora ela cresce com o Centro
+     * de Rotas — o predio que existe justamente para coordenar contratos
+     * simultaneos — e um ponto a cada dez niveis. Aqui a empresa esta no
+     * nivel 10 sem o predio: 5 + 1.
+     */
     expect(store.operations).toEqual({
-      capacity: 5,
+      capacity: 6,
       used: 1,
-      available: 4,
+      available: 5,
       bikeUnits: 2,
       couriers: 1,
       automatedSlots: 1,

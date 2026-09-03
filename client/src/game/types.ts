@@ -44,9 +44,19 @@ export interface HiredCourier {
   id: CourierId;
   name: string;
   hiredAt: number;
-  bikeUnitId: string;
+  /**
+   * A classe que este operador dirige. Antes todo operador era ciclista, e
+   * por isso a classe nem existia; agora a XB contrata do pedal a carreta.
+   * Save antigo, sem o campo, vira ciclista — que e o que ele era.
+   */
+  vehicleId: VehicleId;
+  /** A unidade da frota que ficou com ele. Ninguem divide veiculo. */
+  vehicleUnitId: string;
   operationalPoints: number;
-  /** Fraction of gross revenue reserved as salary (0.18 = 18%). */
+  /**
+   * Fatia do frete que vai para ele. E o repasse do freight.ts (0,15 para
+   * quem dirige veiculo da XB), e nao mais um numero solto.
+   */
   wageRate: number;
 }
 
@@ -200,6 +210,13 @@ export interface VehicleConfig {
 }
 
 export interface CampaignState {
+  /**
+   * Como a pessoa quer ser chamada, e qual dos oito entregadores ela escolheu
+   * na primeira entrada. Vazio quer dizer que ela ainda nao se apresentou — e
+   * e assim que o jogo sabe que precisa mostrar a tela de boas-vindas.
+   */
+  playerName: string;
+  playerAvatarId: string;
   credits: number;
   reputation: number;
   companyXp: number;
@@ -220,6 +237,16 @@ export interface CampaignState {
   dailyMissionDay: string;
   dailyMissions: DailyMissionState[];
   bikePartLevels: BikePartLevels;
+  /**
+   * Quantas unidades a empresa tem de cada classe. E a fonte da verdade da
+   * frota.
+   */
+  vehicleFleet: Record<VehicleId, number>;
+  /**
+   * Espelho de `vehicleFleet.bike`, mantido para os saves e as telas que ja
+   * liam este campo. Quem escreve nele e so `sincronizarFrota`, e um teste
+   * garante que ele nunca sai do lugar. Nao ler nem escrever fora dali.
+   */
   bikeFleetSize: number;
   operationalPointsCapacity: number;
   hiredCouriers: HiredCourier[];

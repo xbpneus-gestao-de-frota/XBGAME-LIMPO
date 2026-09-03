@@ -57,6 +57,43 @@ import {
   missionComplete,
   progressDailyMissions,
 } from "./missions";
+import { MAXIMO_POR_CLASSE as MAXIMO_DE_UNIDADES_POR_CLASSE } from "./hiring";
+import {
+  ENTREGADOR_PADRAO,
+  ehEntregador,
+  limparNome,
+  nomeValido,
+} from "./identity";
+import { REPASSE } from "./freight";
+import type { MotivoDeNaoContratar } from "./hiring";
+import {
+  PONTOS_DO_OPERADOR,
+  capacidadeOperacional,
+  custoDeContratar,
+  custoDeUmaUnidade,
+  frotaMaxima,
+  podeContratar,
+  salarioDaViagem,
+} from "./hiring";
+
+/**
+ * O que a tela diz quando a contratacao nao sai.
+ *
+ * Cada motivo tem um recado proprio porque "nao pode" sem dizer por que e a
+ * forma mais rapida de a pessoa desistir. A ordem em que eles aparecem e
+ * decidida no `podeContratar`, e nao aqui.
+ */
+const RECADO_DA_CONTRATACAO: Readonly<
+  Record<MotivoDeNaoContratar, (veiculo: string) => string>
+> = {
+  "classe-bloqueada": veiculo => `${veiculo} ainda não foi liberada.`,
+  // Uma unidade fica sempre com o jogador: e a que ele pilota.
+  "sem-veiculo-livre": veiculo =>
+    `Compre uma ${veiculo.toLowerCase()} livre antes de contratar o operador.`,
+  "sem-pontos": () =>
+    "Contratação bloqueada: não há Pontos Operacionais livres.",
+  "sem-dinheiro": () => "Falta caixa para a contratação.",
+};
 import {
   CAMPAIGN_SAVE_VERSION,
   type ActiveDelivery,
@@ -85,6 +122,7 @@ export const PREVIOUS_CAMPAIGN_STORAGE_KEY = "xb-pneus-do-pedal-ao-planeta-v2";
 export const LEGACY_CAMPAIGN_STORAGE_KEY = "xb-pneus-do-pedal-ao-planeta-v1";
 
 const VEHICLE_IDS = VEHICLES.map(vehicle => vehicle.id);
+const VEHICLE_ID_SET = new Set<VehicleId>(VEHICLE_IDS);
 const ROUTE_IDS = new Set(ROUTES.map(route => route.id));
 const REGION_IDS = new Set(REGIONS.map(region => region.id));
 const COMPOUND_IDS = new Set(TIRE_COMPOUNDS.map(compound => compound.id));
@@ -165,6 +203,10 @@ const fullTireCondition = (): Record<VehicleId, number> => ({
 });
 
 export const createDefaultCampaignState = (): CampaignState => ({
+  // Vazio de proposito: e assim que o jogo sabe que a pessoa ainda nao se
+  // apresentou e precisa ver a tela de boas-vindas.
+  playerName: "",
+  playerAvatarId: "",
   credits: 0,
   reputation: 0,
   companyXp: 0,
@@ -185,12 +227,15 @@ export const createDefaultCampaignState = (): CampaignState => ({
   dailyMissionDay: dayKey(),
   dailyMissions: [],
   bikePartLevels: emptyBikePartLevels(),
+  vehicleFleet: { bike: 1, moto: 0, van: 0, truck: 0, fleet: 0, planetary: 0 },
   bikeFleetSize: 1,
   operationalPointsCapacity: STARTING_OPERATIONAL_POINTS,
   hiredCouriers: [],
 });
 
 const createDemoState = (): CampaignState => ({
+  playerName: "Fernando",
+  playerAvatarId: ENTREGADOR_PADRAO,
   credits: 248_400,
   reputation: 2_480,
   companyXp: companyXpRequiredForLevel(MAX_COMPANY_LEVEL),
@@ -256,6 +301,14 @@ const createDemoState = (): CampaignState => ({
     brake: MAX_BIKE_PART_LEVEL,
     wheels: MAX_BIKE_PART_LEVEL,
   },
+  vehicleFleet: {
+    bike: MAX_MVP_BIKE_FLEET,
+    moto: 2,
+    van: 2,
+    truck: 2,
+    fleet: 2,
+    planetary: 2,
+  },
   bikeFleetSize: MAX_MVP_BIKE_FLEET,
   operationalPointsCapacity: 20,
   hiredCouriers: [
@@ -263,7 +316,8 @@ const createDemoState = (): CampaignState => ({
       id: "courier-1",
       name: "Operador XB 01",
       hiredAt: 0,
-      bikeUnitId: "bike-2",
+      vehicleId: "bike",
+      vehicleUnitId: "bike-2",
       operationalPoints: 1,
       wageRate: 0.18,
     },
@@ -352,7 +406,7 @@ export class CampaignStore {
   get operations(): OperationsSummary {
     return operationsSummary(
       this.state.operationalPointsCapacity,
-      this.state.bikeFleetSize,
+      this.state.vehicleFleet,
       this.state.hiredCouriers
     );
   }
@@ -430,6 +484,118 @@ export class CampaignStore {
     };
   }
 
+  /**
+   * Mantem `bikeFleetSize` colado em `vehicleFleet.bike`.
+   *
+   * O campo antigo continua no save e em algumas telas. Ter dois numeros para
+   * a mesma coisa e como ter dois relogios — entao ha um unico lugar que
+   * escreve nele, este, e um teste que prova que ele nunca sai do lugar.
+   */
+  private sincronizarFrota(): void {
+    this.state.bikeFleetSize = Math.max(1, this.state.vehicleFleet.bike ?? 1);
+  }
+
+  private unidadesDe(veiculo: VehicleId): number {
+    return Math.max(0, Math.floor(this.state.vehicleFleet[veiculo] ?? 0));
+  }
+
+  private operadoresDe(veiculo: VehicleId): HiredCourier[] {
+    return this.state.hiredCouriers.filter(
+      operador => operador.vehicleId === veiculo
+    );
+  }
+
+  /**
+   * A capacidade da central, que cresce e nunca encolhe.
+   *
+   * Ela era um numero parado em 5 desde o primeiro save: dava para contratar
+   * cinco ciclistas e mais nada, para sempre. Agora sobe com o Centro de
+   * Rotas — o predio que existe justamente para coordenar contratos
+   * simultaneos — e com o tamanho da empresa.
+   */
+  private atualizarCapacidadeOperacional(): void {
+    this.state.operationalPointsCapacity = Math.max(
+      this.state.operationalPointsCapacity,
+      capacidadeOperacional(
+        this.companyLevel,
+        this.state.buildingLevels.dispatch,
+        STARTING_OPERATIONAL_POINTS
+      )
+    );
+  }
+
+  /** Quantas unidades desta classe a empresa ainda pode comprar. */
+  frotaMaximaDe(veiculo: VehicleId): number {
+    return frotaMaxima(VEHICLE_UNLOCK_LEVELS[veiculo], this.companyLevel);
+  }
+
+  /**
+   * Compra mais uma unidade de uma classe.
+   *
+   * Antes so existia `buyBikeUnit`, e a frota inteira do jogo era "quantas
+   * bicicletas". A XB do Fernando compra moto, van, caminhao e carreta — e a
+   * regra e a mesma para todas, o que muda e o preco, que sai da conta de
+   * frete e nao de um numero digitado.
+   */
+  /**
+   * Guarda quem a pessoa e: o nome dela e o entregador que ela escolheu.
+   *
+   * Vale uma vez, na primeira entrada — mas nada aqui impede trocar depois, e
+   * isso e de proposito: se um dia houver um botao de trocar de entregador nos
+   * ajustes, ele ja funciona sem mexer no motor.
+   */
+  definirJogador(nome: string, entregadorId: string): StoreActionResult {
+    const limpo = limparNome(nome);
+    if (!nomeValido(limpo)) {
+      return { ok: false, message: "Escreva um nome com pelo menos 2 letras." };
+    }
+    if (!ehEntregador(entregadorId)) {
+      return { ok: false, message: "Escolha um entregador para começar." };
+    }
+    this.state.playerName = limpo;
+    this.state.playerAvatarId = entregadorId;
+    this.save();
+    return { ok: true, message: `Boa viagem, ${limpo}.` };
+  }
+
+  buyVehicleUnit(veiculo: VehicleId): StoreActionResult {
+    if (!this.state.unlockedVehicles.includes(veiculo)) {
+      return {
+        ok: false,
+        message: `${veiculo === "bike" ? "A bicicleta" : "Esta classe"} ainda nao foi liberada.`,
+      };
+    }
+    const atuais = this.unidadesDe(veiculo);
+    const teto = this.frotaMaximaDe(veiculo);
+    if (atuais >= teto) {
+      return {
+        ok: false,
+        message:
+          teto >= MAXIMO_DE_UNIDADES_POR_CLASSE
+            ? "A garagem chegou ao limite desta classe."
+            : "Suba de nivel para abrir mais uma vaga na garagem.",
+      };
+    }
+    const cost = custoDeUmaUnidade(veiculo, atuais);
+    if (this.state.credits < cost) {
+      return {
+        ok: false,
+        message: `Faltam XB$ ${cost - this.state.credits} para a nova unidade.`,
+      };
+    }
+    this.state.credits -= cost;
+    this.state.vehicleFleet[veiculo] = atuais + 1;
+    this.sincronizarFrota();
+    this.recordMission("upgrade", 1);
+    this.save();
+    return {
+      ok: true,
+      message: `Unidade ${atuais + 1} adicionada a garagem.`,
+      bikeFleetSize: this.state.bikeFleetSize,
+    };
+  }
+
+  /** O caso bicicleta, que as telas antigas ja chamavam pelo nome. */
   buyBikeUnit(): StoreActionResult {
     if (this.companyLevel < SECOND_BIKE_UNLOCK_LEVEL) {
       return {
@@ -437,80 +603,64 @@ export class CampaignStore {
         message: `A segunda bicicleta libera no nível ${SECOND_BIKE_UNLOCK_LEVEL}.`,
       };
     }
-    if (this.state.bikeFleetSize >= MAX_MVP_BIKE_FLEET) {
-      return {
-        ok: false,
-        message: "Frota de bicicletas do MVP já está completa.",
-      };
-    }
-    const cost = secondBikeCost(this.state.bikeFleetSize);
-    if (this.state.credits < cost) {
-      return {
-        ok: false,
-        message: `Faltam XB$ ${cost - this.state.credits} para a nova bicicleta.`,
-      };
-    }
-    this.state.credits -= cost;
-    this.state.bikeFleetSize += 1;
-    this.recordMission("upgrade", 1);
-    this.save();
-    return {
-      ok: true,
-      message: `Bicicleta ${this.state.bikeFleetSize} adicionada à garagem.`,
-      bikeFleetSize: this.state.bikeFleetSize,
-    };
+    return this.buyVehicleUnit("bike");
   }
 
-  hireCourier(now = Date.now()): StoreActionResult {
-    if (this.companyLevel < FIRST_COURIER_UNLOCK_LEVEL) {
-      return {
-        ok: false,
-        message: `O primeiro operador libera no nível ${FIRST_COURIER_UNLOCK_LEVEL}.`,
-      };
-    }
-    if (this.state.hiredCouriers.length >= this.state.bikeFleetSize - 1) {
+  /**
+   * Contrata um operador para uma classe.
+   *
+   * Cada operador sai com uma unidade reservada para ele: ninguem divide
+   * veiculo, e uma unidade fica sempre com o jogador, que e quem pilota. O
+   * operador ja vem habilitado — e para isso que se contrata alguem; a escada
+   * de CNH do freight.ts e do jogador, para ele proprio poder pilotar aquela
+   * classe.
+   */
+  hireOperator(veiculo: VehicleId, now = Date.now()): StoreActionResult {
+    this.atualizarCapacidadeOperacional();
+    const daClasse = this.operadoresDe(veiculo);
+    const decisao = podeContratar(veiculo, {
+      classeLiberada: this.state.unlockedVehicles.includes(veiculo),
+      unidades: this.unidadesDe(veiculo),
+      operadoresDaClasse: daClasse.length,
+      pontosLivres: operationalPointsAvailable(
+        this.state.operationalPointsCapacity,
+        this.state.hiredCouriers
+      ),
+      caixa: this.state.credits,
+    });
+    if (!decisao.pode) {
       return {
         ok: false,
         message:
-          "Compre uma bicicleta livre antes de contratar outro operador.",
+          decisao.motivo === "sem-dinheiro"
+            ? `Faltam XB$ ${decisao.faltam} para a contratação.`
+            : RECADO_DA_CONTRATACAO[decisao.motivo!](
+                getVehicle(veiculo).shortName
+              ),
       };
     }
-    if (
-      operationalPointsAvailable(
-        this.state.operationalPointsCapacity,
-        this.state.hiredCouriers
-      ) < 1
-    ) {
-      return { ok: false, message: "Não há Pontos Operacionais disponíveis." };
-    }
-    const cost = courierHireCost(this.state.hiredCouriers.length);
-    if (this.state.credits < cost) {
-      return {
-        ok: false,
-        message: `Faltam XB$ ${cost - this.state.credits} para a contratação.`,
-      };
-    }
-    const number = this.state.hiredCouriers.length + 1;
-    const id = `courier-${number}` as CourierId;
-    const usedUnits = new Set(
-      this.state.hiredCouriers.map(courier => courier.bikeUnitId)
+
+    const numero = this.state.hiredCouriers.length + 1;
+    const ocupadas = new Set(
+      this.state.hiredCouriers.map(operador => operador.vehicleUnitId)
     );
-    const bikeUnitId = Array.from(
-      { length: Math.max(0, this.state.bikeFleetSize - 1) },
-      (_, index) => `bike-${index + 2}`
-    ).find(unitId => !usedUnits.has(unitId));
-    if (!bikeUnitId) {
-      return { ok: false, message: "Nenhuma bicicleta livre para o operador." };
+    const vehicleUnitId = Array.from(
+      { length: Math.max(0, this.unidadesDe(veiculo) - 1) },
+      (_, index) => `${veiculo}-${index + 2}`
+    ).find(unitId => !ocupadas.has(unitId));
+    if (!vehicleUnitId) {
+      return { ok: false, message: "Nenhuma unidade livre para o operador." };
     }
     const courier: HiredCourier = {
-      id,
-      name: `Operador XB ${String(number).padStart(2, "0")}`,
+      id: `courier-${numero}` as CourierId,
+      name: `Operador XB ${String(numero).padStart(2, "0")}`,
       hiredAt: Math.max(0, Math.floor(now)),
-      bikeUnitId,
-      operationalPoints: 1,
-      wageRate: 0.18,
+      vehicleId: veiculo,
+      vehicleUnitId,
+      operationalPoints: PONTOS_DO_OPERADOR[veiculo],
+      wageRate: REPASSE.transportadora,
     };
-    this.state.credits -= cost;
+    this.state.credits -= decisao.custo;
     this.state.hiredCouriers.push(courier);
     this.recordMission("upgrade", 1);
     this.save();
@@ -520,6 +670,17 @@ export class CampaignStore {
       courierId: courier.id,
       operationalPointsAvailable: this.operations.available,
     };
+  }
+
+  /** O caso bicicleta, que as telas antigas ja chamavam pelo nome. */
+  hireCourier(now = Date.now()): StoreActionResult {
+    if (this.companyLevel < FIRST_COURIER_UNLOCK_LEVEL) {
+      return {
+        ok: false,
+        message: `O primeiro operador libera no nível ${FIRST_COURIER_UNLOCK_LEVEL}.`,
+      };
+    }
+    return this.hireOperator("bike", now);
   }
 
   maintainBike(): StoreActionResult {
@@ -914,24 +1075,38 @@ export class CampaignStore {
     ) {
       return { ok: false, message: "Este contrato já está em andamento." };
     }
+    /*
+     * Sem operador escolhido, a central pega um livre — mas so serve quem
+     * dirige a classe que a rota pede. Antes o despacho automatico mandava
+     * qualquer operador e preparava a rota como se fosse sempre bicicleta;
+     * com a XB tendo carreta, isso mandaria um ciclista atravessar o pais.
+     */
+    const rotaDaVez = ROUTES.find(route => route.id === routeId);
+    const livre = (item: HiredCourier) =>
+      !this.state.activeDeliveries.some(
+        delivery => delivery.operatorId === item.id
+      );
     const courier = courierId
       ? this.state.hiredCouriers.find(item => item.id === courierId)
       : this.state.hiredCouriers.find(
-          item =>
-            !this.state.activeDeliveries.some(
-              delivery => delivery.operatorId === item.id
-            )
+          item => livre(item) && item.vehicleId === rotaDaVez?.requiredVehicle
         );
     if (!courier) {
       return { ok: false, message: "Nenhum operador automático está livre." };
+    }
+    if (rotaDaVez && courier.vehicleId !== rotaDaVez.requiredVehicle) {
+      return {
+        ok: false,
+        message: `${courier.name} não dirige o veículo desta rota.`,
+      };
     }
     if (
       this.state.activeDeliveries.some(
         delivery =>
           delivery.operatorId === courier.id ||
-          delivery.vehicleUnitId === courier.bikeUnitId
+          delivery.vehicleUnitId === courier.vehicleUnitId
       ) ||
-      this.pilotedPlan?.vehicleUnitId === courier.bikeUnitId
+      this.pilotedPlan?.vehicleUnitId === courier.vehicleUnitId
     ) {
       return { ok: false, message: `${courier.name} ainda está em rota.` };
     }
@@ -946,20 +1121,30 @@ export class CampaignStore {
     }
     const prepared = this.prepareRoute(
       routeId,
-      "bike",
+      courier.vehicleId,
       false,
-      courier.bikeUnitId
+      courier.vehicleUnitId
     );
     if (!prepared.ok || !prepared.plan) return prepared;
     const basePlan = prepared.plan;
+    /*
+     * O salario do operador SUBSTITUI a mao de obra da rota, e nao soma com
+     * ela.
+     *
+     * Antes somava, e isso passou a ser cobranca dupla no momento em que o
+     * custo por km deixou de ser inventado: hoje a linha `labor` de
+     * `operatingCosts` JA e o repasse ao condutor, tirado da conta de frete.
+     * Pagar os dois seria pagar dois motoristas para dirigir um veiculo so —
+     * um erro que nao aparece na tela, so no caixa, e sempre no vermelho.
+     */
     const salary = Math.max(
       1,
       Math.round(basePlan.grossReward * courier.wageRate)
     );
     const costBreakdown = {
       ...basePlan.costBreakdown,
-      labor: basePlan.costBreakdown.labor + salary,
-      total: basePlan.costBreakdown.total + salary,
+      labor: salary,
+      total: basePlan.costBreakdown.total - basePlan.costBreakdown.labor + salary,
     };
     const plan: RouteRunPlan = {
       ...basePlan,
@@ -977,7 +1162,7 @@ export class CampaignStore {
     const delivery: ActiveDelivery = {
       instanceId: `${routeId}-${Math.max(0, Math.floor(now))}-${courier.id}`,
       routeId,
-      vehicleId: "bike",
+      vehicleId: courier.vehicleId,
       startedAt: now,
       completesAt: now + plan.duration * 1000,
       compoundId: plan.compoundId,
@@ -995,7 +1180,7 @@ export class CampaignStore {
       conditionAtDispatch: plan.conditionAtStart,
       costBreakdown: clone(plan.costBreakdown),
       operatorId: courier.id,
-      vehicleUnitId: courier.bikeUnitId,
+      vehicleUnitId: courier.vehicleUnitId,
       automated: true,
     };
     this.state.credits -= plan.operatingCost;
@@ -1662,9 +1847,45 @@ export class CampaignStore {
         clamp(parsed.bikePartLevels?.[part.id], 0, MAX_BIKE_PART_LEVEL, 0)
       );
     });
-    const bikeFleetSize = Math.round(
-      clamp(parsed.bikeFleetSize, 1, MAX_MVP_BIKE_FLEET, 1)
-    );
+    /*
+     * A frota agora e por classe. Save antigo so tinha `bikeFleetSize`, entao
+     * ele vira a contagem de bicicletas e o resto comeca em zero — que e
+     * exatamente a operacao que aquele save descrevia.
+     */
+    const frotaSalva = (parsed.vehicleFleet ?? {}) as Partial<
+      Record<VehicleId, number>
+    >;
+    const vehicleFleet = {
+      bike: 1,
+      moto: 0,
+      van: 0,
+      truck: 0,
+      fleet: 0,
+      planetary: 0,
+    } as Record<VehicleId, number>;
+    VEHICLES.forEach(vehicle => {
+      const teto = frotaMaxima(
+        VEHICLE_UNLOCK_LEVELS[vehicle.id],
+        MAX_COMPANY_LEVEL
+      );
+      /*
+       * A bicicleta tem dois campos possiveis no save: o `vehicleFleet.bike`
+       * novo e o `bikeFleetSize` antigo, que continua sendo escrito como
+       * espelho. Quando os dois aparecem e discordam, vale o maior — assim
+       * uma bicicleta comprada nunca some por causa de qual campo foi lido.
+       */
+      const salvo =
+        vehicle.id === "bike"
+          ? Math.max(
+              clamp(parsed.bikeFleetSize, 1, teto, 1),
+              clamp(frotaSalva.bike, 1, teto, 1)
+            )
+          : frotaSalva[vehicle.id];
+      vehicleFleet[vehicle.id] = Math.round(
+        clamp(salvo, vehicle.id === "bike" ? 1 : 0, teto, vehicle.id === "bike" ? 1 : 0)
+      );
+    });
+    const bikeFleetSize = vehicleFleet.bike;
     const operationalPointsCapacity = Math.round(
       clamp(
         parsed.operationalPointsCapacity,
@@ -1675,7 +1896,7 @@ export class CampaignStore {
     );
     const hiredCouriers = this.sanitizeCouriers(
       parsed.hiredCouriers,
-      bikeFleetSize,
+      vehicleFleet,
       operationalPointsCapacity
     );
 
@@ -1711,6 +1932,15 @@ export class CampaignStore {
     );
     const selected = parsed.selectedVehicleId;
     const state: CampaignState = {
+      /*
+       * Nome e entregador vem do save, mas passam pela mesma limpeza da tela.
+       * Um save editado a mao com nome de mil caracteres ou com invisiveis
+       * colados nao pode vazar para dentro do jogo.
+       */
+      playerName: limparNome(parsed.playerName),
+      playerAvatarId: ehEntregador(parsed.playerAvatarId)
+        ? parsed.playerAvatarId
+        : "",
       credits: Math.max(0, Math.round(finite(parsed.credits))),
       reputation: Math.max(0, Math.round(finite(parsed.reputation))),
       companyXp: Math.max(
@@ -1753,6 +1983,7 @@ export class CampaignStore {
           : dayKey(),
       dailyMissions: this.sanitizeMissions(parsed.dailyMissions),
       bikePartLevels,
+      vehicleFleet,
       bikeFleetSize,
       operationalPointsCapacity,
       hiredCouriers,
@@ -2035,19 +2266,31 @@ export class CampaignStore {
       });
   }
 
+  /**
+   * Le os operadores do save, agora de qualquer classe.
+   *
+   * O saneamento existe porque o save e um arquivo no computador da pessoa e
+   * pode chegar aqui de qualquer jeito — editado, truncado, de uma versao
+   * antiga. Um operador invalido nao pode derrubar o jogo nem, pior, ficar
+   * dirigindo uma unidade que nao existe.
+   *
+   * Save antigo nao tinha classe: todo operador era ciclista com unidade
+   * `bike-N`. Ele entra como ciclista, que e o que era.
+   */
   private sanitizeCouriers(
     input: unknown,
-    bikeFleetSize: number,
+    frota: Readonly<Record<VehicleId, number>>,
     operationalPointsCapacity: number
   ): HiredCourier[] {
-    if (!Array.isArray(input) || bikeFleetSize <= 1) return [];
+    if (!Array.isArray(input)) return [];
     const couriers: HiredCourier[] = [];
     const ids = new Set<string>();
     const units = new Set<string>();
+    const porClasse = new Map<VehicleId, number>();
     let pointsUsed = 0;
     for (const rawValue of input) {
       if (!rawValue || typeof rawValue !== "object") continue;
-      const raw = rawValue as Partial<HiredCourier>;
+      const raw = rawValue as Partial<HiredCourier> & { bikeUnitId?: unknown };
       if (
         typeof raw.id !== "string" ||
         !/^courier-[1-9]\d*$/.test(raw.id) ||
@@ -2055,21 +2298,38 @@ export class CampaignStore {
       ) {
         continue;
       }
-      const bikeUnitId =
-        typeof raw.bikeUnitId === "string" ? raw.bikeUnitId : "";
-      const unitNumber = Number(bikeUnitId.replace("bike-", ""));
+      const unidadeCrua =
+        typeof raw.vehicleUnitId === "string"
+          ? raw.vehicleUnitId
+          : typeof raw.bikeUnitId === "string"
+            ? raw.bikeUnitId
+            : "";
+      const classe = VEHICLE_ID_SET.has(raw.vehicleId as VehicleId)
+        ? (raw.vehicleId as VehicleId)
+        : "bike";
+      /*
+       * A unidade tem de ser da classe do operador e tem de existir na
+       * garagem. A unidade 1 nunca e de operador: ela e a que o jogador
+       * pilota.
+       */
+      const casa = new RegExp(`^${classe}-([2-9]\\d*)$`).exec(unidadeCrua);
+      const numeroDaUnidade = casa ? Number(casa[1]) : Number.NaN;
       if (
-        !/^bike-[2-9]\d*$/.test(bikeUnitId) ||
-        !Number.isInteger(unitNumber) ||
-        unitNumber > bikeFleetSize ||
-        units.has(bikeUnitId)
+        !Number.isInteger(numeroDaUnidade) ||
+        numeroDaUnidade > Math.floor(frota[classe] ?? 0) ||
+        units.has(unidadeCrua)
       ) {
         continue;
       }
       const operationalPoints = Math.round(
-        clamp(raw.operationalPoints, 1, 50, 1)
+        clamp(raw.operationalPoints, 1, 50, PONTOS_DO_OPERADOR[classe])
       );
       if (pointsUsed + operationalPoints > operationalPointsCapacity) continue;
+      const jaDaClasse = porClasse.get(classe) ?? 0;
+      // Nunca mais operadores de uma classe do que unidades livres dela.
+      if (jaDaClasse >= Math.max(0, Math.floor(frota[classe] ?? 0) - 1)) {
+        continue;
+      }
       const fallbackName = `Operador XB ${String(couriers.length + 1).padStart(2, "0")}`;
       couriers.push({
         id: raw.id as CourierId,
@@ -2078,14 +2338,15 @@ export class CampaignStore {
             ? raw.name.trim().slice(0, 48)
             : fallbackName,
         hiredAt: Math.max(0, Math.floor(finite(raw.hiredAt))),
-        bikeUnitId,
+        vehicleId: classe,
+        vehicleUnitId: unidadeCrua,
         operationalPoints,
-        wageRate: clamp(raw.wageRate, 0.05, 0.5, 0.18),
+        wageRate: clamp(raw.wageRate, 0.05, 0.5, REPASSE.transportadora),
       });
       ids.add(raw.id);
-      units.add(bikeUnitId);
+      units.add(unidadeCrua);
+      porClasse.set(classe, jaDaClasse + 1);
       pointsUsed += operationalPoints;
-      if (couriers.length >= bikeFleetSize - 1) break;
     }
     return couriers;
   }
@@ -2193,8 +2454,8 @@ export class CampaignStore {
           : undefined;
       const automated =
         raw.automated === true &&
-        requestedCourier?.bikeUnitId === preferredUnit &&
-        vehicleId === "bike";
+        requestedCourier?.vehicleUnitId === preferredUnit &&
+        requestedCourier?.vehicleId === vehicleId;
       deliveries.push({
         instanceId:
           typeof raw.instanceId === "string" && raw.instanceId
@@ -2246,7 +2507,7 @@ export class CampaignStore {
     }
     const automatedSlots = operationsSummary(
       state.operationalPointsCapacity,
-      state.bikeFleetSize,
+      state.vehicleFleet,
       state.hiredCouriers
     ).automatedSlots;
     return deliveries.slice(

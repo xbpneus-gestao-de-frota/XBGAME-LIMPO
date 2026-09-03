@@ -35,7 +35,20 @@ import {
 import { GAME_ASSETS } from "@/game/assets";
 import { criarTrilhaSonora, type TrilhaSonora } from "@/game/music";
 import { deveRodarAbertura, marcarAberturaVista } from "@/game/openingScene";
+import { precisaSeApresentar } from "@/game/identity";
+import type { EntregadorId } from "@/game/identity";
+import Welcome from "./Welcome";
 import BaseScreen from "./BaseScreen";
+import FirstDelivery, { ehPrimeiraEntrada } from "./FirstDelivery";
+
+/*
+ * A tela de primeira entrada esta pronta e testada, mas desligada: o Fernando
+ * pediu para parar e definir a historia do jogo antes de trocar o comeco. Ela
+ * fica aqui inteira, a uma palavra de distancia — trocar para true liga.
+ * Deixar o codigo pronto e desligado e melhor do que deixa-lo solto na mesa:
+ * assim ele nao se perde nem entra sem ser convidado.
+ */
+const PRIMEIRA_ENTRADA_APROVADA = false;
 import ExperienceSettings from "./ExperienceSettings";
 import RoutesScreen from "./RoutesScreen";
 import TireStrategyPanel from "./TireStrategyPanel";
@@ -1205,6 +1218,7 @@ export default function GameCanvas() {
    * a ver e o clique, na hora do clique.
    */
   const [filmeRodando, setFilmeRodando] = useState(false);
+  const [apresentando, setApresentando] = useState(false);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
   const [engineError, setEngineError] = useState(false);
   const [contextLost, setContextLost] = useState(false);
@@ -1272,14 +1286,44 @@ export default function GameCanvas() {
       setFilmeRodando(true);
       return;
     }
+    entrarNoJogo();
+  }, []);
+
+  /*
+   * Depois do filme vem a apresentacao, e so entao a central.
+   *
+   * A pergunta "ja se apresentou?" sai do SAVE e nao de uma marca do
+   * navegador: quem apagou o save comeca de novo do zero, inclusive escolhendo
+   * de novo quem pedala. Se fosse marca do navegador, um save zerado entraria
+   * numa central que chama a pessoa por um nome que ela nao lembra de ter
+   * dado.
+   */
+  const entrarNoJogo = useCallback(() => {
+    const campanha = handleRef.current?.getSnapshot().campaign;
+    if (campanha && precisaSeApresentar(campanha)) {
+      setApresentando(true);
+      return;
+    }
     handleRef.current?.goBase();
   }, []);
 
   const encerrarAbertura = useCallback((assistida: boolean) => {
     if (assistida) marcarAberturaVista();
     setFilmeRodando(false);
-    handleRef.current?.goBase();
-  }, []);
+    entrarNoJogo();
+  }, [entrarNoJogo]);
+
+  const apresentar = useCallback(
+    (nome: string, entregadorId: EntregadorId) => {
+      const resultado = handleRef.current?.definirJogador(nome, entregadorId);
+      // So sai da tela se o motor aceitou. Sair com a escolha recusada
+      // deixaria a pessoa numa central que nao sabe o nome dela.
+      if (resultado && !resultado.ok) return;
+      setApresentando(false);
+      handleRef.current?.goBase();
+    },
+    []
+  );
 
   /*
    * A trilha sai de cena enquanto o filme roda e volta quando ele acaba. Sem
@@ -1597,10 +1641,23 @@ export default function GameCanvas() {
           </span>
         </div>
       ) : (
-        <div className="game-ui" data-mode={snapshot.mode}>
-          {snapshot.mode === "base" && (
-            <BaseScreen snapshot={snapshot} handle={handle} />
-          )}
+        <div
+          className="game-ui"
+          data-mode={snapshot.mode}
+          data-primeira={
+            PRIMEIRA_ENTRADA_APROVADA &&
+            snapshot.mode === "base" &&
+            ehPrimeiraEntrada(snapshot)
+              ? "sim"
+              : undefined
+          }
+        >
+          {snapshot.mode === "base" &&
+            (PRIMEIRA_ENTRADA_APROVADA && ehPrimeiraEntrada(snapshot) ? (
+              <FirstDelivery snapshot={snapshot} handle={handle} />
+            ) : (
+              <BaseScreen snapshot={snapshot} handle={handle} />
+            ))}
           {snapshot.mode === "routes" && (
             <RoutesScreen snapshot={snapshot} handle={handle} />
           )}
@@ -1625,6 +1682,7 @@ export default function GameCanvas() {
             <CompleteScreen snapshot={snapshot} handle={handle} />
           )}
           {filmeRodando && <OpeningScene onFinish={encerrarAbertura} />}
+          {apresentando && !filmeRodando && <Welcome aoComecar={apresentar} />}
           {snapshot.isDemo && (
             <div className="demo-badge" role="status">
               <CircleGauge size={14} /> DEMONSTRAÇÃO AUTOMÁTICA

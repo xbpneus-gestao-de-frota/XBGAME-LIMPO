@@ -126,3 +126,20 @@ SHA256SUMS_*.txt
 
 # registro do envio
 SUBIDA_LOG.txt
+
+# ─── SUJEIRA DE TRABALHO (v3.8) ───────────────────────────────────────────
+# Arquivos que nascem do proprio processo de salvar e nao sao o jogo.
+# Sem esta lista eles voltam a aparecer como "novidade" a cada sessao, e
+# alguem acaba subindo um log de 200 linhas junto com o codigo.
+SUBIDA_LOG.txt
+MENSAGEM_DO_COMMIT.txt
+CONTAGEM.txt
+*.log
+
+# Coisas movidas para apagar depois: o assistente nao consegue apagar
+# arquivos nesta maquina, entao ele move para ca em vez de deixar no lugar.
+# Pode apagar esta pasta a mao quando quiser.
+_to_delete/
+
+# Material interno da equipe, que nao e codigo do jogo.
+_equipe/

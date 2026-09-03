@@ -13,7 +13,12 @@ import {
   operationsSummary,
 } from "../../client/src/game/progression";
 import { CampaignStore } from "../../client/src/game/GameState";
-import type { BikePartLevels, HiredCourier } from "../../client/src/game/types";
+import type {
+  BikePartLevels,
+  HiredCourier,
+  VehicleId,
+} from "../../client/src/game/types";
+import { REPASSE } from "../../client/src/game/freight";
 import { installBrowserWindow, seedCampaign } from "./harness";
 
 const MAXED: BikePartLevels = {
@@ -35,9 +40,20 @@ const courier = (index: number): HiredCourier => ({
   id: `courier-${index}`,
   name: `Operador XB 0${index}`,
   hiredAt: 0,
-  bikeUnitId: `bike-${index + 1}`,
+  vehicleId: "bike",
+  vehicleUnitId: `bike-${index + 1}`,
   operationalPoints: 1,
-  wageRate: 0.18,
+  wageRate: REPASSE.transportadora,
+});
+
+/** A garagem, montada a partir de quantas bicicletas ela tem. */
+const garagem = (bikes: number): Record<VehicleId, number> => ({
+  bike: bikes,
+  moto: 0,
+  van: 0,
+  truck: 0,
+  fleet: 0,
+  planetary: 0,
 });
 
 describe("teto de desgaste das peças da bicicleta", () => {
@@ -63,18 +79,22 @@ describe("teto de desgaste das peças da bicicleta", () => {
 describe("slots automáticos anunciados pelo painel de operações", () => {
   it("nunca promete mais automação do que operadores e bicicletas livres", () => {
     // Duas bicicletas na garagem e nenhum operador: nada roda sozinho.
-    expect(operationsSummary(5, 2, []).automatedSlots).toBe(0);
+    expect(operationsSummary(5, garagem(2), []).automatedSlots).toBe(0);
     // Um operador sem bicicleta livre (a única é a do jogador) também não.
-    expect(operationsSummary(5, 1, [courier(1)]).automatedSlots).toBe(0);
+    expect(operationsSummary(5, garagem(1), [courier(1)]).automatedSlots).toBe(
+      0
+    );
     // Com a segunda bicicleta comprada, exatamente uma rota automática.
-    expect(operationsSummary(5, 2, [courier(1)]).automatedSlots).toBe(1);
+    expect(operationsSummary(5, garagem(2), [courier(1)]).automatedSlots).toBe(
+      1
+    );
 
     for (const bikes of [0, 1, 2, 3]) {
       for (const hired of [0, 1, 2, 3]) {
         const couriers = Array.from({ length: hired }, (_, index) =>
           courier(index + 1)
         );
-        const summary = operationsSummary(20, bikes, couriers);
+        const summary = operationsSummary(20, garagem(bikes), couriers);
         expect(summary.automatedSlots).toBeLessThanOrEqual(couriers.length);
         expect(summary.automatedSlots).toBeLessThanOrEqual(
           Math.max(0, summary.bikeUnits - 1)

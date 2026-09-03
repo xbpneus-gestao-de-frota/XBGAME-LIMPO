@@ -146,7 +146,8 @@ button:not(:disabled) {
 .result-overlay,
 .loading-screen,
 .experience-settings-trigger,
-.experience-settings-overlay {
+.experience-settings-overlay,
+.boasvindas {
   pointer-events: auto;
 }
 
@@ -7555,4 +7556,560 @@ body {
     600 0.62rem/1.3 var(--font-body, "Segoe UI"),
     sans-serif;
   letter-spacing: 0.08em;
+}
+
+/* ==========================================================================
+ * PRIMEIRA ENTRADA (v3.7)
+ * A tela de quem chega agora: uma coisa so na frente, a primeira entrega.
+ * Sem mapa, sem contadores zerados, sem cadeados — eles voltam na central
+ * assim que passam a significar alguma coisa.
+ * ========================================================================== */
+.primeira {
+  display: grid;
+  place-items: center;
+  /* folga menor no celular: com a folga antiga o cartao empurrava a tela em
+     25 px e nascia uma rolagem sem motivo */
+  padding: clamp(0.75rem, 3.5vw, 2.5rem);
+  overflow-y: auto;
+  background: #060a11;
+}
+
+.primeira__fundo {
+  position: absolute;
+  inset: 0;
+  background: var(--primeira-arte) center / cover no-repeat;
+  /* A arte fica so como lembranca do lugar: escura o bastante para o texto
+     nunca disputar leitura com ela. */
+  filter: blur(2px) brightness(0.46) saturate(0.95);
+  transform: scale(1.06);
+}
+
+.primeira::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 80% at 50% 55%,
+    rgb(6 10 17 / 24%),
+    rgb(6 10 17 / 86%) 100%
+  );
+}
+
+.primeira__marca {
+  position: absolute;
+  top: max(1.1rem, env(safe-area-inset-top));
+  left: max(1.1rem, env(safe-area-inset-left));
+  z-index: 2;
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.primeira__marca img {
+  width: 40px;
+}
+
+.primeira__marca strong {
+  display: block;
+  color: #eaf5fa;
+  font:
+    800 0.92rem/1 var(--font-display, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.08em;
+}
+
+.primeira__marca small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #7f9bab;
+  font:
+    700 0.58rem/1 var(--font-body, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.22em;
+}
+
+.primeira__cartao {
+  position: relative;
+  z-index: 2;
+  width: min(100%, 30rem);
+  padding: clamp(1.4rem, 5vw, 2.2rem);
+  border: 1px solid rgb(140 200 230 / 20%);
+  border-radius: 18px;
+  background: rgb(8 14 23 / 78%);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 55%);
+  backdrop-filter: blur(14px);
+  text-align: center;
+}
+
+.primeira__olho {
+  margin: 0;
+  color: #18bfea;
+  font:
+    800 0.64rem/1 var(--font-body, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.28em;
+}
+
+.primeira__cartao h1 {
+  margin: 0.7rem 0 0;
+  color: #f2f8fb;
+  font:
+    900 clamp(1.5rem, 6vw, 2.1rem) / 1.05 var(--font-display, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.primeira__rota {
+  margin: 0.5rem 0 0;
+  color: #9fb6c4;
+  font:
+    600 0.95rem/1.4 var(--font-body, "Segoe UI"),
+    sans-serif;
+}
+
+.primeira__fatos {
+  display: flex;
+  gap: 0.9rem;
+  justify-content: center;
+  margin: 1.5rem 0 0;
+}
+
+.primeira__fatos span {
+  flex: 1 1 0;
+  padding: 0.85rem 0.5rem;
+  border: 1px solid rgb(140 200 230 / 16%);
+  border-radius: 12px;
+  background: rgb(255 255 255 / 4%);
+}
+
+.primeira__fatos strong {
+  display: block;
+  color: #eaf5fa;
+  font:
+    900 1.35rem/1 var(--font-display, "Segoe UI"),
+    sans-serif;
+}
+
+.primeira__fatos small {
+  display: block;
+  margin-top: 0.35rem;
+  color: #7f9bab;
+  font:
+    700 0.58rem/1 var(--font-body, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.18em;
+}
+
+.primeira__ajuda {
+  margin: 1.35rem 0 0;
+  color: #9fb6c4;
+  font:
+    500 0.86rem/1.55 var(--font-body, "Segoe UI"),
+    sans-serif;
+}
+
+/* O botao segue o padrao da marca, como o PLAY GAME: placa cromada com
+   contorno azul. Aqui ele e o unico caminho em destaque na tela. */
+.primeira__acao {
+  position: relative;
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  /* 56 px de altura minima: o dedo precisa de 44, e este e o botao da tela. */
+  min-height: 56px;
+  margin-top: 1.6rem;
+  padding: 1rem 1.6rem;
+  border: 0;
+  overflow: visible;
+  isolation: isolate;
+  background: linear-gradient(180deg, #4fd2ff 0%, #0a9bee 46%, #0350a6 100%);
+  clip-path: polygon(0 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
+  color: #eaf7ff;
+  font:
+    800 clamp(0.95rem, 3.6vw, 1.1rem) / 1 var(--font-display, "Segoe UI"),
+    sans-serif;
+  letter-spacing: 0.18em;
+  text-shadow:
+    0 1px 0 #002a5e,
+    0 0 8px rgb(10 180 255 / 85%);
+  cursor: pointer;
+  transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 6px 0 rgb(0 28 72 / 92%))
+    drop-shadow(0 0 14px rgb(10 170 255 / 45%));
+}
+
+.primeira__acao::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  background: linear-gradient(
+    168deg,
+    #e8f1f6 0%,
+    #9fb3c0 18%,
+    #4e606d 48%,
+    #8fa5b3 70%,
+    #33424d 100%
+  );
+  clip-path: polygon(0 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 75%),
+    inset 0 -2px 0 rgb(0 20 45 / 50%);
+}
+
+.primeira__acao:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.primeira__acao:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.primeira__acao:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.7) brightness(0.7);
+}
+
+.primeira__alternativa {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.9rem;
+  padding: 0.6rem;
+  border: 0;
+  background: none;
+  color: #8fa8b8;
+  font:
+    600 0.82rem/1.4 var(--font-body, "Segoe UI"),
+    sans-serif;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.primeira__alternativa:hover:not(:disabled) {
+  color: #7be9ff;
+}
+
+.primeira__alternativa:disabled {
+  color: #56697a;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.primeira__aviso {
+  margin: 1rem 0 0;
+  color: #ffb27a;
+  font:
+    600 0.78rem/1.5 var(--font-body, "Segoe UI"),
+    sans-serif;
+}
+
+/* Nesta tela o AJUSTES sobe: embaixo ele encostaria no botao principal. */
+.game-ui[data-primeira="sim"] .experience-settings-trigger {
+  top: max(1rem, env(safe-area-inset-top));
+  bottom: auto;
+}
+
+/* ─── BOAS-VINDAS (v3.8) ───────────────────────────────────────────────────
+ *
+ * Feita para o celular primeiro: uma coluna, retrato em cima, controles
+ * embaixo. So a partir de 900 px de largura ela vira duas colunas.
+ *
+ * O que aprendemos na auditoria da tela Central e que esta obedece:
+ *  - alvo de toque nunca abaixo de 48 px (la havia botao de 34 px);
+ *  - nada de rolagem escondida: a fita de miniaturas mostra que rola;
+ *  - texto nunca cortado por altura fixa.
+ */
+.boasvindas {
+  /*
+   * SEMPRE CELULAR, em qualquer tela.
+   *
+   * O jogo e de celular, e por isso a tela nao ganha versao de monitor: no
+   * monitor ela e a mesma coluna estreita, centralizada, com o fundo enchendo
+   * o resto. Isso nao e preguica de fazer o layout largo — e o contrario.
+   * Duas versoes da mesma tela significam dois lugares para o defeito se
+   * esconder, e a que quase ninguem usa e sempre a que ninguem testa. Como o
+   * alvo e o celular, a versao do celular e a unica.
+   */
+  position: fixed;
+  /* Acima da interface do jogo (5) e abaixo do filme de abertura (400): os
+   * dois nunca aparecem juntos, mas a ordem escrita evita a surpresa. */
+  z-index: 380;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #070a0e;
+  color: #eef3f8;
+  padding: max(16px, env(safe-area-inset-top)) 16px
+    max(16px, env(safe-area-inset-bottom));
+  gap: 14px;
+  align-items: center;
+  /* Sobrando altura (monitor), a coluna centraliza em vez de esticar: fica
+   * com cara de tela de celular, e nao de coluna estirada. */
+  justify-content: center;
+}
+
+/* A coluna: tamanho de celular, centralizada, valha a tela o que valer. */
+.boasvindas__marca,
+.boasvindas__miolo {
+  width: 100%;
+  max-width: 440px;
+}
+.boasvindas__miolo {
+  max-height: 760px;
+}
+
+/* A cidade ao fundo, bem apagada: dá lugar sem disputar com os bonecos. */
+.boasvindas__fundo {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(24, 191, 234, 0.16), transparent 60%),
+    linear-gradient(180deg, #0a1018 0%, #070a0e 60%);
+  pointer-events: none;
+}
+
+.boasvindas__marca {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.boasvindas__marca img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+.boasvindas__marca span {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+.boasvindas__marca strong {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+.boasvindas__marca small {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: #7d8b9c;
+}
+
+.boasvindas__miolo {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+.boasvindas__palco {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* Encolhe quando o teclado do celular sobe, em vez de empurrar o botão
+   * para fora da tela. É por isso que a altura é mínima e não fixa. */
+  min-height: 34vh;
+  flex: 1 1 34vh;
+}
+
+.boasvindas__retrato {
+  height: 100%;
+  max-height: 38vh;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.6));
+  animation: boasvindas-entra 260ms ease-out both;
+}
+@keyframes boasvindas-entra {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .boasvindas__retrato {
+    animation: none;
+  }
+}
+
+.boasvindas__ficha {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.boasvindas__olho {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: #18bfea;
+}
+.boasvindas__ficha h1 {
+  margin: 0;
+  font-size: clamp(24px, 6vw, 34px);
+  line-height: 1.1;
+}
+
+.boasvindas__nomeEscolhido {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.boasvindas__nomeEscolhido strong {
+  font-size: 20px;
+  color: #18bfea;
+}
+.boasvindas__nomeEscolhido span {
+  font-size: 14px;
+  color: #9fb0c2;
+}
+
+/* A fita de oito. Rola de lado, e o degradê na borda direita conta que há
+ * mais gente ali — rolagem sem pista é rolagem que ninguém encontra. */
+.boasvindas__fita {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 2px 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
+}
+.boasvindas__fita::-webkit-scrollbar {
+  height: 4px;
+}
+.boasvindas__fita::-webkit-scrollbar-thumb {
+  background: #24313f;
+  border-radius: 999px;
+}
+
+.boasvindas__selo {
+  flex: 0 0 auto;
+  scroll-snap-align: center;
+  width: 72px;
+  min-height: 92px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 4px 5px;
+  border-radius: 14px;
+  border: 2px solid #1d2836;
+  background: #0d141c;
+  color: #7d8b9c;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+.boasvindas__selo img {
+  width: 100%;
+  height: 62px;
+  object-fit: contain;
+  object-position: top center;
+}
+.boasvindas__selo[data-escolhido="true"] {
+  border-color: #18bfea;
+  background: #10202b;
+  color: #eef3f8;
+}
+.boasvindas__selo:focus-visible {
+  outline: 3px solid #18bfea;
+  outline-offset: 2px;
+}
+
+.boasvindas__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.boasvindas__campo span {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: #7d8b9c;
+}
+.boasvindas__campo input {
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 2px solid #1d2836;
+  background: #0d141c;
+  color: #eef3f8;
+  /* 16 px é o mínimo que impede o iPhone de dar zoom ao focar o campo. */
+  font-size: 17px;
+  font-weight: 600;
+}
+.boasvindas__campo input:focus {
+  outline: none;
+  border-color: #18bfea;
+}
+.boasvindas__campo input::placeholder {
+  color: #4c5a6a;
+}
+
+.boasvindas__acao {
+  min-height: 56px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #23cbf3, #0f9ec6);
+  color: #04121a;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.boasvindas__acao:disabled {
+  background: #16202b;
+  color: #55677a;
+  cursor: default;
+}
+.boasvindas__acao:focus-visible {
+  outline: 3px solid #18bfea;
+  outline-offset: 3px;
+}
+
+
+/*
+ * Celular baixo (640 px de altura ainda é comum, e é o caso mais apertado).
+ *
+ * Sem isto o botão COMEÇAR nascia abaixo da dobra: a tela rolava, então
+ * funcionava, mas a ação principal só aparecia para quem pensasse em rolar —
+ * exatamente o defeito que a auditoria da Central tinha apontado. O retrato é
+ * quem cede espaço, porque é o maior e o único que não é decisão.
+ */
+@media (max-height: 730px) {
+  .boasvindas {
+    gap: 10px;
+  }
+  .boasvindas__palco {
+    min-height: 21vh;
+    flex-basis: 21vh;
+  }
+  .boasvindas__retrato {
+    max-height: 25vh;
+  }
+  .boasvindas__ficha {
+    gap: 9px;
+  }
+  .boasvindas__ficha h1 {
+    font-size: 22px;
+  }
+  .boasvindas__selo {
+    min-height: 84px;
+  }
+  .boasvindas__selo img {
+    height: 56px;
+  }
 }

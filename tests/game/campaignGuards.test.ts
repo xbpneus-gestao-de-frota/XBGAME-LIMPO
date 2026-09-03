@@ -209,6 +209,8 @@ describe("teto da frota e da equipe do MVP", () => {
     // Nem dinheiro nem Pontos Operacionais faltam: o que falta é a bicicleta.
     expect(store.operations.available).toBeGreaterThan(0);
     expect(refused.message).toContain("Compre uma bicicleta");
+    // O recado nomeia o veiculo da classe: a XB contrata do pedal a carreta,
+    // e "compre uma unidade" nao diria a ninguem o que comprar.
     expect(store.value.hiredCouriers).toHaveLength(0);
     expect(store.value.credits).toBe(credits);
 
@@ -217,7 +219,10 @@ describe("teto da frota e da equipe do MVP", () => {
     const hired = store.hireCourier(1_001);
     expect(hired.ok).toBe(true);
     expect(store.value.hiredCouriers).toHaveLength(1);
-    expect(store.value.hiredCouriers[0]!.bikeUnitId).toBe("bike-2");
+    expect(store.value.hiredCouriers[0]!.vehicleUnitId).toBe("bike-2");
+    // O operador nasce ligado a uma classe. Antes todo operador era ciclista
+    // por construcao, e a classe nem existia.
+    expect(store.value.hiredCouriers[0]!.vehicleId).toBe("bike");
     vi.useRealTimers();
   });
 

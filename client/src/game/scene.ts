@@ -23,6 +23,7 @@ import type {
   TireStat,
   VehicleId,
 } from "./types";
+import type { StoreActionResult } from "./GameState";
 import type { StartRunResult } from "./GameState";
 
 export interface GameHandle {
@@ -45,8 +46,11 @@ export interface GameHandle {
   upgradeVehicle(id: VehicleId): void;
   upgradeTire(stat: TireStat): void;
   upgradeBikePart(partId: BikePartId): void;
+  definirJogador(nome: string, entregadorId: string): StoreActionResult;
   buyBikeUnit(): void;
+  buyVehicleUnit(vehicleId: VehicleId): void;
   hireCourier(): void;
+  hireOperator(vehicleId: VehicleId): void;
   maintainBike(): void;
   equipCompound(vehicleId: VehicleId, compoundId: TireCompoundId): void;
   maintainVehicleTires(vehicleId: VehicleId): void;
@@ -366,8 +370,12 @@ export async function createGameScene(
     upgradeVehicle: id => world.upgradeVehicle(id),
     upgradeTire: stat => world.upgradeTire(stat),
     upgradeBikePart: partId => world.upgradeBikePart(partId),
+    definirJogador: (nome: string, entregadorId: string) =>
+      world.definirJogador(nome, entregadorId),
     buyBikeUnit: () => world.buyBikeUnit(),
+    buyVehicleUnit: (vehicleId: VehicleId) => world.buyVehicleUnit(vehicleId),
     hireCourier: () => world.hireCourier(),
+    hireOperator: (vehicleId: VehicleId) => world.hireOperator(vehicleId),
     maintainBike: () => world.maintainBike(),
     equipCompound: (vehicleId, compoundId) =>
       world.equipCompound(vehicleId, compoundId),

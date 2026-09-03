@@ -457,14 +457,36 @@ export class GameWorld {
     this.publish();
   }
 
+  /** Guarda quem a pessoa e, vindo da tela de boas-vindas. */
+  definirJogador(nome: string, entregadorId: string) {
+    const resultado = this.store.definirJogador(nome, entregadorId);
+    this.notice = resultado.message;
+    this.publish();
+    return resultado;
+  }
+
   buyBikeUnit(): void {
     const result = this.store.buyBikeUnit();
     this.notice = result.message;
     this.publish();
   }
 
+  /** Compra mais uma unidade de qualquer classe: moto, van, caminhao, carreta. */
+  buyVehicleUnit(veiculo: VehicleId): void {
+    const result = this.store.buyVehicleUnit(veiculo);
+    this.notice = result.message;
+    this.publish();
+  }
+
   hireCourier(): void {
     const result = this.store.hireCourier();
+    this.notice = result.message;
+    this.publish();
+  }
+
+  /** Contrata um operador para dirigir uma classe. */
+  hireOperator(veiculo: VehicleId): void {
+    const result = this.store.hireOperator(veiculo);
     this.notice = result.message;
     this.publish();
   }
