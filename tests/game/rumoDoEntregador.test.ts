@@ -11,6 +11,12 @@ import {
   olhadaPara,
   type TrocaPendente,
   OLHADA_METROS,
+  MOLDES,
+  COSTURA_GRAUS,
+  PASSO_DO_GIRO_MS,
+  desenhosAte,
+  ficarDoMesmoLado,
+  proximoNoGiro,
   diferencaDeAngulo,
   escolherRumo,
   montarPassos,
@@ -322,5 +328,89 @@ describe("o rumo do entregador, medido no bairro inteiro", () => {
     expect(olhadaPara(5)).toBe(OLHADA_METROS);
     expect(olhadaPara(50)).toBeCloseTo(15, 6);
     expect(olhadaPara(500)).toBe(25);
+  });
+
+  /*
+   * 11/09/2026 — "APENAS UMA SITUACAO QUE DA PRA VER RENAN MUDANDO DE FORMA".
+   *
+   * Medido no PC dele: 19 de 67 trocas pulavam 45 graus ou mais — um desenho
+   * de costas virando de frente de um quadro para o outro. O desenho escolhido
+   * continua o mesmo; a TELA passa pelos do meio.
+   */
+  it("o giro passa pelos desenhos do meio, pelo lado mais curto", () => {
+    const i = (nome: string) => MOLDES.findIndex(m => m.nome === nome);
+    expect(desenhosAte(i("04h14"), i("06h00"))).toBe(-2);
+    expect(MOLDES[proximoNoGiro(i("04h14"), i("06h00"))]!.nome).toBe("04h34");
+    // vizinho com vizinho troca na hora
+    expect(proximoNoGiro(i("04h34"), i("06h00"))).toBe(i("06h00"));
+    // atravessando o zero do relogio, vai pelo lado curto
+    expect(desenhosAte(i("03h08"), i("02h27"))).toBe(2);
+    expect(MOLDES[proximoNoGiro(i("03h08"), i("02h27"))]!.nome).toBe("02h59");
+    // meia volta: nunca mais que metade do relogio
+    for (let a = 0; a < MOLDES.length; a += 1)
+      for (let b = 0; b < MOLDES.length; b += 1)
+        expect(Math.abs(desenhosAte(a, b))).toBeLessThanOrEqual(MOLDES.length / 2);
+  });
+
+  it(
+    "na velocidade do balcao, a tela nunca pula mais de um desenho",
+    () => {
+      const rapido = 50;
+      let pulos = 0;
+      let passosDeGiro = 0;
+      for (const r of todasAsRotas()) {
+        const passos = montarPassos(r.caminho);
+        const fim = passos[passos.length - 1]?.ate ?? 0;
+        let andado = 0;
+        let q = 0;
+        let escolha: EscolhaDeRumo | null = null;
+        let pendente: TrocaPendente | null = null;
+        let rumo: number | null = null;
+        let tela: number | null = null;
+        let telaEm = 0;
+        while (andado < fim) {
+          const ms = q * DT * 1000;
+          const alvo = rumoSuavizado(passos, andado, olhadaPara(rapido));
+          if (alvo !== null) {
+            rumo = virarPara(rumo, alvo, DT);
+            const proposta = escolherRumo(escolha, rumo, ms);
+            if (escolha) {
+              const d = confirmarTroca(escolha, proposta, pendente, ms);
+              pendente = d.pendente;
+              escolha = d.escolha;
+            } else escolha = proposta;
+            if (tela === null) {
+              tela = escolha.fatia;
+              telaEm = ms;
+            } else if (tela !== escolha.fatia && ms - telaEm >= PASSO_DO_GIRO_MS) {
+              const prox = proximoNoGiro(tela, escolha.fatia);
+              if (Math.abs(desenhosAte(tela, prox)) > 1) pulos += 1;
+              if (prox !== escolha.fatia) passosDeGiro += 1;
+              tela = prox;
+              telaEm = ms;
+            }
+          }
+          andado += rapido * DT;
+          q += 1;
+        }
+      }
+      expect(pulos).toBe(0);
+      // e o giro de fato acontece no bairro — nao e uma regra que nunca roda
+      expect(passosDeGiro).toBeGreaterThan(100);
+    },
+    60_000
+  );
+
+  it("para virar do avesso (costas para frente) o outro lado tem de ganhar pela costura", () => {
+    const i = (nome: string) => MOLDES.findIndex(m => m.nome === nome);
+    expect(MOLDES[i("02h59")]!.lado).toBe("costas");
+    expect(MOLDES[i("03h08")]!.lado).toBe("frente");
+    // de costas, andando um pouco para perto da camera: continua de costas
+    expect(ficarDoMesmoLado(i("02h59"), i("03h08"), 356)).toBe(i("02h59"));
+    // quando a rua vira de verdade para perto da camera, vira de frente
+    const longe = MOLDES[i("02h59")]!.graus - COSTURA_GRAUS - 10;
+    expect(ficarDoMesmoLado(i("02h59"), i("03h42"), longe)).toBe(i("03h42"));
+    // do mesmo lado, nada muda
+    expect(ficarDoMesmoLado(i("02h27"), i("02h03"), 28)).toBe(i("02h03"));
   });
 });

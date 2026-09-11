@@ -119,6 +119,27 @@ describe("o entregador no mapa", () => {
     expect(CSS).toMatch(/--sai\s*\{[^}]*position:\s*absolute/);
   });
 
+  it("ele gira pelos desenhos do meio e monta ja virado para onde vai", () => {
+    /*
+     * 11/09/2026, medido no PC dele: 19 de 67 trocas pulavam 45 graus ou mais
+     * — ate 137 e 180 graus ao montar de novo depois da cena. "Apenas uma
+     * situacao que da pra ver Renan mudando de forma."
+     */
+    // a tela passa pelos desenhos do meio, um de cada vez, e so depois que o
+    // de agora apareceu de fato
+    expect(COMPONENTE).toContain("proximoNoGiro(tela, quer)");
+    expect(COMPONENTE).toContain(
+      "naTela.current = { desenho: desenhoAgora, desde: performance.now() }"
+    );
+    // ao montar depois da cena, o desenho ja e o da saida
+    expect(COMPONENTE).toContain("const saida = rumoSuavizado(");
+    // voltar para o desenho que acabou de sair acorda a virada (antes ficava
+    // preso no desenho errado ate outro ser pedido)
+    expect(COMPONENTE).toContain(
+      "return { ...t, enderecos: [t.enderecos[0], t.enderecos[1]] };"
+    );
+  });
+
   it("a bicicleta de cada folha aponta para o lado do rumo", () => {
     /*
      * O TESTE QUE FALTAVA — e o defeito que ele viu antes de mim.

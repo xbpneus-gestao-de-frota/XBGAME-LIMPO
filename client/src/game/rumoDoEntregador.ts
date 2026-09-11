@@ -85,7 +85,15 @@ export interface Molde {
    * de costas quase puras). As duas pegadas ficam no mesmo ponto.
    */
   umaRoda?: boolean;
+  /**
+   * De que lado o menino aparece: "costas" (a mochila XB virada para a camera)
+   * ou "frente" (o rosto virado para a camera). Sai do nome da folha.
+   */
+  lado?: LadoDoMenino;
 }
+
+/** As duas metades das folhas: de costas para a camera, ou de frente. */
+export type LadoDoMenino = "costas" | "frente";
 
 export const MOLDES: readonly Molde[] = (
   moldesDoArquivo.moldes as ReadonlyArray<{
@@ -96,6 +104,7 @@ export const MOLDES: readonly Molde[] = (
     trasX: number;
     trasY: number;
     umaRoda?: boolean;
+    folha?: string;
   }>
 ).map(m => ({
   nome: m.nome,
@@ -107,6 +116,11 @@ export const MOLDES: readonly Molde[] = (
     trasY: m.trasY,
   },
   umaRoda: m.umaRoda === true,
+  lado: m.folha?.startsWith("costas")
+    ? "costas"
+    : m.folha?.startsWith("frente")
+      ? "frente"
+      : undefined,
 }));
 
 /** Os nomes, na mesma ordem — e o que vira nome de arquivo do desenho. */
@@ -355,10 +369,11 @@ export function diferencaDeAngulo(a: number, b: number): number {
  * e forcar uma grade sobre eles jogaria fora a diferenca entre um desenho a
  * tres graus e outro a vinte.
  */
-export function fatiaDoAngulo(graus: number): number {
+export function fatiaDoAngulo(graus: number, lado?: LadoDoMenino): number {
   let melhor = 0;
   let perto = Infinity;
   for (let i = 0; i < MOLDES.length; i += 1) {
+    if (lado && MOLDES[i]!.lado !== lado) continue;
     const d = Math.abs(diferencaDeAngulo(MOLDES[i]!.graus, graus));
     if (d < perto) {
       perto = d;
@@ -371,6 +386,98 @@ export function fatiaDoAngulo(graus: number): number {
 /** Para onde o desenho de uma fatia aponta. */
 export function centroDaFatia(fatia: number): number {
   return MOLDES[((fatia % MOLDES.length) + MOLDES.length) % MOLDES.length]!.graus;
+}
+
+/*
+ * ── A COSTURA ENTRE AS FOLHAS DE COSTAS E AS DE FRENTE (11/09/2026) ────────
+ *
+ * "Apenas uma situacao que da pra ver Renan mudando de forma." Era esta. As
+ * folhas novas vem em duas metades: nas de costas a mochila XB esta virada
+ * para a camera, nas de frente e o rosto. As duas metades se encontram quando
+ * ele anda de lado — para a direita, entre 03h08 (de frente) e 02h59 (de
+ * costas), a quatro graus e meio uma da outra; para a esquerda, entre 09h12 e
+ * 08h34. Quatro graus de rumo nao sao nada, mas o desenho vira do avesso: o
+ * rosto some, a mochila aparece. Numa rua que ondula perto do horizontal, o
+ * menino trocava de avesso a cada ondinha.
+ *
+ * A regra: para passar de uma metade para a outra, o molde do outro lado tem
+ * de estar melhor que o melhor do lado atual por mais que a costura. Enquanto
+ * nao estiver, ele segue do lado em que estava — com o molde desse lado mais
+ * perto do rumo, que ainda troca normalmente. Ele so vira do avesso quando a
+ * rua vira de verdade para longe ou para perto da camera.
+ */
+
+/** Quanto o outro lado tem de ganhar, em graus, para o menino virar do avesso. */
+export const COSTURA_GRAUS = 14;
+
+/**
+ * Se a troca proposta cruza a costura sem ganhar o bastante, devolve o melhor
+ * molde do lado atual no lugar dela.
+ */
+export function ficarDoMesmoLado(
+  atual: number,
+  proposta: number,
+  graus: number,
+  costura = COSTURA_GRAUS
+): number {
+  const ladoAtual = MOLDES[atual]?.lado;
+  const ladoNovo = MOLDES[proposta]?.lado;
+  if (!ladoAtual || !ladoNovo || ladoAtual === ladoNovo) return proposta;
+  const mesmoLado = fatiaDoAngulo(graus, ladoAtual);
+  const fica = Math.abs(diferencaDeAngulo(centroDaFatia(mesmoLado), graus));
+  const vai = Math.abs(diferencaDeAngulo(centroDaFatia(proposta), graus));
+  return fica - vai > costura ? proposta : mesmoLado;
+}
+
+/*
+ * ── O GIRO PELOS DESENHOS (11/09/2026) ────────────────────────────────────
+ *
+ * Medido no PC dele, na janela do jogo: de 67 trocas de desenho numa corrida,
+ * 19 pulavam 45 graus ou mais de uma vez — ate 137 e 180 graus na saida de uma
+ * porta. Um desenho de costas que vira de frente de um quadro para o outro nao
+ * le como curva: le como o menino MUDANDO DE FORMA.
+ *
+ * O desenho escolhido continua sendo decidido pelas regras de cima (espera,
+ * folga, confirmacao). O que muda e o caminho ate ele: quando o escolhido esta
+ * a dois desenhos ou mais do que esta na tela, a tela passa pelos do meio, um
+ * a cada PASSO_DO_GIRO_MS, sempre pelo lado mais curto do relogio. E o que o
+ * olho le como "ele virou". Vizinho com vizinho continua trocando na hora.
+ */
+
+/** Quanto cada desenho do meio fica na tela durante um giro, em ms. */
+export const PASSO_DO_GIRO_MS = 60;
+
+/** Os moldes em volta do relogio, do menor angulo ao maior. */
+const NO_RELOGIO: readonly number[] = MOLDES.map((_, i) => i).sort(
+  (a, b) => MOLDES[a]!.graus - MOLDES[b]!.graus
+);
+const POSICAO_NO_RELOGIO: readonly number[] = (() => {
+  const p: number[] = [];
+  NO_RELOGIO.forEach((fatia, pos) => {
+    p[fatia] = pos;
+  });
+  return p;
+})();
+
+/**
+ * Quantos desenhos ha entre dois, pelo lado mais curto do relogio. Positivo e
+ * no sentido do angulo crescente.
+ */
+export function desenhosAte(de: number, para: number): number {
+  const n = NO_RELOGIO.length;
+  let d = (POSICAO_NO_RELOGIO[para]! - POSICAO_NO_RELOGIO[de]!) % n;
+  if (d > n / 2) d -= n;
+  if (d < -n / 2) d += n;
+  return d;
+}
+
+/** O proximo desenho da tela a caminho do escolhido. */
+export function proximoNoGiro(mostrada: number, alvo: number): number {
+  const falta = desenhosAte(mostrada, alvo);
+  if (Math.abs(falta) <= 1) return alvo;
+  const n = NO_RELOGIO.length;
+  const pos = (POSICAO_NO_RELOGIO[mostrada]! + Math.sign(falta) + n) % n;
+  return NO_RELOGIO[pos]!;
 }
 
 export interface EscolhaDeRumo {
@@ -402,14 +509,15 @@ export function escolherRumo(
   graus: number,
   agoraMs: number,
   folga = FOLGA_GRAUS,
-  espera = ESPERA_MS
+  espera = ESPERA_MS,
+  costura = COSTURA_GRAUS
 ): EscolhaDeRumo {
   if (!anterior) {
     return { fatia: fatiaDoAngulo(graus), trocadoEmMs: agoraMs };
   }
   if (agoraMs - anterior.trocadoEmMs < espera) return anterior;
 
-  const nova = fatiaDoAngulo(graus);
+  const nova = ficarDoMesmoLado(anterior.fatia, fatiaDoAngulo(graus), graus, costura);
   if (nova === anterior.fatia) return anterior;
 
   const agora = Math.abs(diferencaDeAngulo(centroDaFatia(anterior.fatia), graus));

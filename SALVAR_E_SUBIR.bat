@@ -17,7 +17,9 @@ REM Sem ela a tela de boas-vindas sobe sem os oito entregadores,
 REM e o jogo publicado mostra oito imagens quebradas.
 git add -A client/src client/public/assets scripts tests docs server security preview-server.mjs > "%NOTAS%\SUBIDA_LOG.txt" 2>&1
 git add -A *.bat *.json *.ts *.md >> "%NOTAS%\SUBIDA_LOG.txt" 2>&1
-git add -A -u >> "%NOTAS%\SUBIDA_LOG.txt" 2>&1
+REM -u: tambem salva o que mudou ou saiu dos arquivos que ja estao no historico,
+REM em qualquer pasta. ("-A -u" juntos o git recusa, e a linha nao fazia nada.)
+git add -u >> "%NOTAS%\SUBIDA_LOG.txt" 2>&1
 
 echo   Conferindo o que vai subir...
 git diff --cached --name-only | find /c /v "" > "%TEMP%\xb_contagem.txt"

@@ -7,7 +7,15 @@
 // Quem precisa mudar a cada release é o NOME DO CACHE: é ele que decide o que
 // sobrevive à troca de versão.
 const RELEASE = "3.6.1";
-const CACHE_NAME = `xbpneus-racing-v${RELEASE.replaceAll(".", "")}`;
+// A ARTE TAMBEM VERSIONA O CACHE, e nao so a versao do jogo.
+//
+// Os pacotes do Vite ja carregam hash no nome, entao trocam de endereco
+// sozinhos. O desenho solto NAO: o pino do mapa mudou de forma em 05/09/2026 e
+// continuou se chamando XB_Pino_coleta.png — mesmo endereco, conteudo novo. O
+// worker serviu o desenho velho e a tela ficou mentindo, com o codigo novo e a
+// arte antiga. Quem troca um desenho no lugar troca esta data junto.
+const ARTE = "20260909-luvas-e-moradores-2";
+const CACHE_NAME = `xbpneus-racing-v${RELEASE.replaceAll(".", "")}-${ARTE}`;
 
 // Chave única para toda navegação: o SPA sempre devolve o mesmo shell, então
 // cachear por URL de navegação faria o cache crescer sem limite.

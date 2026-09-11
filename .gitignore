@@ -143,3 +143,7 @@ _to_delete/
 
 # Material interno da equipe, que nao e codigo do jogo.
 _equipe/
+
+# lixo que o python deixa ao rodar os scripts
+__pycache__/
+*.pyc

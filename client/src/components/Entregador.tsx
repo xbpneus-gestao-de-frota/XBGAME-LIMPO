@@ -68,6 +68,8 @@ import {
   escolherRumo,
   olhadaPara,
   montarPassos,
+  proximoNoGiro,
+  PASSO_DO_GIRO_MS,
   pontoEm,
   rumoSuavizado,
   virarPara,
@@ -76,6 +78,12 @@ import {
   type EscolhaDeRumo,
   type TrocaPendente,
 } from "@/game/rumoDoEntregador";
+
+/**
+ * Se o desenho do meio de um giro nao aparecer (imagem que falhou), o giro
+ * segue assim mesmo depois deste tempo — nunca fica preso.
+ */
+const ESPERA_MAXIMA_DO_GIRO_MS = 600;
 
 /** Quantos por cento da largura do mapa o entregador ocupa. */
 /*
@@ -455,6 +463,13 @@ export default function Entregador({
   /** O rumo mostrado, que persegue o do caminho com limite de guidao. */
   const rumo = useRef<number | null>(null);
   /*
+   * O DESENHO NA TELA, que pode estar a caminho do escolhido. Quando o
+   * escolhido esta a dois desenhos ou mais, a tela passa pelos do meio (ver
+   * proximoNoGiro) — e o giro, e nao um pulo de forma.
+   */
+  const mostrada = useRef<number | null>(null);
+  const mostradaEm = useRef(0);
+  /*
    * A CURVA: o quanto o guidao esta girando, e o quanto ele pende por causa
    * disso.
    *
@@ -566,7 +581,15 @@ export default function Entregador({
     setTelas(t => {
       if (t.enderecos[t.frente] === desenhoPedido) return t;
       const tras = t.frente === 0 ? 1 : 0;
-      if (t.enderecos[tras] === desenhoPedido) return t;
+      /*
+       * VOLTAR PARA O DESENHO DE ONDE ACABOU DE SAIR. Depois de uma virada, o
+       * desenho que saiu fica guardado na imagem de tras. Se ele e pedido de
+       * novo, a imagem de tras ja o tem — e devolver o mesmo estado nao
+       * acordava a virada: o menino ficava preso no desenho errado ate outro
+       * ser pedido, e ai pulava por cima. Uma lista nova acorda a virada.
+       */
+      if (t.enderecos[tras] === desenhoPedido)
+        return { ...t, enderecos: [t.enderecos[0], t.enderecos[1]] };
       const enderecos: [string, string | null] = [...t.enderecos];
       enderecos[tras] = desenhoPedido;
       return { ...t, enderecos };
@@ -597,6 +620,17 @@ export default function Entregador({
   }, [telas.enderecos, telas.frente]);
 
   const desenhoAgora = telas.enderecos[telas.frente]!;
+
+  /*
+   * QUAL DESENHO ESTA DE FATO NA TELA, E DESDE QUANDO. O giro pelos desenhos
+   * do meio so da o proximo passo depois que o de agora apareceu e ficou o
+   * tempo dele — sem isso, num quadro lento, o passo do meio era pulado e o
+   * giro voltava a ser pulo.
+   */
+  const naTela = useRef({ desenho: desenhoAgora, desde: 0 });
+  useEffect(() => {
+    naTela.current = { desenho: desenhoAgora, desde: performance.now() };
+  }, [desenhoAgora]);
 
   /*
    * O DESENHO QUE ESTA SAINDO, e o relogio que o apaga.
@@ -647,6 +681,7 @@ export default function Entregador({
     escolha.current = null;
     pendente.current = null;
     rumo.current = null;
+    mostrada.current = null;
     giroSuave.current = 0;
     inclinacao.current = 0;
     proximaParada.current = 0;
@@ -714,6 +749,29 @@ export default function Entregador({
           // Montou de novo depois da cena: a proxima perna comeca aqui.
           paradoEm.current = null;
           setCena(null);
+          /*
+           * E ELE MONTA JA VIRADO PARA ONDE VAI. A volta na porta acontece
+           * enquanto ele esta a pe, dentro da cena; ao montar, o desenho ja e o
+           * da saida. Antes ele montava virado para onde tinha chegado e, meio
+           * segundo depois, pulava de uma vez para o outro lado — o pulo de 137
+           * e 180 graus medido no PC dele.
+           */
+          const saida = rumoSuavizado(
+            passos,
+            andado.current,
+            olhadaPara(c.metrosPorSegundo ?? 0)
+          );
+          if (saida !== null) {
+            rumo.current = saida;
+            const nova = escolherRumo(null, saida, ms);
+            escolha.current = nova;
+            pendente.current = null;
+            mostrada.current = nova.fatia;
+            mostradaEm.current = agora;
+            setFatia(anterior =>
+              anterior === nova.fatia ? anterior : nova.fatia
+            );
+          }
         }
         if (c.parado) {
           andado.current = Math.min(Math.max(0, c.metros), distanciaTotal);
@@ -729,6 +787,8 @@ export default function Entregador({
               rumo.current = alvo;
               const nova = escolherRumo(null, alvo, ms);
               escolha.current = nova;
+              mostrada.current = nova.fatia;
+              mostradaEm.current = agora;
               setFatia(anterior =>
                 anterior === nova.fatia ? anterior : nova.fatia
               );
@@ -853,6 +913,7 @@ export default function Entregador({
           escolha.current = null;
           pendente.current = null;
           rumo.current = null;
+          mostrada.current = null;
           setNaPorta(true);
         } else {
           andado.current = proximo;
@@ -923,11 +984,29 @@ export default function Entregador({
           ? confirmarTroca(escolha.current, proposta, pendente.current, ms)
           : { escolha: proposta, pendente: null };
         pendente.current = decidido.pendente;
-        const nova = decidido.escolha;
-        if (nova !== escolha.current) {
-          escolha.current = nova;
+        escolha.current = decidido.escolha;
+
+        // A tela vai ate o escolhido — de uma vez se e vizinho, girando pelos
+        // do meio se esta mais longe.
+        const quer = escolha.current.fatia;
+        const tela = mostrada.current;
+        let mostrar = tela;
+        if (tela === null) {
+          mostrar = quer;
+        } else if (tela !== quer) {
+          const visto = naTela.current;
+          const apareceu = visto.desenho === desenhoDoRumo(tela, "pedalando1");
+          const ficouOTempo = apareceu
+            ? agora - visto.desde >= PASSO_DO_GIRO_MS
+            : agora - mostradaEm.current >= ESPERA_MAXIMA_DO_GIRO_MS;
+          if (ficouOTempo) mostrar = proximoNoGiro(tela, quer);
+        }
+        if (mostrar !== tela && mostrar !== null) {
+          mostrada.current = mostrar;
+          mostradaEm.current = agora;
+          const agoraNaTela = mostrar;
           setFatia(anterior =>
-            anterior === nova.fatia ? anterior : nova.fatia
+            anterior === agoraNaTela ? anterior : agoraNaTela
           );
         }
       }
