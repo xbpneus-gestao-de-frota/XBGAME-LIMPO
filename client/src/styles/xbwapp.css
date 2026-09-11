@@ -1,0 +1,6297 @@
+/*
+ * XBWAPP — a aparencia do aplicativo de mensagens do jogo.
+ *
+ * O desenho e dele: o verde escuro, o cabecalho arredondado, o fundo de
+ * rabiscos, os baloes e a barra de baixo saem das duas folhas que ele mandou.
+ * Os ICONES sao recortes dessas folhas; os BALOES, a BARRA e as etiquetas sao
+ * FEITOS aqui — balao que e imagem nao estica com o texto sem entortar as
+ * pontas, e teclado que e imagem nao digita.
+ *
+ * Uma coluna so, sempre. O alvo e celular; numa tela larga a coluna para no
+ * tamanho de tablet e fica no meio.
+ */
+
+.xbw {
+  /*
+   * AS CORES — o azul do XB, e nao o verde de aplicativo de mensagem.
+   *
+   * Ordem dele, 07/09/2026: "ao inves do verde o azul xb". O aplicativo e da
+   * XBPNEUS, e o verde era emprestado. Os tons saem da mesma paleta do resto
+   * do jogo: azul-marinho, azul-aco e ciano eletrico.
+   *
+   * O nome "marca" existe porque um valor chamado "verde" guardando azul e o
+   * tipo de mentira que custa caro seis meses depois.
+   */
+  --xbw-fundo: #0d1b33;
+  --xbw-topo-alto: #12547a;
+  --xbw-topo-baixo: #0e3f5c;
+  --xbw-painel: rgba(9, 18, 34, 0.96);
+  --xbw-fosco: rgba(9, 18, 34, 0.82);
+  --xbw-realce: rgba(18, 84, 122, 0.45);
+  --xbw-vidro: rgba(184, 199, 209, 0.18);
+  --xbw-marca: #18bfea;
+  --xbw-marca-clara: #7fd8f0;
+  --xbw-marca-texto: #06283b;
+  --xbw-campo: rgba(32, 39, 45, 0.94);
+
+  /* O TEXTO tem tres forcas, e nao seis tons quase iguais. */
+  --xbw-texto: #edf5f6;
+  --xbw-texto-2: rgba(237, 245, 246, 0.72);
+  --xbw-texto-3: rgba(237, 245, 246, 0.6);
+
+  /* Os baloes */
+  --xbw-balao-outro: #1b2b45;
+  --xbw-balao-meu: #12547a;
+
+  /* Quando alguma coisa esta errada ou fechada */
+  --xbw-alerta: #ff9d8a;
+  --xbw-alerta-fundo: rgba(92, 26, 20, 0.94);
+  --xbw-fechado: rgba(255, 170, 150, 0.8);
+
+  /*
+   * AS MEDIDAS.
+   *
+   * "vw" para o que anda de lado e "vh" para o que anda de cima para baixo:
+   * assim o aplicativo cresce junto com o telefone, em vez de ficar apertado
+   * num aparelho pequeno e perdido num tablet.
+   */
+  --xbw-lado-1: 1.5vw;
+  --xbw-lado-2: 2.5vw;
+  --xbw-lado-3: 4vw;
+  --xbw-lado-4: 5vw;
+  --xbw-alto-1: 0.6vh;
+  --xbw-alto-2: 1.2vh;
+  --xbw-alto-3: 2vh;
+  --xbw-alto-4: 3vh;
+
+  /* OS TAMANHOS DE TEXTO: quatro, e nao vinte e cinco. */
+  --xbw-t-marca: 800 clamp(1.2rem, 3.1vh, 1.8rem) / 1.1 system-ui, sans-serif;
+  --xbw-t-nome: 700 clamp(0.95rem, 2.3vh, 1.15rem) / 1.2 system-ui, sans-serif;
+  --xbw-t-corpo: 500 clamp(0.92rem, 2.2vh, 1.3rem) / 1.38 system-ui, sans-serif;
+  --xbw-t-apoio: 500 clamp(0.8rem, 1.9vh, 0.95rem) / 1.3 system-ui, sans-serif;
+  --xbw-t-mini: 600 clamp(0.68rem, 1.6vh, 0.82rem) / 1.2 system-ui, sans-serif;
+
+  /* OS CANTOS e as sombras */
+  --xbw-canto-1: 0.3vh;
+  --xbw-canto-2: 1.5vh;
+  --xbw-canto-3: 2.2vh;
+  --xbw-pilula: 999px;
+  --xbw-sombra-1: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.28);
+  --xbw-sombra-2: 0 0.4vh 2vh rgba(0, 0, 0, 0.35);
+  --xbw-sombra-3: 0 -0.6vh 3vh rgba(0, 0, 0, 0.5);
+
+  /*
+   * O ALVO DE TOQUE.
+   *
+   * 44 pixels e o menor alvo que um polegar acerta sem irritar. Nao e enfeite
+   * de acessibilidade: num jogo contra o relogio, botao pequeno faz a pessoa
+   * errar e perder a entrega por causa da tela, e nao do jogo.
+   */
+  --xbw-toque: 44px;
+  --xbw-tempo: 160ms;
+  --xbw-curva: ease-out;
+}
+
+/*
+ * ── OS ESTADOS DE TODO BOTAO, DITOS UMA VEZ ───────────────────────────────
+ *
+ * Aplicativo em que so alguns botoes reagem ao toque parece quebrado: a pessoa
+ * nao sabe se o toque pegou, e toca de novo.
+ *
+ * O "hover" fica atras de uma pergunta ao aparelho porque, em tela de toque,
+ * hover COLA: o botao fica aceso depois do toque e so apaga quando a pessoa
+ * toca em outro lugar.
+ */
+.xbw button {
+  transition:
+    background-color var(--xbw-tempo) var(--xbw-curva),
+    filter var(--xbw-tempo) var(--xbw-curva),
+    transform var(--xbw-tempo) var(--xbw-curva);
+}
+
+@media (hover: hover) {
+  .xbw button:not(:disabled):hover {
+    filter: brightness(1.14);
+  }
+}
+
+.xbw button:not(:disabled):active {
+  transform: scale(0.985);
+}
+
+.xbw button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.xbw button:focus-visible {
+  outline: 3px solid var(--xbw-marca);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw button {
+    transition: none;
+  }
+  .xbw button:not(:disabled):active {
+    transform: none;
+  }
+}
+
+/*
+ * O APLICATIVO SE BASTA SOZINHO.
+ *
+ * Ele nasceu dentro do jogo, onde o Tailwind ja zera margens e coloca
+ * box-sizing: border-box em tudo. Mas a ordem dele foi que este aplicativo e
+ * uma PECA DE ACOPLAMENTO — e uma peca que so funciona se o vizinho tiver
+ * arrumado a casa nao e uma peca, e um pedaco.
+ *
+ * Sem estas quatro linhas a barra das abas fica 16px mais larga que a tela
+ * (largura 100% MAIS o respiro dos lados), e a aba "Ajustes" cai para fora.
+ * Foi assim que apareceu ao subir o aplicativo sozinho para ele testar.
+ */
+.xbw,
+.xbw *,
+.xbw *::before,
+.xbw *::after {
+  box-sizing: border-box;
+}
+
+.xbw h1,
+.xbw h2,
+.xbw h3,
+.xbw h4,
+.xbw p,
+.xbw figure,
+.xbw blockquote,
+.xbw dl,
+.xbw dd {
+  margin: 0;
+}
+
+.xbw ul,
+.xbw ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.xbw button,
+.xbw input,
+.xbw textarea,
+.xbw select {
+  font: inherit;
+  color: inherit;
+}
+
+.xbw img,
+.xbw video {
+  display: block;
+  max-width: 100%;
+}
+
+.xbw {
+  position: fixed;
+  inset: 0;
+  z-index: 420; /* acima do mapa (370) e da conversa antiga (400) */
+  pointer-events: auto;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  color: var(--xbw-texto);
+  background-color: var(--xbw-fundo);
+  background-image: url("/assets/XB_conversa_fundo_azul.webp");
+  background-size: min(62vw, 42vh);
+  background-repeat: repeat;
+  animation: xbw-entra 240ms ease-out both;
+  /*
+   * O ESPACO DO TECLADO.
+   *
+   * No celular o teclado sobe POR CIMA da pagina — a tela nao encolhe, fica
+   * coberta. Sem isto a barra de escrever some atras do teclado e a pessoa
+   * digita sem ver o que escreve. O aplicativo pergunta ao aparelho quanto
+   * ficou tapado e se encolhe na mesma medida; onde o navegador nao souber
+   * responder, o valor e zero e nada muda.
+   */
+  padding-bottom: var(--xbw-teclado, 0px);
+  transition: padding-bottom 140ms var(--xbw-curva);
+}
+
+@keyframes xbw-entra {
+  from {
+    opacity: 0;
+    transform: translateY(2vh);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw {
+    animation: none;
+  }
+}
+
+/* A coluna: no celular ocupa tudo; na tela larga para no tamanho de tablet. */
+.xbw__tela {
+  width: min(100%, 46rem);
+  margin-inline: auto;
+  overflow: hidden;
+  display: grid;
+}
+
+/*
+ * CADA TELA E UMA COLUNA, e nao uma grade de linhas fixas.
+ *
+ * A grade fixa foi um erro visto na primeira conferencia: ela dava a terceira
+ * linha de CADA tela o espaco que sobrava, e em Ajustes isso abriu um buraco
+ * enorme no meio da tela, entre o titulo e a lista. Numa coluna, quem estica e
+ * quem pede para esticar — e so a lista pede.
+ *
+ * O "min-width: 0" nao e enfeite: sem ele um filho com texto comprido empurra
+ * a coluna para alem da largura do telefone, e a tela inteira sai de lugar
+ * pela direita. Foi exatamente o que aconteceu com as respostas prontas.
+ */
+.xbw__tela > section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-content: start;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Quem estica e rola: a lista da tela. */
+.xbw-conversas,
+.xbw-lojas,
+.xbw-pedidos,
+.xbw-catalogo,
+.xbw-fio,
+.xbw-recados ul,
+.xbw-chamadas ul {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/*
+ * AS TELAS QUE ROLAM INTEIRAS.
+ *
+ * E o caso de Ajustes, Dados da conversa e Grupos: elas nao tem UMA lista que
+ * estica, tem varias secoes empilhadas. Aqui quem rola e a tela.
+ *
+ * O "flex: none" nos pedacos nao e detalhe: numa coluna flexivel todo filho
+ * pode ENCOLHER, e com muita coisa dentro os pedacos de baixo somem — foi
+ * assim que a lista "como o bairro te ve" e os papeis de parede sumiram da
+ * tela sem deixar erro nenhum.
+ */
+.xbw-ajustes,
+.xbw-contato,
+.xbw-grupos,
+.xbw-decisao,
+.xbw-equipe {
+  overflow-y: auto;
+}
+
+.xbw-ajustes > *,
+.xbw-contato > *,
+.xbw-grupos > *,
+.xbw-decisao > *,
+.xbw-equipe > * {
+  flex: none;
+}
+
+/*
+ * A BARRA DE ROLAGEM APARECE. Ordem dele, 09/09/2026: "precisamos de uma barra
+ * de rolagem para primeira tela".
+ *
+ * O defeito era outro e maior: a tela de decisao nao rolava, ela ESPREMIA. Numa
+ * coluna flexivel todo filho pode encolher, e com cinco pedidos os cartoes
+ * foram achatados ate cortar o valor e sumir com os botoes — o mesmo defeito
+ * que a nota acima descreve para Ajustes. O `flex: none` resolve o
+ * esmagamento; a barra abaixo resolve o resto, que e AVISAR que ha mais coisa.
+ *
+ * Ela e fina e sempre visivel, e nao daquelas que so aparecem quando ja se
+ * esta rolando: quem nao sabe que pode rolar nunca rola.
+ */
+.xbw-decisao,
+.xbw-equipe {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(120, 190, 255, 0.55) rgba(255, 255, 255, 0.06);
+}
+
+.xbw-decisao::-webkit-scrollbar,
+.xbw-equipe::-webkit-scrollbar {
+  width: 0.9vh;
+  min-width: 7px;
+}
+
+.xbw-decisao::-webkit-scrollbar-track,
+.xbw-equipe::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.xbw-decisao::-webkit-scrollbar-thumb,
+.xbw-equipe::-webkit-scrollbar-thumb {
+  background: rgba(120, 190, 255, 0.55);
+  border-radius: 999px;
+}
+
+.xbw-decisao::-webkit-scrollbar-thumb:active,
+.xbw-equipe::-webkit-scrollbar-thumb:active {
+  background: rgba(120, 190, 255, 0.85);
+}
+
+/* ── PECAS COMUNS ───────────────────────────────────────────────────────── */
+
+.xbw-i {
+  width: clamp(1.25rem, 3.1vh, 1.75rem);
+  height: auto;
+  object-fit: contain;
+  flex: none;
+}
+
+.xbw-tique {
+  width: clamp(0.85rem, 2vh, 1.1rem);
+}
+
+.xbw-botao {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.xbw-botao--ativo,
+.xbw-botao:focus-visible {
+  outline: 3px solid var(--xbw-marca);
+  outline-offset: -3px;
+}
+
+.xbw-retrato {
+  position: relative;
+  display: block;
+  flex: none !important;
+  width: clamp(2.9rem, 6.6vh, 3.6rem);
+  aspect-ratio: 1;
+  flex: none;
+}
+
+.xbw-retrato--pequeno {
+  width: clamp(2.2rem, 5vh, 2.8rem);
+}
+.xbw-retrato--grande {
+  width: clamp(4.4rem, 11vh, 6rem);
+}
+
+/* O retrato da tela de chamada, do tamanho que ele desenhou. */
+.xbw-retrato--enorme {
+  width: clamp(11rem, 30vh, 17rem);
+}
+
+/*
+ * O RETRATO CORTA PELO ALTO, e nao pelo meio.
+ *
+ * Os desenhos dos entregadores sao de CORPO INTEIRO (247x480). Cortados pelo
+ * meio, como todo retrato redondo faz por padrao, sobra a barriga e a cabeca
+ * fica de fora — foi o que apareceu na tela de chamada da Lia. Cortando pelo
+ * alto, sobra cabeca e ombros, que e o que se espera de um retrato.
+ *
+ * Quem ja e quadrado (o Renan, 320x320) nao muda nada com isto.
+ */
+.xbw-retrato img,
+.xbw-retrato__iniciais {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.xbw-retrato__iniciais {
+  display: grid;
+  place-items: center;
+  font:
+    700 clamp(0.85rem, 2.2vh, 1.15rem) / 1 system-ui,
+    sans-serif;
+  color: #edf5f6;
+  letter-spacing: 0.02em;
+}
+
+.xbw-retrato__online {
+  position: absolute;
+  right: 2%;
+  bottom: 2%;
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--xbw-marca);
+  box-shadow: 0 0 0 0.32vh var(--xbw-topo-alto);
+}
+
+.xbw-contador {
+  display: grid;
+  place-items: center;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  padding-inline: 0.4rem;
+  border-radius: 999px;
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font:
+    800 0.8rem/1 system-ui,
+    sans-serif;
+}
+
+.xbw-hora {
+  font:
+    500 clamp(0.66rem, 1.5vh, 0.8rem) / 1 system-ui,
+    sans-serif;
+  color: var(--xbw-texto-3);
+  white-space: nowrap;
+}
+
+.xbw-etiqueta,
+.xbw-aviso {
+  justify-self: center;
+  align-self: center;
+  margin: 0.6vh auto;
+  padding: 0.5vh 3vw;
+  border-radius: 999px;
+  background: rgba(9, 18, 34, 0.85);
+  font:
+    600 clamp(0.7rem, 1.7vh, 0.85rem) / 1.2 system-ui,
+    sans-serif;
+  color: var(--xbw-texto-2);
+  text-align: center;
+}
+
+.xbw-vazio {
+  padding: 6vh 8vw;
+  text-align: center;
+  color: var(--xbw-texto-3);
+  font:
+    500 clamp(0.9rem, 2.1vh, 1.05rem) / 1.5 system-ui,
+    sans-serif;
+}
+
+.xbw-titulo {
+  margin: 2.4vh 5vw 0.8vh;
+  font:
+    700 clamp(0.8rem, 1.9vh, 0.95rem) / 1.2 system-ui,
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(226, 244, 234, 0.58);
+}
+
+/* ── O ALTO DE TODA TELA ────────────────────────────────────────────────── */
+
+.xbw-topo {
+  display: flex;
+  align-items: center;
+  gap: 2.6vw;
+  padding: max(1.4vh, env(safe-area-inset-top)) 3.5vw 1.4vh;
+  background: linear-gradient(
+    180deg,
+    var(--xbw-topo-alto) 0%,
+    var(--xbw-topo-baixo) 100%
+  );
+  border-radius: 0 0 2.2vh 2.2vh;
+  box-shadow: 0 0.4vh 2vh rgba(0, 0, 0, 0.35);
+}
+
+.xbw-topo__quem {
+  display: grid;
+  line-height: 1.1;
+  margin-right: auto;
+  min-width: 0;
+}
+
+.xbw-topo__quem strong {
+  font:
+    800 clamp(1rem, 2.7vh, 1.5rem) / 1.1 system-ui,
+    sans-serif;
+}
+
+.xbw-topo__quem small {
+  font:
+    500 clamp(0.72rem, 1.8vh, 0.95rem) / 1.2 system-ui,
+    sans-serif;
+  color: var(--xbw-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-marca {
+  margin-right: auto;
+  font:
+    800 clamp(1.2rem, 3.1vh, 1.8rem) / 1 system-ui,
+    sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.xbw-marca em {
+  font-style: normal;
+  color: var(--xbw-marca);
+}
+
+/* ── LISTA DE CONVERSAS ─────────────────────────────────────────────────── */
+
+.xbw-procura {
+  display: flex;
+  align-items: center;
+  gap: 2.5vw;
+  margin: 1.4vh 4vw 0.6vh;
+  padding: 1vh 4vw;
+  border-radius: 999px;
+  background: var(--xbw-fosco);
+}
+
+.xbw-procura input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font:
+    500 clamp(0.9rem, 2.1vh, 1.05rem) / 1.3 system-ui,
+    sans-serif;
+}
+
+.xbw-procura input:focus {
+  outline: none;
+}
+.xbw-procura:focus-within {
+  outline: 2px solid var(--xbw-marca);
+}
+
+.xbw-arquivadas {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  width: 100%;
+  padding: 1.4vh 5vw;
+  border: 0;
+  background: none;
+  color: inherit;
+  font:
+    600 clamp(0.88rem, 2vh, 1rem) / 1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-arquivadas em {
+  margin-left: auto;
+  font-style: normal;
+  color: var(--xbw-marca);
+}
+
+.xbw-conversas,
+.xbw-lojas,
+.xbw-pedidos,
+.xbw-recados ul,
+.xbw-chamadas ul,
+.xbw-reputacao,
+.xbw-opcoes,
+.xbw-catalogo,
+.xbw-contatos ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.xbw-item__toque {
+  display: flex;
+  align-items: center;
+  gap: 3.5vw;
+  width: 100%;
+  padding: 1.3vh 4vw;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-item--aberto {
+  background: rgba(18, 84, 122, 0.35);
+}
+
+.xbw-item__miolo {
+  display: grid;
+  gap: 0.3vh;
+  flex: 1;
+  min-width: 0;
+}
+
+.xbw-item__linha {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  min-width: 0;
+}
+
+.xbw-item__linha strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    700 clamp(0.95rem, 2.3vh, 1.15rem) / 1.2 system-ui,
+    sans-serif;
+}
+
+.xbw-item__linha time {
+  font:
+    500 clamp(0.7rem, 1.6vh, 0.85rem) / 1 system-ui,
+    sans-serif;
+  color: var(--xbw-texto-3);
+}
+
+.xbw-item__linha small {
+  display: flex;
+  align-items: center;
+  gap: 1.2vw;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    500 clamp(0.82rem, 1.9vh, 0.98rem) / 1.3 system-ui,
+    sans-serif;
+  color: var(--xbw-texto-3);
+}
+
+.xbw-item__marcas {
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+}
+
+.xbw-acoes {
+  display: flex;
+  gap: 2vw;
+  padding: 0 4vw 1.4vh calc(4vw + clamp(2.9rem, 6.6vh, 3.6rem) + 3.5vw);
+}
+
+.xbw-acoes button,
+.xbw-menu button,
+.xbw-contatos__abrir {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  padding: 0.9vh 3.5vw;
+  border: 0;
+  border-radius: 999px;
+  background: var(--xbw-realce);
+  color: inherit;
+  font:
+    600 clamp(0.82rem, 1.9vh, 0.95rem) / 1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-contatos {
+  padding: 1.4vh 4vw max(2vh, env(safe-area-inset-bottom));
+}
+
+.xbw-contatos ul {
+  margin-top: 1vh;
+}
+
+.xbw-contatos li button {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  width: 100%;
+  padding: 1vh 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-contatos li > button > span:not(.xbw-retrato) {
+  display: grid;
+  min-width: 0;
+}
+.xbw-contatos li strong {
+  font:
+    700 0.98rem/1.2 system-ui,
+    sans-serif;
+}
+.xbw-contatos li small {
+  color: var(--xbw-texto-3);
+  font-size: 0.84rem;
+}
+
+/* ── A CONVERSA ─────────────────────────────────────────────────────────── */
+
+.xbw-menu {
+  display: grid;
+  gap: 0.6vh;
+  margin: 1vh 4vw;
+}
+
+.xbw-menu button {
+  justify-content: flex-start;
+}
+
+.xbw-fio {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1vh;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 2vh 4vw;
+}
+
+/*
+ * OS BALOES.
+ *
+ * Sao feitos, e nao colados. A forma e do desenho dele; o tamanho e do texto.
+ */
+.xbw-balao {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.4rem 0.6rem;
+  max-width: 82%;
+  margin: 0;
+  padding: 1.1vh 3.4vw;
+  border-radius: 1.5vh;
+  font:
+    500 clamp(0.92rem, 2.2vh, 1.3rem) / 1.38 system-ui,
+    sans-serif;
+  box-shadow: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.28);
+}
+
+.xbw-balao::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 2.1vh;
+  height: 1.5vh;
+}
+
+.xbw-balao--outro {
+  align-self: flex-start;
+  border-bottom-left-radius: 0.3vh;
+  background: var(--xbw-balao-outro);
+}
+
+.xbw-balao--outro::after {
+  left: -1vh;
+  background: var(--xbw-balao-outro);
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.xbw-balao--meu {
+  align-self: flex-end;
+  border-bottom-right-radius: 0.3vh;
+  background: var(--xbw-balao-meu);
+}
+
+.xbw-balao--meu::after {
+  right: -1vh;
+  background: var(--xbw-balao-meu);
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+.xbw-balao--pedido {
+  border-left: 0.5vh solid var(--xbw-marca);
+}
+
+.xbw-balao__autor {
+  flex-basis: 100%;
+  font:
+    700 clamp(0.76rem, 1.8vh, 0.9rem) / 1.2 system-ui,
+    sans-serif;
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-balao__texto {
+  flex: 1;
+  min-width: 6ch;
+}
+
+.xbw-balao__marca {
+  width: clamp(1.1rem, 2.6vh, 1.4rem);
+}
+
+.xbw-balao__pe {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.xbw-digitando {
+  display: flex;
+  gap: 0.7vh;
+  padding: 1.5vh 3.6vw;
+}
+
+.xbw-digitando i {
+  width: 1vh;
+  height: 1vh;
+  min-width: 6px;
+  min-height: 6px;
+  border-radius: 50%;
+  background: rgba(232, 244, 238, 0.72);
+  animation: xbw-pula 1.1s ease-in-out infinite;
+}
+
+.xbw-digitando i:nth-child(2) {
+  animation-delay: 0.16s;
+}
+.xbw-digitando i:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes xbw-pula {
+  0%,
+  60%,
+  100% {
+    transform: none;
+    opacity: 0.55;
+  }
+  30% {
+    transform: translateY(-0.6vh);
+    opacity: 1;
+  }
+}
+
+/* As respostas prontas — no lugar do teclado, que e onde o polegar ja esta. */
+/*
+ * UMA RESPOSTA POR LINHA.
+ *
+ * Lado a lado, "Me da 10 minutos?" ficava cortado no meio — e resposta cortada
+ * e pior que resposta nenhuma: a pessoa escolhe sem saber o que escolheu. Uma
+ * por linha tambem da o alvo de toque que um polegar precisa.
+ */
+.xbw-respostas {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  padding: 1.2vh 4vw 0;
+}
+
+/*
+ * COM O TECLADO EM PE, AS RESPOSTAS VIRAM UMA LINHA SO.
+ *
+ * Empilhadas sao tres linhas: otimo com o teclado fechado, impossivel com ele
+ * aberto — sobrava uma tira de conversa de dois dedos de altura.
+ */
+.xbw-respostas--curtas {
+  flex-direction: row;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding-bottom: var(--xbw-alto-1);
+}
+
+.xbw-respostas--curtas::-webkit-scrollbar {
+  display: none;
+}
+
+.xbw-respostas--curtas button {
+  width: auto;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  min-height: 0;
+  padding-block: 0.9vh;
+}
+
+.xbw-respostas button {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--xbw-toque);
+  padding: var(--xbw-alto-2) var(--xbw-lado-3);
+  border: 1px solid rgba(24, 191, 234, 0.55);
+  border-radius: var(--xbw-pilula);
+  /*
+   * A cor vem da lista de valores, e nao escrita a mao: com o verde-escuro
+   * fixo, o tema claro punha texto escuro em cima de fundo escuro e a resposta
+   * ficava ilegivel justamente na hora de escolher.
+   */
+  background: var(--xbw-realce);
+  color: var(--xbw-texto);
+  font: var(--xbw-t-apoio);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-respostas button:active {
+  transform: scale(0.985);
+}
+.xbw-respostas button:focus-visible {
+  outline: 3px solid var(--xbw-marca);
+  outline-offset: 2px;
+}
+
+.xbw-anexos {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.6vh 2vw;
+  padding: 2vh 5vw;
+  background: var(--xbw-painel);
+  border-radius: 2vh 2vh 0 0;
+}
+
+.xbw-anexos button {
+  display: grid;
+  justify-items: center;
+  gap: 0.7vh;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font:
+    500 clamp(0.68rem, 1.6vh, 0.8rem) / 1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-anexos button .xbw-i {
+  width: clamp(2.4rem, 5.6vh, 3.2rem);
+}
+.xbw-anexos button:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.xbw-barra {
+  display: flex;
+  align-items: center;
+  gap: 2.5vw;
+  padding: 1.2vh 4vw max(1.6vh, env(safe-area-inset-bottom));
+}
+
+.xbw-campo {
+  display: flex;
+  align-items: center;
+  gap: 2.5vw;
+  flex: 1;
+  min-width: 0;
+  padding: 1vh 4vw;
+  border-radius: 999px;
+  background: var(--xbw-campo);
+}
+
+/*
+ * O CAMPO DE ESCREVER.
+ *
+ * Sem tamanho de letra proprio ele herda 16px do sistema — e abaixo de 16px o
+ * navegador do telefone DA ZOOM sozinho quando o dedo toca o campo, e a tela
+ * do jogo sai de lugar. Por isso o minimo aqui e 1rem.
+ */
+.xbw-campo input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  color: var(--xbw-texto);
+  font:
+    500 max(1rem, clamp(0.88rem, 2.1vh, 1.05rem)) / 1.3 system-ui,
+    sans-serif;
+}
+
+.xbw-campo input::placeholder {
+  color: var(--xbw-texto-3);
+}
+
+.xbw-campo input:focus {
+  outline: none;
+}
+
+.xbw-campo:focus-within {
+  outline: 2px solid var(--xbw-marca);
+}
+
+.xbw-campo input:disabled {
+  opacity: 0.6;
+}
+
+/* O aviao de enviar ocupa o mesmo lugar do microfone, e o mesmo tamanho. */
+.xbw-enviar {
+  display: grid;
+  place-items: center;
+  min-width: var(--xbw-toque);
+  min-height: var(--xbw-toque);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.xbw-enviar .xbw-i {
+  width: clamp(2.6rem, 6vh, 3.4rem);
+}
+
+.xbw-campo em {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    500 clamp(0.88rem, 2.1vh, 1.05rem) / 1.3 system-ui,
+    sans-serif;
+  font-style: normal;
+  color: var(--xbw-texto-3);
+}
+
+.xbw-campo button {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.xbw-microfone .xbw-i {
+  width: clamp(2.6rem, 6vh, 3.4rem);
+}
+
+/* ── A LOJA ─────────────────────────────────────────────────────────────── */
+
+.xbw-lojas li button,
+.xbw-pedidos li button {
+  display: flex;
+  align-items: center;
+  gap: 3.5vw;
+  width: 100%;
+  padding: 1.4vh 4vw;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-lojas li > button > span:not(.xbw-retrato),
+.xbw-pedidos li > button > span:not(.xbw-retrato) {
+  display: grid;
+  gap: 0.2vh;
+  flex: 1;
+  min-width: 0;
+}
+.xbw-lojas strong,
+.xbw-pedidos strong {
+  font:
+    700 clamp(0.95rem, 2.2vh, 1.1rem) / 1.2 system-ui,
+    sans-serif;
+}
+.xbw-lojas small,
+.xbw-pedidos small {
+  font-size: clamp(0.78rem, 1.8vh, 0.9rem);
+  color: rgba(226, 244, 234, 0.64);
+}
+
+.xbw-aberta {
+  color: var(--xbw-marca-clara) !important;
+}
+.xbw-fechada {
+  color: var(--xbw-fechado) !important;
+}
+
+.xbw-catalogo li {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  padding: 1.4vh 4vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.xbw-produto {
+  display: grid;
+  gap: 0.2vh;
+  flex: 1;
+  min-width: 0;
+}
+.xbw-produto strong {
+  font:
+    700 clamp(0.92rem, 2.1vh, 1.05rem) / 1.2 system-ui,
+    sans-serif;
+}
+.xbw-produto small {
+  font-size: clamp(0.76rem, 1.7vh, 0.88rem);
+  color: var(--xbw-texto-3);
+}
+.xbw-produto em {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--xbw-marca-clara);
+  font-size: clamp(0.8rem, 1.9vh, 0.95rem);
+}
+
+.xbw-quantidade {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+
+.xbw-quantidade button {
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(24, 191, 234, 0.5);
+  border-radius: 50%;
+  background: rgba(18, 84, 122, 0.5);
+  color: var(--xbw-texto);
+  font:
+    700 1.2rem/1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-quantidade button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.xbw-quantidade b {
+  min-width: 1.5ch;
+  text-align: center;
+}
+
+.xbw-carrinho {
+  display: grid;
+  gap: 1vh;
+  padding: 1.6vh 5vw;
+  background: rgba(18, 84, 122, 0.55);
+  font:
+    600 clamp(0.86rem, 2vh, 1rem) / 1.3 system-ui,
+    sans-serif;
+}
+
+.xbw-carrinho--estourou {
+  background: var(--xbw-alerta-fundo);
+}
+.xbw-carrinho b {
+  color: #ffbfae;
+}
+
+.xbw-carrinho__acoes {
+  display: flex;
+  gap: 2.5vw;
+}
+
+.xbw-carrinho__acoes button {
+  flex: 1;
+  padding: 1.2vh 3vw;
+  border: 0;
+  border-radius: 999px;
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font:
+    700 clamp(0.88rem, 2vh, 1.02rem) / 1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-carrinho__acoes button:first-child {
+  background: var(--xbw-vidro);
+  color: var(--xbw-texto);
+}
+
+.xbw-carrinho__acoes button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.xbw-escolher {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 2vh 5vw max(2.4vh, env(safe-area-inset-bottom));
+  background: var(--xbw-fundo);
+  border-radius: 2.4vh 2.4vh 0 0;
+  box-shadow: 0 -0.6vh 3vh rgba(0, 0, 0, 0.5);
+}
+
+.xbw-escolher > p {
+  margin: 0 0 1.4vh;
+  font:
+    700 clamp(0.95rem, 2.2vh, 1.1rem) / 1.2 system-ui,
+    sans-serif;
+}
+
+.xbw-escolher ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.xbw-escolher li button {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  width: 100%;
+  padding: 1.2vh 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-escolher li > button > span:not(.xbw-retrato) {
+  display: grid;
+  min-width: 0;
+}
+.xbw-escolher li strong {
+  font:
+    700 0.98rem/1.2 system-ui,
+    sans-serif;
+}
+.xbw-escolher li small {
+  font-size: 0.84rem;
+  color: var(--xbw-texto-3);
+}
+
+.xbw-escolher__sair {
+  width: 100%;
+  margin-top: 1.4vh;
+  padding: 1.2vh;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  font:
+    600 0.95rem/1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-selo {
+  padding: 0.4vh 2.4vw;
+  border-radius: 999px;
+  background: var(--xbw-vidro);
+  font:
+    700 0.72rem/1 system-ui,
+    sans-serif;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.xbw-selo--entregue {
+  background: rgba(24, 191, 234, 0.28);
+  color: #b6f5d2;
+}
+.xbw-selo--atrasado,
+.xbw-selo--devolvido {
+  background: rgba(220, 90, 70, 0.3);
+  color: #ffcfc3;
+}
+
+/* ── RECADOS, CHAMADAS E AJUSTES ────────────────────────────────────────── */
+
+.xbw-recado button,
+.xbw-chamada {
+  display: flex;
+  align-items: center;
+  gap: 3.5vw;
+  width: 100%;
+  padding: 1.4vh 4vw;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-recado button > span:not(.xbw-recado__anel) {
+  display: grid;
+  gap: 0.2vh;
+  min-width: 0;
+}
+.xbw-recado strong,
+.xbw-chamada strong {
+  font:
+    700 clamp(0.95rem, 2.2vh, 1.1rem) / 1.2 system-ui,
+    sans-serif;
+}
+.xbw-recado small,
+.xbw-chamada small {
+  font-size: clamp(0.8rem, 1.8vh, 0.92rem);
+  color: var(--xbw-texto-3);
+}
+.xbw-recado time {
+  font-size: 0.76rem;
+  color: rgba(226, 244, 234, 0.5);
+}
+.xbw-recado--visto {
+  opacity: 0.62;
+}
+
+.xbw-recado__anel {
+  position: relative;
+  display: block;
+}
+
+.xbw-recado__aro {
+  position: absolute;
+  inset: -14%;
+  width: 128%;
+  height: 128%;
+  max-width: none;
+}
+
+.xbw-chamada > span:not(.xbw-retrato) {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.xbw-chamada--perdida strong {
+  color: var(--xbw-alerta);
+}
+
+.xbw-perfil {
+  display: flex;
+  align-items: center;
+  gap: 4vw;
+  padding: 2.4vh 5vw;
+}
+
+.xbw-perfil__foto {
+  width: clamp(4.4rem, 11vh, 6rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 0.35vh solid var(--xbw-marca);
+}
+
+.xbw-perfil__foto--vazia {
+  display: grid;
+  place-items: center;
+  border: 0;
+}
+.xbw-perfil > span {
+  display: grid;
+  gap: 0.3vh;
+  min-width: 0;
+}
+.xbw-perfil strong {
+  font:
+    800 clamp(1.1rem, 2.7vh, 1.4rem) / 1.2 system-ui,
+    sans-serif;
+}
+.xbw-perfil small {
+  color: rgba(226, 244, 234, 0.68);
+}
+
+.xbw-reputacao li {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  padding: 1.1vh 5vw;
+}
+
+.xbw-reputacao li > span:not(.xbw-retrato):not(.xbw-regua) {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.xbw-reputacao strong {
+  font:
+    700 0.98rem/1.2 system-ui,
+    sans-serif;
+}
+.xbw-reputacao small {
+  font-size: 0.84rem;
+  color: var(--xbw-texto-3);
+}
+
+.xbw-regua {
+  width: 26%;
+  height: 0.8vh;
+  min-height: 5px;
+  border-radius: 999px;
+  background: var(--xbw-vidro);
+  overflow: hidden;
+}
+
+.xbw-regua i {
+  display: block;
+  height: 100%;
+  background: var(--xbw-marca);
+}
+
+.xbw-opcoes li {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  padding: 1.3vh 5vw;
+  font:
+    600 clamp(0.9rem, 2.1vh, 1.02rem) / 1.2 system-ui,
+    sans-serif;
+}
+
+.xbw-opcoes em {
+  margin-left: auto;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--xbw-texto-3);
+}
+
+/* ── AS ABAS DE BAIXO ───────────────────────────────────────────────────── */
+
+.xbw-abas {
+  display: flex;
+  justify-content: space-around;
+  gap: 1vw;
+  width: min(100%, 46rem);
+  margin-inline: auto;
+  padding: 0.9vh 2vw;
+  background: var(--xbw-painel);
+  border-radius: 2vh 2vh 0 0;
+}
+
+.xbw-aba {
+  display: grid;
+  justify-items: center;
+  gap: 0.35vh;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 52px;
+  padding: 0.4vh 0;
+  border: 0;
+  border-radius: 1.4vh;
+  background: none;
+  color: var(--xbw-texto-3);
+  cursor: pointer;
+}
+
+.xbw-aba--atual {
+  background: rgba(24, 191, 234, 0.16);
+  color: var(--xbw-texto);
+}
+
+.xbw-aba small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    600 clamp(0.55rem, 1.25vh, 0.7rem) / 1 system-ui,
+    sans-serif;
+}
+
+/*
+ * O ICONE DA ABA.
+ *
+ * Ordem dele, 07/09/2026: "ESTOU ACHANDO OS ICONES DA TELA INICIAL MUITO FRACOS
+ * E PEQUENOS, PRECISAMOS DO VISUAL DO WHATS APP".
+ *
+ * Eram fracos por um motivo que nao se ve olhando: cada icone era um DESENHO
+ * BRANCO DENTRO DE UM DISCO AZUL-MARINHO, e o disco tem quase a cor do fundo do
+ * aplicativo. Entao o disco sumia e sobrava so o desenho pequeno no meio de um
+ * quadrado vazio. Os 45 arquivos foram limpos: o disco saiu, e o desenho foi
+ * recortado ate a borda — que e como o WhatsApp faz. Os icones que sao chapa
+ * COLORIDA (camera roxa, pino vermelho, foto azul) continuam com a chapa.
+ *
+ * Aqui embaixo so a medida: a aba pede icone maior que o resto do aplicativo.
+ */
+.xbw-aba__icone {
+  position: relative;
+  display: block;
+}
+
+.xbw-aba__icone .xbw-i {
+  width: clamp(1.55rem, 3.6vh, 2rem);
+}
+
+.xbw-aba__icone .xbw-contador {
+  position: absolute;
+  top: -0.6vh;
+  right: -1.6vh;
+  min-width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.68rem;
+}
+
+.xbw__sair {
+  width: min(100%, 46rem);
+  margin-inline: auto;
+  padding: 1.2vh max(1.6vh, env(safe-area-inset-bottom));
+  border: 0;
+  background: rgba(0, 0, 0, 0.32);
+  color: var(--xbw-texto-2);
+  font:
+    600 clamp(0.82rem, 1.9vh, 0.95rem) / 1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+/* O aviso do mapa: o aplicativo tem recado esperando. */
+.mapa__xbwapp {
+  position: absolute;
+  right: 4vw;
+  bottom: max(4vh, env(safe-area-inset-bottom));
+  z-index: 380;
+  display: grid;
+  place-items: center;
+  width: clamp(3.4rem, 8vh, 4.4rem);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #12547a 0%, #0d1b33 100%);
+  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.mapa__xbwapp .xbw-i {
+  width: 56%;
+}
+
+.mapa__xbwapp .xbw-contador {
+  position: absolute;
+  top: -0.4vh;
+  right: -0.4vh;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O APLICATIVO COMPLETO — as pecas que chegaram quando ele pediu "tudo que o
+ * whats app tem". Todas usam a lista de valores la de cima: nenhuma cor nova
+ * foi escrita a mao aqui.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── O TEMA CLARO ───────────────────────────────────────────────────────────
+ *
+ * E a segunda folha de desenho que ele mandou. Ele nao troca o aplicativo: ele
+ * troca a LISTA DE VALORES, e o aplicativo inteiro vem junto. E exatamente
+ * para isto que a lista existe.
+ */
+.xbw--claro {
+  --xbw-fundo: #edf5f6;
+  --xbw-topo-alto: #12547a;
+  --xbw-topo-baixo: #0e3f5c;
+  --xbw-painel: rgba(255, 255, 255, 0.97);
+  --xbw-fosco: rgba(9, 18, 34, 0.06);
+  --xbw-realce: rgba(9, 18, 34, 0.07);
+  --xbw-vidro: rgba(9, 18, 34, 0.1);
+  --xbw-marca: #0f9fd0;
+  --xbw-marca-clara: #0b6f92;
+  --xbw-marca-texto: #ffffff;
+  --xbw-campo: #ffffff;
+  --xbw-texto: #091222;
+  --xbw-texto-2: rgba(9, 18, 34, 0.72);
+  --xbw-texto-3: rgba(9, 18, 34, 0.55);
+  --xbw-balao-outro: #ffffff;
+  --xbw-balao-meu: #cfeaf7;
+  --xbw-alerta: #b23c26;
+  --xbw-alerta-fundo: rgba(220, 150, 140, 0.35);
+  --xbw-fechado: #b23c26;
+  background-image: none;
+}
+
+/* No claro o alto da tela continua verde, e o texto dele continua branco. */
+.xbw--claro .xbw-topo,
+.xbw--claro .xbw-topo * {
+  color: #edf5f6;
+}
+
+.xbw--claro .xbw-balao--meu,
+.xbw--claro .xbw-balao--outro {
+  color: var(--xbw-texto);
+}
+
+/* ── OS PAPEIS DE PAREDE ────────────────────────────────────────────────── */
+
+.xbw-fio--liso {
+  background: #0d1b33;
+}
+.xbw-fio--noite {
+  background: #091222;
+}
+.xbw-fio--aco {
+  background: #12547a;
+}
+.xbw-fio--grafite {
+  background: #20272d;
+}
+.xbw-fio--gelo {
+  background: #edf5f6;
+  color: #091222;
+}
+
+/* ── O BALAO, COM TUDO QUE ELE PASSOU A CARREGAR ────────────────────────── */
+
+.xbw-balao--solto {
+  background: none !important;
+  box-shadow: none;
+  padding: 0;
+}
+
+.xbw-balao--solto::after {
+  display: none;
+}
+
+.xbw-balao--apagada {
+  opacity: 0.72;
+  font-style: italic;
+}
+
+.xbw-balao--marcada {
+  outline: 2px solid var(--xbw-marca);
+  outline-offset: 2px;
+}
+
+.xbw-balao__marca-texto {
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+  font-style: italic;
+}
+
+.xbw-balao__apagada {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.xbw-editada {
+  font: var(--xbw-t-mini);
+  font-style: italic;
+  color: var(--xbw-texto-3);
+}
+
+/*
+ * A CITACAO em cima da resposta.
+ * Sem ela, "pode sim" duas horas depois nao quer dizer nada — e essa e a
+ * diferenca entre uma conversa e uma lista de frases soltas.
+ */
+.xbw-citacao {
+  flex-basis: 100%;
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.5vh var(--xbw-lado-2);
+  border-left: 0.4vh solid var(--xbw-marca);
+  border-radius: var(--xbw-canto-1);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.xbw-citacao strong {
+  font: var(--xbw-t-mini);
+  font-weight: 700;
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-citacao small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60vw;
+}
+
+/* As reacoes ficam pendendo do canto de baixo, como em todo aplicativo. */
+.xbw-reacoes {
+  position: absolute;
+  bottom: -1.2vh;
+  left: var(--xbw-lado-2);
+  display: flex;
+  gap: 0.2rem;
+  padding: 0.2vh 0.5rem;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-painel);
+  box-shadow: var(--xbw-sombra-1);
+  font-size: 0.85rem;
+}
+
+.xbw-reacoes em {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-style: normal;
+}
+
+.xbw-reacoes b {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+/* ── OS MIOLOS DE CADA TIPO ─────────────────────────────────────────────── */
+
+.xbw-figurinha {
+  font-size: clamp(3rem, 9vh, 4.5rem);
+  line-height: 1;
+}
+
+.xbw-foto {
+  display: grid;
+  gap: 0.4rem;
+  max-width: 62vw;
+}
+
+.xbw-foto img {
+  width: 100%;
+  border-radius: var(--xbw-canto-1);
+  object-fit: cover;
+}
+
+.xbw-foto__vazia {
+  width: 40vw !important;
+  height: 24vh;
+  opacity: 0.5;
+}
+
+.xbw-foto small {
+  font: var(--xbw-t-apoio);
+}
+
+.xbw-audio {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  min-width: 48vw;
+}
+
+.xbw-audio__play {
+  width: clamp(2rem, 4.6vh, 2.6rem) !important;
+}
+
+.xbw-audio__onda {
+  flex: 1;
+  width: auto !important;
+  max-width: none;
+  height: 2.4vh;
+  opacity: 0.85;
+}
+
+.xbw-documento {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  min-width: 46vw;
+}
+
+.xbw-documento em {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 3rem;
+  border-radius: var(--xbw-canto-1);
+  font:
+    800 0.72rem/1 system-ui,
+    sans-serif;
+  font-style: normal;
+  color: #fff;
+  flex: none;
+}
+
+.xbw-documento span {
+  display: grid;
+  min-width: 0;
+}
+
+.xbw-documento strong {
+  font: var(--xbw-t-apoio);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-documento small,
+.xbw-cartao small,
+.xbw-local small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-cartao,
+.xbw-local {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  min-width: 44vw;
+}
+
+.xbw-cartao span,
+.xbw-local span {
+  display: grid;
+  min-width: 0;
+}
+
+.xbw-cartao strong,
+.xbw-local strong {
+  font: var(--xbw-t-apoio);
+  font-weight: 700;
+}
+
+.xbw-local__pino {
+  width: clamp(2rem, 4.6vh, 2.6rem) !important;
+}
+
+/* A enquete: a barra atras da opcao e o resultado, e nao enfeite. */
+.xbw-enquete {
+  display: grid;
+  gap: 0.6vh;
+  min-width: 58vw;
+}
+
+.xbw-enquete > strong {
+  font: var(--xbw-t-apoio);
+  font-weight: 700;
+}
+
+.xbw-opcao {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-1);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 0.6vh var(--xbw-lado-2);
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-canto-1);
+  background: none;
+  color: inherit;
+  font: var(--xbw-t-apoio);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.xbw-opcao i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: rgba(24, 191, 234, 0.22);
+  transition: width var(--xbw-tempo) var(--xbw-curva);
+}
+
+.xbw-opcao span,
+.xbw-opcao b {
+  position: relative;
+}
+
+.xbw-opcao span {
+  flex: 1;
+}
+
+.xbw-opcao--minha {
+  border-color: var(--xbw-marca);
+}
+
+.xbw-enquete > small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-pagamento {
+  display: grid;
+  justify-items: center;
+  gap: 0.4vh;
+  min-width: 40vw;
+  padding: 0.6vh 0;
+}
+
+.xbw-pagamento__marca {
+  width: clamp(2.2rem, 5vh, 2.8rem) !important;
+}
+
+.xbw-pagamento strong {
+  font:
+    800 clamp(1.2rem, 3vh, 1.6rem) / 1 system-ui,
+    sans-serif;
+}
+
+.xbw-pagamento small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-pagamento__acoes {
+  display: flex;
+  gap: var(--xbw-lado-2);
+  margin-top: 0.4vh;
+}
+
+.xbw-pagamento__acoes button {
+  min-height: var(--xbw-toque);
+  padding: 0 var(--xbw-lado-3);
+  border: 0;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font: var(--xbw-t-apoio);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.xbw-pagamento__acoes button:last-child {
+  background: var(--xbw-vidro);
+  color: var(--xbw-texto);
+}
+
+.xbw-aviso--chamada {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ── A FOLHA QUE SOBE DE BAIXO ──────────────────────────────────────────── */
+
+.xbw-folha {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.xbw-folha__fora {
+  flex: 1;
+  border: 0;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
+.xbw-folha__corpo {
+  width: min(100%, 46rem);
+  margin-inline: auto;
+  max-height: 76vh;
+  overflow-y: auto;
+  padding: var(--xbw-alto-3) var(--xbw-lado-4)
+    max(2.4vh, env(safe-area-inset-bottom));
+  background: var(--xbw-fundo);
+  border-radius: var(--xbw-canto-3) var(--xbw-canto-3) 0 0;
+  box-shadow: var(--xbw-sombra-3);
+  animation: xbw-sobe 200ms var(--xbw-curva) both;
+}
+
+@keyframes xbw-sobe {
+  from {
+    transform: translateY(30%);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-folha__corpo {
+    animation: none;
+  }
+}
+
+.xbw-folha__titulo {
+  margin: 0 0 1.2vh;
+  font: var(--xbw-t-nome);
+}
+
+.xbw-folha__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.xbw-folha__lista button {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 1.2vh 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: var(--xbw-t-apoio);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-perigo {
+  color: var(--xbw-alerta) !important;
+}
+
+/*
+ * A FILA DE EMOJI fica em cima e e grande: reagir e o que a pessoa faz noventa
+ * por cento das vezes que segura um balao.
+ */
+.xbw-emojis {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--xbw-lado-1);
+  margin-bottom: var(--xbw-alto-2);
+  padding-bottom: var(--xbw-alto-2);
+  border-bottom: 1px solid var(--xbw-vidro);
+}
+
+.xbw-emojis button {
+  min-width: var(--xbw-toque);
+  min-height: var(--xbw-toque);
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  font-size: clamp(1.5rem, 4vh, 2rem);
+  cursor: pointer;
+}
+
+/* ── ESCREVER: gravador, atalhos e citacao ──────────────────────────────── */
+
+.xbw-gravando {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  padding: var(--xbw-alto-2) var(--xbw-lado-3)
+    max(1.6vh, env(safe-area-inset-bottom));
+}
+
+.xbw-gravando__fora {
+  min-width: var(--xbw-toque);
+  min-height: var(--xbw-toque);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.xbw-gravando__ponto {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  background: #e34234;
+  animation: xbw-pisca 1.2s ease-in-out infinite;
+}
+
+@keyframes xbw-pisca {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.xbw-gravando time {
+  font: var(--xbw-t-apoio);
+  font-variant-numeric: tabular-nums;
+}
+
+.xbw-gravando__onda {
+  flex: 1;
+  width: auto !important;
+  max-width: none;
+  height: 2.4vh;
+  opacity: 0.7;
+}
+
+.xbw-atalhos {
+  list-style: none;
+  margin: 0;
+  padding: 0 var(--xbw-lado-3);
+  max-height: 24vh;
+  overflow-y: auto;
+}
+
+.xbw-atalhos button {
+  display: flex;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 1vh var(--xbw-lado-2);
+  border: 0;
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-realce);
+  color: inherit;
+  font: var(--xbw-t-apoio);
+  text-align: left;
+  cursor: pointer;
+  margin-bottom: 0.5vh;
+}
+
+.xbw-atalhos b {
+  color: var(--xbw-marca-clara);
+  flex: none;
+}
+
+.xbw-citando {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  margin: 0 var(--xbw-lado-3);
+  padding: 0.8vh var(--xbw-lado-2);
+  border-left: 0.4vh solid var(--xbw-marca);
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-realce);
+}
+
+.xbw-citando span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.xbw-citando strong {
+  font: var(--xbw-t-mini);
+  font-weight: 700;
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-citando small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-citando button {
+  min-width: var(--xbw-toque);
+  min-height: var(--xbw-toque);
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* ── A MENSAGEM FIXADA E A BUSCA NA CONVERSA ────────────────────────────── */
+
+.xbw-fixada {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 0.9vh var(--xbw-lado-3);
+  border: 0;
+  border-bottom: 1px solid var(--xbw-vidro);
+  background: var(--xbw-realce);
+  color: inherit;
+  font: var(--xbw-t-apoio);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-fixada span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-procura--conversa {
+  margin: 1vh var(--xbw-lado-3);
+}
+
+.xbw-procura--conversa button {
+  min-width: var(--xbw-toque);
+  min-height: var(--xbw-toque);
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.xbw-achado {
+  display: grid;
+  gap: 0.2vh;
+  padding: 1vh var(--xbw-lado-2);
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-realce);
+}
+
+.xbw-achado strong {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-achado small {
+  font: var(--xbw-t-apoio);
+}
+
+.xbw-achado time {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-topo--selecao {
+  background: var(--xbw-realce);
+}
+
+.xbw-topo__abrir {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* ── AS FOLHAS DE ESCOLHER ──────────────────────────────────────────────── */
+
+.xbw-escolher-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.xbw-escolher-lista button {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 1vh 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: var(--xbw-t-apoio);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-escolhido {
+  color: var(--xbw-marca-clara) !important;
+  font-weight: 700;
+}
+
+.xbw-figurinhas {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--xbw-lado-1);
+}
+
+.xbw-figurinhas button {
+  min-height: var(--xbw-toque);
+  border: 0;
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-realce);
+  font-size: clamp(1.6rem, 4.4vh, 2.2rem);
+  cursor: pointer;
+}
+
+.xbw-galeria {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--xbw-lado-1);
+  padding: 0 var(--xbw-lado-4) var(--xbw-alto-2);
+}
+
+.xbw-galeria button,
+.xbw-galeria span {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-realce);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.xbw-galeria img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xbw-linha-de-forma {
+  display: grid;
+  gap: 0.4vh;
+  margin-bottom: var(--xbw-alto-2);
+}
+
+.xbw-linha-de-forma span {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-linha-de-forma input,
+.xbw-linha-de-forma textarea {
+  width: 100%;
+  padding: 1vh var(--xbw-lado-2);
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-campo);
+  color: var(--xbw-texto);
+  font:
+    500 max(1rem, var(--xbw-t-apoio)) system-ui,
+    sans-serif;
+  resize: vertical;
+}
+
+.xbw-principal {
+  width: 100%;
+  min-height: var(--xbw-toque);
+  margin-top: var(--xbw-alto-2);
+  border: 0;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font: var(--xbw-t-apoio);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── A CHAMADA ──────────────────────────────────────────────────────────── */
+
+.xbw-chamada-tela {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8vh var(--xbw-lado-4) max(6vh, env(safe-area-inset-bottom));
+  background: linear-gradient(
+    180deg,
+    var(--xbw-topo-alto) 0%,
+    var(--xbw-fundo) 60%
+  );
+}
+
+.xbw-chamada-tela__quem {
+  display: grid;
+  justify-items: center;
+  gap: var(--xbw-alto-2);
+  text-align: center;
+}
+
+.xbw-chamada-tela__quem strong {
+  font: var(--xbw-t-marca);
+}
+
+.xbw-chamada-tela__quem small {
+  font: var(--xbw-t-apoio);
+  color: var(--xbw-texto-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.xbw-chamada-tela__botoes {
+  display: flex;
+  gap: var(--xbw-lado-4);
+}
+
+.xbw-chamada-tela__botao {
+  display: grid;
+  justify-items: center;
+  gap: 0.6vh;
+  min-width: 4.4rem;
+  padding: 1.2vh 0;
+  border: 0;
+  border-radius: var(--xbw-canto-3);
+  background: var(--xbw-realce);
+  color: inherit;
+  font: var(--xbw-t-mini);
+  cursor: pointer;
+}
+
+.xbw-desligado {
+  background: var(--xbw-vidro);
+  opacity: 0.6;
+}
+
+.xbw-desligar,
+.xbw-atender {
+  display: grid;
+  place-items: center;
+  gap: 0.4vh;
+  width: 4.6rem;
+  height: 4.6rem;
+  border: 0;
+  border-radius: 50%;
+  background: #e34234;
+  color: #fff;
+  cursor: pointer;
+}
+
+.xbw-desligar .xbw-i {
+  transform: rotate(135deg);
+}
+
+.xbw-atender {
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+}
+
+.xbw-desligar small,
+.xbw-atender small {
+  position: absolute;
+  margin-top: 7rem;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-2);
+}
+
+.xbw-chamada-tela__atender {
+  display: flex;
+  gap: 22vw;
+}
+
+/* ── DADOS DA CONVERSA ──────────────────────────────────────────────────── */
+
+.xbw-contato {
+  overflow-y: auto !important;
+}
+
+.xbw-contato__cabeca {
+  display: grid;
+  justify-items: center;
+  gap: 0.4vh;
+  padding: var(--xbw-alto-4) var(--xbw-lado-4);
+  text-align: center;
+}
+
+.xbw-contato__cabeca strong {
+  font: var(--xbw-t-marca);
+  font-size: clamp(1.2rem, 3vh, 1.6rem);
+}
+
+.xbw-contato__cabeca small {
+  font: var(--xbw-t-apoio);
+  color: var(--xbw-texto-2);
+}
+
+.xbw-contato__acoes {
+  display: flex;
+  gap: var(--xbw-lado-4);
+  margin-top: var(--xbw-alto-2);
+}
+
+.xbw-contato__acoes button {
+  display: grid;
+  justify-items: center;
+  gap: 0.4vh;
+  min-width: 4rem;
+  min-height: var(--xbw-toque);
+  border: 0;
+  background: none;
+  color: var(--xbw-marca-clara);
+  font: var(--xbw-t-mini);
+  cursor: pointer;
+}
+
+.xbw-contato__reputacao {
+  margin: 0 var(--xbw-lado-4);
+  font: var(--xbw-t-nome);
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-contato__midia {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  margin: 0 var(--xbw-lado-4);
+  min-height: var(--xbw-toque);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: var(--xbw-t-apoio);
+  cursor: pointer;
+}
+
+.xbw-membros {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.xbw-membros li {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  padding: 0.9vh var(--xbw-lado-4);
+  font: var(--xbw-t-apoio);
+}
+
+.xbw-membros em {
+  margin-left: auto;
+  padding: 0.2vh 0.6rem;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-vidro);
+  font: var(--xbw-t-mini);
+  font-style: normal;
+}
+
+.xbw-papeis {
+  display: flex;
+  gap: var(--xbw-lado-2);
+  padding: 0 var(--xbw-lado-4);
+  overflow-x: auto;
+}
+
+.xbw-papel {
+  display: grid;
+  align-items: end;
+  flex: 0 0 auto;
+  width: 5.5rem;
+  height: 4rem;
+  padding: 0.4rem;
+  border: 2px solid transparent;
+  border-radius: var(--xbw-canto-2);
+  color: #fff;
+  font: var(--xbw-t-mini);
+  cursor: pointer;
+}
+
+.xbw-papel--atual {
+  border-color: var(--xbw-marca);
+}
+
+.xbw-escolhas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--xbw-lado-1);
+  padding: 0 var(--xbw-lado-4);
+}
+
+.xbw-escolha {
+  min-height: var(--xbw-toque);
+  padding: 0 var(--xbw-lado-3);
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-pilula);
+  background: none;
+  color: inherit;
+  font: var(--xbw-t-apoio);
+  cursor: pointer;
+}
+
+.xbw-escolha--atual {
+  border-color: var(--xbw-marca);
+  background: rgba(24, 191, 234, 0.16);
+}
+
+.xbw-bloquear {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: calc(100% - 2 * var(--xbw-lado-4));
+  margin: var(--xbw-alto-4) var(--xbw-lado-4);
+  min-height: var(--xbw-toque);
+  padding: 0 var(--xbw-lado-3);
+  border: 1px solid var(--xbw-alerta);
+  border-radius: var(--xbw-canto-2);
+  background: none;
+  color: var(--xbw-alerta);
+  font: var(--xbw-t-apoio);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ── RECADOS ────────────────────────────────────────────────────────────── */
+
+.xbw-recado--meu {
+  display: flex;
+  align-items: center;
+}
+
+.xbw-recado__mais {
+  position: absolute;
+  right: -4%;
+  bottom: -4%;
+  display: grid;
+  place-items: center;
+  width: 42%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font:
+    800 1rem/1 system-ui,
+    sans-serif;
+  font-style: normal;
+}
+
+.xbw-recado__previa {
+  display: grid;
+  place-items: center;
+  min-height: 22vh;
+  border-radius: var(--xbw-canto-2);
+  padding: var(--xbw-lado-3);
+}
+
+.xbw-recado__previa textarea {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: #fff;
+  font:
+    700 clamp(1.1rem, 3vh, 1.5rem) / 1.35 system-ui,
+    sans-serif;
+  text-align: center;
+  resize: none;
+}
+
+.xbw-recado__previa textarea:focus {
+  outline: none;
+}
+
+.xbw-cores {
+  display: flex;
+  gap: var(--xbw-lado-2);
+  margin: var(--xbw-alto-2) 0;
+}
+
+.xbw-cor {
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.xbw-cor--atual {
+  border-color: var(--xbw-texto);
+}
+
+.xbw-recado-tela {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: var(--xbw-alto-2);
+  padding: max(2vh, env(safe-area-inset-top)) var(--xbw-lado-4)
+    max(3vh, env(safe-area-inset-bottom));
+  color: #fff;
+}
+
+.xbw-recado-tela__barra {
+  display: block;
+  height: 0.4rem;
+  border-radius: var(--xbw-pilula);
+  background: rgba(255, 255, 255, 0.3);
+  overflow: hidden;
+}
+
+.xbw-recado-tela__barra i {
+  display: block;
+  height: 100%;
+  background: #fff;
+}
+
+.xbw-recado-tela header {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+}
+
+.xbw-recado-tela header span {
+  display: grid;
+  flex: 1;
+}
+
+.xbw-recado-tela header strong {
+  font: var(--xbw-t-nome);
+}
+
+.xbw-recado-tela header small {
+  font: var(--xbw-t-mini);
+  opacity: 0.8;
+}
+
+.xbw-recado-tela header button {
+  min-width: var(--xbw-toque);
+  min-height: var(--xbw-toque);
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.xbw-recado-tela__texto {
+  align-self: center;
+  margin: 0;
+  font:
+    700 clamp(1.3rem, 4vh, 2rem) / 1.35 system-ui,
+    sans-serif;
+  text-align: center;
+}
+
+.xbw-recado-tela__viram {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font: var(--xbw-t-mini);
+  opacity: 0.9;
+}
+
+/* ── GRUPOS ─────────────────────────────────────────────────────────────── */
+
+.xbw-grupos {
+  overflow-y: auto !important;
+}
+
+.xbw-criar {
+  display: grid;
+  gap: var(--xbw-alto-1);
+  padding: var(--xbw-alto-2) var(--xbw-lado-3);
+}
+
+.xbw-criar button {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 1.2vh var(--xbw-lado-2);
+  border: 0;
+  border-radius: var(--xbw-canto-2);
+  background: var(--xbw-realce);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-criar span {
+  display: grid;
+}
+
+.xbw-criar strong {
+  font: var(--xbw-t-apoio);
+  font-weight: 700;
+}
+
+.xbw-criar small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-comunidade {
+  display: grid;
+  gap: 0.3vh;
+  width: 100%;
+  padding: 1.2vh var(--xbw-lado-3);
+}
+
+.xbw-comunidade strong {
+  font: var(--xbw-t-nome);
+}
+
+.xbw-comunidade small {
+  font: var(--xbw-t-apoio);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-comunidade select,
+.xbw-privacidade select {
+  min-height: var(--xbw-toque);
+  padding: 0 var(--xbw-lado-2);
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-campo);
+  color: var(--xbw-texto);
+  font: var(--xbw-t-apoio);
+}
+
+/* ── AJUSTES ────────────────────────────────────────────────────────────── */
+
+.xbw-privacidade,
+.xbw-guardadas,
+.xbw-favoritas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.xbw-privacidade li {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  padding: 0.9vh var(--xbw-lado-4);
+  font: var(--xbw-t-apoio);
+}
+
+.xbw-privacidade li > span {
+  flex: 1;
+}
+
+.xbw-chave {
+  width: 3.4rem;
+  height: 1.9rem;
+  padding: 0.2rem;
+  border: 0;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-vidro);
+  cursor: pointer;
+}
+
+.xbw-chave i {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--xbw-texto-3);
+  transition: transform var(--xbw-tempo) var(--xbw-curva);
+}
+
+.xbw-chave--ligada {
+  background: rgba(24, 191, 234, 0.35);
+}
+
+.xbw-chave--ligada i {
+  background: var(--xbw-marca);
+  transform: translateX(1.5rem);
+}
+
+.xbw-nota {
+  margin: 0 var(--xbw-lado-4);
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-guardadas li {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  padding: 0.8vh var(--xbw-lado-4);
+}
+
+.xbw-guardadas li span {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.xbw-guardadas b {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-guardadas small {
+  font: var(--xbw-t-apoio);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-nova-guardada {
+  display: grid;
+  gap: var(--xbw-alto-1);
+  padding: 0 var(--xbw-lado-4) var(--xbw-alto-2);
+}
+
+.xbw-nova-guardada input {
+  min-height: var(--xbw-toque);
+  padding: 0 var(--xbw-lado-2);
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-canto-1);
+  background: var(--xbw-campo);
+  color: var(--xbw-texto);
+  font:
+    500 max(1rem, var(--xbw-t-apoio)) system-ui,
+    sans-serif;
+}
+
+.xbw-nova-guardada button {
+  min-height: var(--xbw-toque);
+  border: 0;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font: var(--xbw-t-apoio);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.xbw-favoritas li {
+  display: grid;
+  gap: 0.2vh;
+  padding: 1vh var(--xbw-lado-4);
+  border-bottom: 1px solid var(--xbw-vidro);
+}
+
+.xbw-favoritas strong {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-favoritas small {
+  font: var(--xbw-t-apoio);
+}
+
+.xbw-favoritas time {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-opcoes button {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-reputacao li button {
+  min-height: var(--xbw-toque);
+  padding: 0 var(--xbw-lado-2);
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-pilula);
+  background: none;
+  color: inherit;
+  font: var(--xbw-t-mini);
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O TECLADO DO APLICATIVO
+ *
+ * Desenhado por nos, dentro do jogo. O teclado do APARELHO sobe por cima da
+ * tela cheia, muda de tamanho no meio do caminho e as vezes nem aparece quando
+ * o toque vem de dentro do canvas. Este tem sempre o mesmo tamanho e esta
+ * sempre no mesmo lugar.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * O TECLADO — FORMATO DO WHATSAPP, CORES DA ARTE DELE.
+ *
+ * Ordem dele, 07/09/2026, dita tres vezes: "SO PEDI NOVAMENTE PARA APLICAR
+ * CORES VC MUDA FORMATO DE TECLADO DENOVO".
+ *
+ * Entao aqui mudam SO AS CORES: o fundo preto da arte dele, a tecla azul, a
+ * letra branca. Altura, espaco entre teclas, canto arredondado, peso da letra e
+ * sombra sao os de antes — os do WhatsApp — e nao se mexe neles.
+ *
+ * As cores ficam neste bloco, e nao na lista do alto do arquivo, de proposito:
+ * o teclado e escuro nos dois temas, como todo teclado de celular.
+ */
+.xbw-teclado {
+  --tec-fundo: #02080f;
+  --tec-tecla: #123b57;
+  --tec-tecla-2: #0a2033;
+  --tec-letra: #ffffff;
+  --tec-apagado: #9fe4f6;
+
+  display: grid;
+  /*
+   * O "min-width: 0" nao e detalhe: sem ele o teclado pede a largura das dez
+   * teclas somadas e passa da borda do telefone, com a coluna da direita
+   * cortada pela metade. Com ele, as teclas se apertam para caber.
+   */
+  min-width: 0;
+  gap: 0.7vh;
+  padding: 0.8vh var(--xbw-lado-1) max(1vh, env(safe-area-inset-bottom));
+  background: var(--tec-fundo);
+  border-top: 1px solid rgba(24, 191, 234, 0.3);
+  animation: xbw-sobe 160ms var(--xbw-curva) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-teclado {
+    animation: none;
+  }
+}
+
+.xbw-teclado__topo {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  padding: 0 var(--xbw-lado-2);
+  font: var(--xbw-t-mini);
+  color: var(--tec-apagado);
+}
+
+.xbw-teclado__topo button {
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.xbw-teclado__topo .xbw-i {
+  width: 1.1rem;
+  transform: rotate(-90deg);
+}
+
+.xbw-teclado__linha {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  justify-content: center;
+  gap: 0.5vw;
+}
+
+/*
+ * A TECLA.
+ *
+ * A altura e o que importa num teclado de celular: baixa demais e o polegar
+ * erra a linha de cima. Ela cresce com a tela, mas nunca fica abaixo de 38px —
+ * que e o menor alvo que ainda da para acertar dez vezes seguidas sem olhar.
+ */
+.xbw-tecla {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: max(38px, 5.2vh);
+  padding: 0;
+  border: 0;
+  border-radius: 0.9vh;
+  background: var(--tec-tecla);
+  color: var(--tec-letra);
+  font:
+    500 clamp(0.95rem, 2.4vh, 1.25rem) / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.xbw-tecla:active {
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+}
+
+.xbw-tecla--larga {
+  flex: 1.5 1 0;
+  font-size: clamp(0.8rem, 2vh, 1rem);
+  background: var(--tec-tecla-2);
+}
+
+.xbw-tecla--espaco {
+  flex: 4 1 0;
+  font-size: clamp(0.75rem, 1.8vh, 0.9rem);
+  color: var(--tec-apagado);
+}
+
+.xbw-tecla--enviar {
+  flex: 1.5 1 0;
+  display: grid;
+  place-items: center;
+  background: var(--xbw-marca);
+}
+
+.xbw-tecla--enviar .xbw-i {
+  width: clamp(1.3rem, 3.2vh, 1.8rem);
+}
+
+.xbw-tecla--enviar:disabled {
+  background: var(--tec-tecla-2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * AS TELAS NOVAS — Atualizações, Canais e Ferramentas.
+ *
+ * Ordem dele, 07/09/2026: as abas passaram a ser as do WhatsApp Business, e
+ * dentro de Ferramentas entrou o lado comercial inteiro. Tudo aqui usa a mesma
+ * lista de valores do alto do arquivo: nenhuma cor solta, nenhuma medida solta.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * QUEM ROLA E ESTE.
+ *
+ * As telas novas sao "cabecalho fixo + miolo que rola". O miolo precisa de
+ * `min-height: 0`, senao ele cresce alem da tela e o rodape com as abas sai
+ * para fora — o mesmo erro que ja apareceu em Ajustes uma vez.
+ */
+.xbw-rolar {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  padding-bottom: 2vh;
+}
+
+.xbw-rolar > * {
+  flex: none;
+}
+
+.xbw-secao {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  margin: 1.4vh 4vw 0;
+  font: var(--xbw-t-mini);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-secao b {
+  margin-left: auto;
+  color: var(--xbw-texto-3);
+}
+
+.xbw-subsecao {
+  margin: 0.6vh 4vw 0;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-dica {
+  margin: 0 4vw;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-resumo {
+  margin: 0 4vw;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-bolinha {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 50%;
+  flex: none;
+}
+
+/* ── A LISTA DE ITENS (Ferramentas, respostas rápidas) ───────────────────── */
+
+.xbw-itens {
+  display: grid;
+  gap: 0.4vh;
+  margin: 0 2vw;
+}
+
+.xbw-itens > li > button,
+.xbw-itens > li > .xbw-linha-fixa {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 1.2vh 2vw;
+  border: 0;
+  border-radius: var(--xbw-canto-2);
+  background: none;
+  color: var(--xbw-texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-itens > li > .xbw-linha-fixa {
+  cursor: default;
+}
+
+.xbw-itens span {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.xbw-itens strong {
+  font: var(--xbw-t-corpo);
+  font-weight: 600;
+}
+
+.xbw-itens small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-seta {
+  font-style: normal;
+  font-size: 1.4rem;
+  color: var(--xbw-texto-3);
+  flex: none;
+}
+
+/* ── STATUS ──────────────────────────────────────────────────────────────── */
+
+.xbw-status {
+  display: grid;
+  gap: 0.3vh;
+  margin: 0 2vw;
+}
+
+.xbw-status > li > button {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 1vh 2vw;
+  border: 0;
+  border-radius: var(--xbw-canto-2);
+  background: none;
+  color: var(--xbw-texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-status
+  span:not(.xbw-retrato):not(.xbw-status__meu):not(.xbw-status__anel) {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.xbw-status strong {
+  font: var(--xbw-t-corpo);
+  font-weight: 600;
+}
+
+.xbw-status small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-status time {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-status .xbw-visto small {
+  opacity: 0.7;
+}
+
+.xbw-status__meu,
+.xbw-status__anel {
+  position: relative;
+  flex: none;
+  display: block;
+}
+
+.xbw-status__meu i {
+  position: absolute;
+  right: -0.2rem;
+  bottom: -0.2rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.xbw-status__aro {
+  position: absolute;
+  inset: -0.32rem;
+  width: auto !important;
+  height: auto;
+}
+
+.xbw-vazio-linha p {
+  margin: 0.6vh 4vw;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-novo-status {
+  display: grid;
+  gap: 1vh;
+  margin: 0 4vw;
+  padding: 1.6vh;
+  border-radius: var(--xbw-canto-3);
+  background: var(--xbw-realce);
+}
+
+.xbw-novo-status textarea {
+  width: 100%;
+  padding: 1vh 2vw;
+  border: 0;
+  border-radius: var(--xbw-canto-2);
+  background: var(--xbw-campo);
+  color: var(--xbw-texto);
+  font: var(--xbw-t-corpo);
+  resize: none;
+}
+
+.xbw-cores {
+  display: flex;
+  gap: 2vw;
+}
+
+.xbw-cor {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.xbw-cor--atual {
+  border-color: var(--xbw-texto);
+}
+
+.xbw-meus-status {
+  display: grid;
+  gap: 0.6vh;
+  margin: 0 4vw;
+}
+
+.xbw-meus-status li {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+}
+
+.xbw-meus-status span {
+  display: grid;
+  min-width: 0;
+}
+
+.xbw-meus-status strong {
+  font: var(--xbw-t-corpo);
+}
+
+.xbw-meus-status small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+/* ── CANAIS ──────────────────────────────────────────────────────────────── */
+
+.xbw-canais {
+  display: grid;
+  gap: 0.3vh;
+  margin: 0 2vw;
+}
+
+.xbw-canal {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+
+.xbw-canal > button {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  flex: 1;
+  min-width: 0;
+  min-height: var(--xbw-toque);
+  padding: 1vh 2vw;
+  border: 0;
+  border-radius: var(--xbw-canto-2);
+  background: none;
+  color: var(--xbw-texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-canal > button > span:not(.xbw-canal__foto) {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+/*
+ * O NOME DO CANAL NAO PODE QUEBRAR EM DUAS LINHAS.
+ *
+ * Quebrando, a hora e o botao de seguir sobem para o meio do nome e a linha
+ * vira um amontoado. Uma linha so, com reticencias, e o nome longo cabe.
+ */
+.xbw-canal strong {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  min-width: 0;
+  font: var(--xbw-t-corpo);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.xbw-canal strong span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.xbw-canal small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-canal time {
+  align-self: flex-start;
+  padding-top: 0.3vh;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+  flex: none;
+}
+
+.xbw-canal__foto {
+  flex: none;
+  width: clamp(2.6rem, 6vh, 3.4rem);
+  height: clamp(2.6rem, 6vh, 3.4rem);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font:
+    700 1.2rem/1 system-ui,
+    sans-serif;
+}
+
+.xbw-verificado {
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font-style: normal;
+  font-size: 0.62rem;
+  font-weight: 700;
+}
+
+.xbw-seguir {
+  flex: none;
+  min-height: 2.2rem;
+  margin-right: 2vw;
+  padding: 0 3.5vw;
+  white-space: nowrap;
+  border: 1px solid var(--xbw-marca);
+  border-radius: var(--xbw-pilula);
+  background: none;
+  color: var(--xbw-marca);
+  font: var(--xbw-t-mini);
+  cursor: pointer;
+}
+
+.xbw-canal__sobre {
+  margin: 0 4vw;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-canal__pe {
+  padding: 1.2vh 4vw max(1.2vh, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--xbw-vidro);
+}
+
+.xbw-post {
+  margin: 0 4vw;
+  padding: 1.6vh;
+  border-radius: var(--xbw-canto-3);
+  background: var(--xbw-balao-outro);
+}
+
+.xbw-post p {
+  margin: 0;
+  font: var(--xbw-t-corpo);
+}
+
+.xbw-post footer {
+  display: flex;
+  gap: 2vw;
+  margin-top: 0.8vh;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-post__reacoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5vw;
+  margin-top: 1vh;
+}
+
+.xbw-reacao {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  min-height: 2rem;
+  padding: 0 2.5vw;
+  border: 1px solid transparent;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-vidro);
+  color: var(--xbw-texto);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.xbw-reacao b {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-reacao--minha {
+  border-color: var(--xbw-marca);
+  background: var(--xbw-realce);
+}
+
+.xbw-reacao--minha b {
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-topo__quem {
+  display: grid;
+  min-width: 0;
+}
+
+/* ── FORMULARIOS (perfil, anúncio, cobrança, automáticas) ────────────────── */
+
+.xbw-formulario label {
+  display: grid;
+  gap: 0.5vh;
+  margin: 0 4vw;
+}
+
+.xbw-formulario label > span {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-formulario input:not([type="range"]):not([type="checkbox"]),
+.xbw-formulario textarea,
+.xbw-formulario select {
+  width: 100%;
+  min-height: var(--xbw-toque);
+  padding: 1vh 3vw;
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-canto-2);
+  background: var(--xbw-campo);
+  color: var(--xbw-texto);
+  font: var(--xbw-t-corpo);
+}
+
+.xbw-formulario textarea {
+  resize: none;
+}
+
+.xbw-formulario input[type="range"] {
+  width: 100%;
+  accent-color: var(--xbw-marca);
+}
+
+.xbw-formulario--dentro {
+  display: grid;
+  gap: 1.2vh;
+  margin: 1vh 2vw;
+  padding: 1.6vh 0;
+  border-radius: var(--xbw-canto-3);
+  background: var(--xbw-realce);
+}
+
+.xbw-perfil-topo {
+  display: grid;
+  justify-items: center;
+  gap: 0.8vh;
+  padding: 1.5vh 0;
+}
+
+.xbw-perfil-topo p {
+  margin: 0;
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-liga {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--xbw-lado-2);
+  min-height: var(--xbw-toque);
+}
+
+.xbw-liga > span {
+  font: var(--xbw-t-corpo) !important;
+  color: var(--xbw-texto) !important;
+}
+
+.xbw-liga input[type="checkbox"] {
+  width: 1.4rem;
+  height: 1.4rem;
+  accent-color: var(--xbw-marca);
+}
+
+.xbw-duas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3vw;
+}
+
+.xbw-duas label {
+  margin: 0;
+}
+
+.xbw-pe {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  padding: 1.2vh 4vw max(1.2vh, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--xbw-vidro);
+}
+
+.xbw-pe .xbw-acao {
+  margin-left: auto;
+}
+
+/* ── BOTOES DE ACAO ──────────────────────────────────────────────────────── */
+
+.xbw-acao {
+  min-height: var(--xbw-toque);
+  padding: 0 5vw;
+  border: 0;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-marca);
+  color: var(--xbw-marca-texto);
+  font: var(--xbw-t-mini);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.xbw-acao--larga {
+  margin: 0 4vw;
+}
+
+.xbw-acao--fraca {
+  background: var(--xbw-vidro);
+  color: var(--xbw-texto);
+}
+
+.xbw-linha-botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2vw;
+  margin: 0 4vw;
+}
+
+.xbw-formulario--dentro .xbw-linha-botoes,
+.xbw-caixa .xbw-linha-botoes {
+  margin: 0;
+}
+
+.xbw-linha-botoes button {
+  min-height: var(--xbw-toque);
+  padding: 0 4vw;
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-pilula);
+  background: none;
+  color: var(--xbw-texto);
+  font: var(--xbw-t-mini);
+  cursor: pointer;
+}
+
+.xbw-linha-botoes .xbw-acao {
+  border-color: transparent;
+}
+
+/* ── CAIXAS (anúncio, cobrança) ──────────────────────────────────────────── */
+
+.xbw-caixas {
+  display: grid;
+  gap: 1.2vh;
+  margin: 0 4vw;
+}
+
+.xbw-caixa {
+  display: grid;
+  gap: 1vh;
+  padding: 1.6vh;
+  border-radius: var(--xbw-canto-3);
+  background: var(--xbw-balao-outro);
+}
+
+.xbw-caixa > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--xbw-lado-2);
+}
+
+.xbw-caixa > header strong {
+  font: var(--xbw-t-corpo);
+  font-weight: 700;
+}
+
+.xbw-caixa p {
+  margin: 0;
+  font: var(--xbw-t-corpo);
+}
+
+.xbw-caixa__quem {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+
+.xbw-selo-situacao {
+  flex: none;
+  padding: 0.4vh 2.4vw;
+  border-radius: var(--xbw-pilula);
+  background: var(--xbw-vidro);
+  font: var(--xbw-t-mini);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.xbw-selo-situacao--no-ar,
+.xbw-selo-situacao--paga {
+  background: rgba(24, 191, 234, 0.28);
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-selo-situacao--pausado,
+.xbw-selo-situacao--enviada {
+  background: rgba(180, 113, 47, 0.28);
+}
+
+.xbw-selo-situacao--terminado,
+.xbw-selo-situacao--cancelada {
+  opacity: 0.7;
+}
+
+.xbw-numeros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4vw;
+  margin: 0 4vw;
+}
+
+.xbw-caixa .xbw-numeros {
+  margin: 0;
+}
+
+.xbw-numeros > div {
+  display: grid;
+  gap: 0.2vh;
+}
+
+.xbw-numeros dt {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-3);
+}
+
+.xbw-numeros dd {
+  margin: 0;
+  font:
+    700 clamp(1rem, 2.6vh, 1.4rem) / 1 system-ui,
+    sans-serif;
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-total {
+  margin: 0 4vw;
+  font: var(--xbw-t-corpo);
+  font-weight: 700;
+  color: var(--xbw-marca-clara);
+}
+
+/* ── GUIA DE NEGOCIOS ────────────────────────────────────────────────────── */
+
+.xbw-fichas {
+  display: flex;
+  gap: 2vw;
+  overflow-x: auto;
+  padding: 0 4vw 0.6vh;
+}
+
+.xbw-ficha {
+  flex: none;
+  min-height: 2.2rem;
+  padding: 0 3.5vw;
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-pilula);
+  background: none;
+  color: var(--xbw-texto-2);
+  font: var(--xbw-t-mini);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.xbw-ficha--atual {
+  border-color: var(--xbw-marca);
+  background: var(--xbw-realce);
+  color: var(--xbw-texto);
+}
+
+/* ── ESTATISTICAS ────────────────────────────────────────────────────────── */
+
+.xbw-placar {
+  display: grid;
+  gap: 0.6vh;
+  margin: 0 4vw;
+}
+
+.xbw-placar > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--xbw-lado-2);
+  padding: 1.1vh 0;
+  border-bottom: 1px solid var(--xbw-vidro);
+}
+
+.xbw-placar dt {
+  font: var(--xbw-t-corpo);
+  color: var(--xbw-texto-2);
+}
+
+.xbw-placar dd {
+  margin: 0;
+  font:
+    700 clamp(1rem, 2.6vh, 1.4rem) / 1 system-ui,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  color: var(--xbw-marca-clara);
+}
+
+/* ── ETIQUETAS ───────────────────────────────────────────────────────────── */
+
+.xbw-grupo-etiqueta {
+  display: grid;
+  gap: 0.6vh;
+}
+
+.xbw-linha-fixa {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * O QUE APARECE QUANDO ALGUEM LIGA OU MANDA MENSAGEM.
+ *
+ * Ordem dele, 07/09/2026: "MAS COM TOM AZUL FORMATO XB, TODO RESTANTE MANTER,
+ * NOME E FOTO SERA DE CADA USUARIO".
+ *
+ * Entao: o desenho e o do aplicativo de verdade, e a cor e o azul XB da lista
+ * do alto do arquivo. Nenhuma cor solta aqui.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── A FAIXA DE MENSAGEM ─────────────────────────────────────────────────── */
+
+.xbw-faixa {
+  position: absolute;
+  top: max(1vh, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  width: min(94%, 44rem);
+  padding: 1vh 3vw;
+  border: 1px solid var(--xbw-vidro);
+  border-radius: var(--xbw-canto-3);
+  background: var(--xbw-fosco);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.45);
+  animation: xbw-desce 180ms var(--xbw-curva) both;
+}
+
+@keyframes xbw-desce {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -0.8rem);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-faixa {
+    animation: none;
+  }
+}
+
+.xbw-faixa__toque {
+  display: flex;
+  align-items: center;
+  gap: var(--xbw-lado-2);
+  flex: 1;
+  min-width: 0;
+  min-height: var(--xbw-toque);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--xbw-texto);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-faixa__toque > span {
+  display: grid;
+  min-width: 0;
+}
+
+.xbw-faixa strong {
+  font: var(--xbw-t-corpo);
+  font-weight: 700;
+}
+
+.xbw-faixa small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-texto-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-faixa__fechar {
+  flex: none;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 0;
+  border-radius: 50%;
+  background: var(--xbw-vidro);
+  color: var(--xbw-texto-2);
+  cursor: pointer;
+}
+
+/* ── O TELEFONE TOCANDO: A TELA QUE ELE DESENHOU ─────────────────────────
+ *
+ * A arte dele tem cinco andares: marca, retrato, os tres botoes redondos, os
+ * dois grandes, e o lema. O fundo tem ondas suaves. Aqui e a mesma coisa no
+ * azul XB — as ondas sao dois clarões de gradiente, e nao imagem, porque
+ * imagem de fundo nao acompanha tela de tamanho diferente.
+ */
+
+.xbw-toque {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: min(100%, 46rem);
+  height: 100%;
+  margin-inline: auto;
+  padding: 3vh 6vw max(3vh, env(safe-area-inset-bottom));
+  text-align: center;
+  background:
+    radial-gradient(
+      70% 40% at 15% 8%,
+      rgba(24, 191, 234, 0.16),
+      transparent 70%
+    ),
+    radial-gradient(
+      80% 45% at 95% 92%,
+      rgba(18, 84, 122, 0.55),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #0f2e46 0%, var(--xbw-fundo) 55%, #081726 100%);
+}
+
+/* ── A MARCA E O LEMA ────────────────────────────────────────────────────── */
+
+.xbw-toque__marca {
+  display: grid;
+  justify-items: center;
+  gap: 0.4vh;
+  grid-template-areas:
+    "selo nome"
+    "lema lema";
+  grid-template-columns: auto auto;
+  column-gap: 2.5vw;
+}
+
+.xbw-toque__selo {
+  grid-area: selo;
+  display: grid;
+  place-items: center;
+  width: clamp(1.9rem, 4.4vh, 2.6rem);
+  aspect-ratio: 1;
+  border: 2px solid var(--xbw-marca);
+  border-radius: 50%;
+  color: var(--xbw-marca);
+  font:
+    800 clamp(1rem, 2.4vh, 1.4rem) / 1 system-ui,
+    sans-serif;
+}
+
+.xbw-toque__marca strong {
+  grid-area: nome;
+  align-self: center;
+  font:
+    800 clamp(1.4rem, 3.4vh, 2rem) / 1 system-ui,
+    sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.xbw-toque__marca em {
+  font-style: normal;
+  color: var(--xbw-marca);
+}
+
+.xbw-toque__marca small {
+  grid-area: lema;
+  font: var(--xbw-t-mini);
+  letter-spacing: 0.24em;
+  color: var(--xbw-texto-3);
+}
+
+/* ── O RETRATO COM O ANEL ACESO ──────────────────────────────────────────── */
+
+.xbw-toque__quem {
+  display: grid;
+  justify-items: center;
+  gap: 1vh;
+}
+
+/*
+ * O anel e o que faz a tela parecer um telefone chamando. Ele nao e enfeite:
+ * sem ele o retrato fica boiando num fundo escuro sem nada em volta.
+ */
+.xbw-toque__anel {
+  display: block;
+  padding: 0.55rem;
+  border: 2px solid var(--xbw-marca);
+  border-radius: 50%;
+  box-shadow:
+    0 0 2.4rem rgba(24, 191, 234, 0.35),
+    inset 0 0 1.6rem rgba(24, 191, 234, 0.18);
+}
+
+.xbw-toque__quem > strong {
+  margin-top: 1.4vh;
+  font:
+    800 clamp(1.8rem, 4.6vh, 2.6rem) / 1.05 system-ui,
+    sans-serif;
+}
+
+.xbw-toque__quem > small {
+  font: var(--xbw-t-corpo);
+  color: var(--xbw-texto-2);
+}
+
+.xbw-toque__pulso {
+  font: var(--xbw-t-mini);
+  font-style: normal;
+  color: var(--xbw-marca-clara);
+  animation: xbw-pisca 1.6s ease-in-out infinite;
+}
+
+@keyframes xbw-pisca {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-toque__pulso {
+    animation: none;
+  }
+}
+
+/* ── OS TRES BOTOES REDONDOS ─────────────────────────────────────────────── */
+
+.xbw-toque__extras {
+  display: flex;
+  justify-content: center;
+  gap: 8vw;
+}
+
+.xbw-toque__extra {
+  display: grid;
+  justify-items: center;
+  gap: 0.7vh;
+  border: 0;
+  background: none;
+  color: var(--xbw-texto);
+  font: var(--xbw-t-mini);
+  cursor: pointer;
+}
+
+.xbw-toque__extra > span {
+  display: grid;
+  place-items: center;
+  width: clamp(3.4rem, 8vh, 4.4rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--xbw-realce);
+}
+
+.xbw-toque__extra .xbw-i {
+  width: clamp(1.2rem, 2.8vh, 1.6rem);
+}
+
+.xbw-toque__extra--off > span {
+  background: var(--xbw-vidro);
+}
+
+.xbw-toque__extra--off .xbw-i {
+  opacity: 0.45;
+}
+
+/* ── OS DOIS BOTOES GRANDES ──────────────────────────────────────────────── */
+
+/*
+ * FICAM LONGE UM DO OUTRO, e o de recusar e o unico vermelho. Atender por
+ * engano e pior que perder a ligacao: quem perde liga de volta, quem atende sem
+ * querer ja atrapalhou.
+ */
+.xbw-toque__botoes {
+  display: flex;
+  justify-content: space-between;
+  gap: 12vw;
+  width: 100%;
+  max-width: 22rem;
+}
+
+.xbw-toque__grande {
+  display: grid;
+  justify-items: center;
+  gap: 1vh;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--xbw-texto);
+  font: var(--xbw-t-corpo);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.xbw-toque__atender,
+.xbw-toque__recusar {
+  border: 0;
+  cursor: pointer;
+}
+
+.xbw-toque__grande .xbw-i {
+  width: clamp(1.7rem, 4vh, 2.3rem);
+  padding: clamp(1.1rem, 2.6vh, 1.6rem);
+  border-radius: 50%;
+  box-sizing: content-box;
+}
+
+.xbw-toque__atender .xbw-i {
+  background: var(--xbw-marca);
+  box-shadow: 0 0 1.6rem rgba(24, 191, 234, 0.45);
+}
+
+.xbw-toque__recusar .xbw-i {
+  background: #d5372c;
+  box-shadow: 0 0 1.6rem rgba(213, 55, 44, 0.4);
+  transform: rotate(135deg);
+}
+
+.xbw-toque__lema {
+  margin: 0;
+  font: var(--xbw-t-mini);
+  line-height: 1.5;
+  letter-spacing: 0.16em;
+  color: rgba(24, 191, 234, 0.55);
+}
+
+/* ── O TELEFONE TOCANDO: FAIXA FINA ──────────────────────────────────────── */
+
+.xbw-toque-faixa {
+  position: absolute;
+  top: max(1vh, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 14;
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  width: min(94%, 44rem);
+  padding: 1vh 3vw;
+  border: 1px solid var(--xbw-marca);
+  border-radius: var(--xbw-canto-3);
+  background: var(--xbw-fosco);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0.6rem 1.6rem rgba(0, 0, 0, 0.45);
+  animation: xbw-desce 180ms var(--xbw-curva) both;
+}
+
+.xbw-toque-faixa > span {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+}
+
+.xbw-toque-faixa strong {
+  font: var(--xbw-t-corpo);
+  font-weight: 700;
+}
+
+.xbw-toque-faixa small {
+  font: var(--xbw-t-mini);
+  color: var(--xbw-marca-clara);
+}
+
+.xbw-toque-faixa .xbw-toque__atender,
+.xbw-toque-faixa .xbw-toque__recusar {
+  flex: none;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+}
+
+.xbw-toque-faixa .xbw-toque__atender {
+  background: var(--xbw-marca);
+}
+
+.xbw-toque-faixa .xbw-toque__recusar {
+  background: #c0492f;
+}
+
+.xbw-toque-faixa .xbw-toque__recusar .xbw-i {
+  transform: rotate(135deg);
+}
+
+.xbw-toque-faixa .xbw-i {
+  width: 1.1rem;
+}
+
+/* O código do entregador, em Configurações → Meu código. */
+.xbw-codigo {
+  margin: 1vh 4vw;
+  padding: 1.6vh 3vw;
+  border: 1px dashed var(--xbw-marca);
+  border-radius: var(--xbw-canto-2);
+  background: var(--xbw-realce);
+  color: var(--xbw-marca-clara);
+  font:
+    700 clamp(1rem, 2.6vh, 1.35rem) / 1.2 ui-monospace,
+    "SF Mono",
+    monospace;
+  letter-spacing: 0.08em;
+  text-align: center;
+  word-break: break-all;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * A MONTAGEM COM AS PECAS DELE.
+ *
+ * Ordem dele, 07/09/2026: "FOCO AGORA E MONTAGEM VISUAL, CRIEI E DESMONTEI
+ * TODO APP, AGORA APLIQUE, A CADA TELA CADA DETALHE TUDO QUE TE ENTREGUEI".
+ *
+ * Ele entregou dez folhas com o aplicativo inteiro desmontado. Cada peca foi
+ * recortada com transparencia e mora em `assets/xbwapp/`. Daqui para baixo o
+ * que havia de CSS desenhando forma cede lugar ao DESENHO DELE.
+ *
+ * ── A FERRAMENTA QUE FAZ ISSO FUNCIONAR: BORDER-IMAGE ─────────────────────
+ *
+ * Balao, topo, campo de escrever e tecla precisam ESTICAR com o conteudo, e o
+ * desenho dele tem tamanho fixo. `border-image` resolve: ela corta a imagem em
+ * nove pedacos, prega os quatro cantos, estica as quatro bordas e o miolo.
+ * O rabinho do balao entra DENTRO do canto de baixo — por isso o canto daquele
+ * lado e mais largo que os outros.
+ *
+ * A parte `/ 15px ...` depois das fatias e a reducao: a fatia de 30px da
+ * imagem e desenhada em 15px na tela. Sem isso o balao teria borda de 30px e
+ * uma frase curta ficaria do tamanho de um cartao.
+ * ═════════════════════════════════════════════════════════════════════════ */
+
+/* ── O PAPEL DE PAREDE ───────────────────────────────────────────────────── */
+
+.xbw {
+  background-image: url("/assets/xbwapp/XBW_papel-azul.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.xbw--claro {
+  background-image: none;
+}
+
+/* ── OS BALOES ───────────────────────────────────────────────────────────── */
+
+.xbw-balao--outro,
+.xbw-balao--meu {
+  border-style: solid;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0.6vh 1.2vw;
+}
+
+/* O rabinho fica embaixo A ESQUERDA: o canto esquerdo e o mais largo. */
+.xbw-balao--outro {
+  border-width: 15px 15px 19px 22px;
+  border-image: url("/assets/xbwapp/XBW_balao_outro.webp") 30 30 38 44 fill /
+    15px 15px 19px 22px stretch;
+}
+
+/* E no meu balao o rabinho fica embaixo A DIREITA. */
+.xbw-balao--meu {
+  border-width: 15px 22px 19px 15px;
+  border-image: url("/assets/xbwapp/XBW_balao_meu.webp") 30 44 38 30 fill / 15px
+    22px 19px 15px stretch;
+}
+
+.xbw-balao--outro::after,
+.xbw-balao--meu::after {
+  content: none;
+}
+
+/* ── O TOPO DA CONVERSA ──────────────────────────────────────────────────── */
+
+/*
+ * A PECA DO TOPO NAO ENTRA COMO FUNDO, e o motivo e simples: o desenho dele ja
+ * tem a seta, o retrato, o nome e os tres botoes DENTRO. Usada como fundo, ela
+ * apareceria atras dos controles de verdade e a tela ficaria com duas setas,
+ * dois retratos e dois nomes — foi exatamente o que aconteceu na primeira
+ * tentativa.
+ *
+ * Entao do topo se aproveita o que e PECA SOLTA: os tres botoes redondos (que
+ * ja sao os desenhos dele) e o anel em volta do retrato. A barra em si e feita,
+ * na mesma cara: fundo azul-marinho, canto redondo e o fio ciano em volta.
+ */
+.xbw-conversa > .xbw-topo:not(.xbw-topo--selecao) {
+  margin: 1vh 2vw 0;
+  padding: 1vh 2.5vw;
+  border: 1px solid rgba(24, 191, 234, 0.55);
+  border-radius: var(--xbw-pilula);
+  background: linear-gradient(
+    180deg,
+    rgba(18, 84, 122, 0.5),
+    rgba(9, 24, 42, 0.92)
+  );
+  box-shadow:
+    0 0 1rem rgba(24, 191, 234, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* O anel aceso em volta do retrato, como no desenho dele. */
+.xbw-conversa > .xbw-topo .xbw-retrato::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border: 2px solid var(--xbw-marca);
+  border-radius: 50%;
+  box-shadow: 0 0 0.6rem rgba(24, 191, 234, 0.55);
+}
+
+/* ── O CAMPO DE ESCREVER ─────────────────────────────────────────────────── */
+
+/*
+ * O CAMPO usa a peca dele SEM O MIOLO (`border-image` sem `fill`): sobra a
+ * moldura acesa, e o meio e pintado aqui com o mesmo azul. Foi preciso porque
+ * o desenho dele traz a palavra "Message..." dentro, e apagar a palavra deixava
+ * emenda visivel no meio. Assim a moldura e dele e o miolo e liso.
+ */
+.xbw-campo {
+  border-style: solid;
+  border-width: 12px 16px 12px 16px;
+  border-image: url("/assets/xbwapp/XBW_campo.webp") 34 46 34 46 / 12px 16px
+    12px 16px stretch;
+  border-radius: var(--xbw-pilula);
+  background: linear-gradient(
+    180deg,
+    rgba(16, 46, 74, 0.92),
+    rgba(8, 24, 40, 0.94)
+  );
+  background-clip: padding-box;
+  padding: 0.2vh 1vw;
+}
+
+/* ── A TECLA ─────────────────────────────────────────────────────────────── */
+
+/*
+ * A TECLA E O DESENHO DELE, INTEIRO.
+ *
+ * Cada tecla da camada de letras e o recorte da folha dele, com a letra ja
+ * dentro — nada e escrito por cima. A largura de cada uma vem do arquivo
+ * (`flex-grow` com o tamanho do recorte), entao a fila fica com o mesmo
+ * desenho da folha em qualquer tamanho de tela.
+ */
+.xbw-tecla {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  cursor: pointer;
+  min-width: 0;
+  min-height: 0;
+}
+
+.xbw-tecla img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.xbw-tecla:active {
+  filter: brightness(1.55) saturate(1.15);
+}
+
+/*
+ * Numeros e acentos nao existem na folha dele: a MOLDURA e a mesma tecla com a
+ * letra apagada, e o caractere e escrito por cima. E o unico jeito honesto —
+ * desenhar tecla nova seria refazer o teclado dele de novo.
+ */
+.xbw-tecla:not(.xbw-tecla--desenho) {
+  display: grid;
+  place-items: center;
+  min-height: max(38px, 5.2vh);
+  border-style: solid;
+  border-width: 9px 10px 11px 10px;
+  border-image: url("/assets/xbwapp/XBW_tecla.webp") 18 20 22 20 fill / 9px 10px
+    11px 10px stretch;
+  color: #ffffff;
+  font:
+    600 clamp(0.9rem, 2.2vh, 1.2rem) / 1 system-ui,
+    sans-serif;
+  text-shadow: 0 0 0.4rem rgba(24, 191, 234, 0.6);
+}
+
+.xbw-tecla:disabled {
+  filter: brightness(0.55) saturate(0.5);
+  cursor: default;
+}
+
+.xbw-teclado__topo button img {
+  width: 1.1rem;
+  transform: rotate(-90deg);
+}
+
+/* ── OS SELOS COM A FRASE JA DESENHADA ───────────────────────────────────── */
+
+/*
+ * Estes cinco so servem onde a frase e SEMPRE a mesma: "Encaminhada",
+ * "Editada", "Mensagem apagada", "online" e "Hoje". Onde o texto muda — o
+ * contador de nao lidas, a hora, a data de ontem — continua sendo CSS, porque
+ * imagem com texto assado mente assim que o texto muda.
+ */
+.xbw-selo-img {
+  display: block;
+  height: auto;
+}
+
+.xbw-selo-img--encaminhada,
+.xbw-selo-img--editada {
+  width: clamp(4.6rem, 11vh, 6.2rem);
+}
+
+.xbw-selo-img--apagada {
+  width: clamp(7rem, 17vh, 9.4rem);
+}
+
+.xbw-selo-img--online {
+  width: clamp(3.6rem, 8.6vh, 4.8rem);
+}
+
+.xbw-selo-img--hoje {
+  width: clamp(3rem, 7vh, 4rem);
+  margin: 0.6vh auto;
+}
+
+.xbw-selo-img--digitando {
+  width: clamp(3.4rem, 8vh, 4.4rem);
+}
+
+/* ── A TELA DE CHAMADA COM AS PECAS DELE ─────────────────────────────────── */
+
+.xbw-toque__marca {
+  display: grid;
+  grid-template-areas:
+    "selo nome"
+    "lema lema";
+  grid-template-columns: auto auto;
+  justify-items: center;
+  align-items: center;
+  column-gap: 2.5vw;
+  row-gap: 0.4vh;
+}
+
+.xbw-toque__selo {
+  grid-area: selo;
+  width: clamp(2.2rem, 5.2vh, 3rem);
+  height: auto;
+}
+
+.xbw-toque__nome {
+  grid-area: nome;
+  width: clamp(9rem, 22vh, 13rem);
+  height: auto;
+}
+
+.xbw-toque__marca small {
+  grid-area: lema;
+  font: var(--xbw-t-mini);
+  letter-spacing: 0.2em;
+  color: var(--xbw-texto-3);
+}
+
+/* A palavra embaixo do botao tambem e desenho dele. */
+.xbw-toque__rotulo {
+  display: block;
+  width: 86%;
+  height: auto;
+  margin: 0.2vh auto 0;
+}
+
+/*
+ * O ANEL da chamada e desenho DELE, e o retrato entra por dentro. O anel fica
+ * por cima num quadro proprio para o retrato nao cobrir o brilho.
+ */
+.xbw-toque__moldura {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: clamp(13rem, 34vh, 19rem);
+  aspect-ratio: 1;
+}
+
+.xbw-toque__moldura img.xbw-toque__aro {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.xbw-toque__moldura .xbw-retrato {
+  width: 82% !important;
+}
+
+.xbw-toque__grande img,
+.xbw-toque__extra img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.xbw-toque__grande {
+  width: clamp(5.2rem, 13vh, 7rem);
+}
+
+.xbw-toque__extra {
+  width: clamp(3.8rem, 9vh, 5rem);
+}
+
+.xbw-toque__extra--off img {
+  filter: brightness(0.55) saturate(0.6);
+}
+
+/*
+ * A BOLINHA DE ONLINE nao entra no retrato da tela de chamada.
+ *
+ * No retrato pequeno ela e um ponto no canto; no retrato enorme ela vira uma
+ * bola azul no meio do rosto. Quem esta ligando obviamente esta online.
+ */
+.xbw-retrato--enorme .xbw-retrato__online {
+  display: none;
+}
+
+/* A folha de carinhas que a tecla do teclado dele abre. */
+.xbw-carinhas {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 1vw;
+  padding: 1.2vh 3vw;
+  background: var(--xbw-painel);
+  border-top: 1px solid var(--xbw-vidro);
+}
+
+.xbw-carinhas button {
+  min-height: var(--xbw-toque);
+  border: 0;
+  border-radius: var(--xbw-canto-2);
+  background: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ *
+ *  ACABAMENTO DE 07 e 08/09 — tela a tela, com a direcao olhando
+ *
+ *  Tudo daqui para baixo saiu da sessao em que ele acompanhou cada tela e
+ *  foi pedindo um ajuste de cada vez. Estava so na pagina publicada; agora
+ *  voltou para casa.
+ *
+ *  Fica no FIM do arquivo de proposito. Varias destas regras corrigem
+ *  desenhos que ja existiam la em cima — a ultima palavra tem de ser desta
+ *  parte. Quem for mexer: nao suba estes blocos para o meio do arquivo,
+ *  eles param de valer.
+ *
+ *  O caminho foi: aplicar moldura no alto e no pe, ele achou poluido,
+ *  tirar as duas e deixar so o selo no canto. Por isso o primeiro bloco
+ *  daqui LIMPA o que os blocos de cima desenham. Nao e sobra, e a decisao.
+ *
+ *  Artes novas que entraram junto, na pasta de pecas:
+ *    XBW_marca-xb.webp          o selo no canto de cima
+ *    XBW_pilula.webp            a moldura limpa da barra de cima
+ *    XBW_papel-claro.webp       o papel de rabiscos atras das listas
+ *    XBW_aba2-conversas.webp    \
+ *    XBW_aba2-atualizacoes.webp  |
+ *    XBW_aba2-chamadas.webp      |  as seis abas de baixo, desenho novo
+ *    XBW_aba2-ferramentas.webp   |  (as duas ultimas sao as telas em
+ *    XBW_aba2-entrega-rapida.webp      |   branco, guardadas para depois)
+ *    XBW_aba2-recibo.webp      /
+ *
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.xbw-abas{justify-content:space-between;gap:1.6%}.xbw-aba{flex:0 1 auto!important;min-width:0;min-height:0;padding:0 .5vw;gap:.3vh;border-radius:1vh}.xbw-aba small{font:600 clamp(.42rem,.92vh,.5rem)/1 system-ui,sans-serif!important;letter-spacing:0;overflow:visible!important;text-overflow:clip!important}.xbw-aba__icone .xbw-i{width:clamp(1rem,2.2vh,1.28rem)!important}.xbw-aba__icone .xbw-contador{top:-.5vh;right:-1.1vh;min-width:.95rem;height:.95rem;font-size:.58rem}.xbw__sair{display:none}
+
+
+.xbw-topo .xbw-retrato{width:clamp(1.85rem,4.1vh,2.35rem)!important}.xbw-topo .xbw-botao{min-width:0!important;min-height:0!important;width:clamp(1.6rem,3.6vh,2rem);height:clamp(1.6rem,3.6vh,2rem)}.xbw-topo .xbw-i{width:clamp(1.05rem,2.35vh,1.35rem)!important}.xbw-topo__quem strong{font:800 clamp(.82rem,2.05vh,1.05rem)/1.1 system-ui,sans-serif!important}.xbw-topo__quem small{font:500 clamp(.58rem,1.4vh,.74rem)/1.2 system-ui,sans-serif!important}.xbw-marca{font:800 clamp(.95rem,2.4vh,1.25rem)/1 system-ui,sans-serif!important}
+
+.xbw-procura{margin-top:1cm!important}
+
+.xbw-marca{display:none}
+
+.xbw-topo{flex:0 0 auto!important;height:clamp(80px,10.9vh,98px)!important;min-height:clamp(80px,10.9vh,98px)!important;max-height:clamp(80px,10.9vh,98px)!important;width:100%;flex-shrink:0!important}
+
+/* limpar: sem as pecas de moldura no alto e no pe */
+.xbw-topo{background-image:none!important;background-color:transparent!important;
+ height:auto!important;min-height:0!important;max-height:none!important;
+ margin:max(1.2vh,env(safe-area-inset-top)) 0 0!important;padding:1.2vh 4vw!important;
+ border:0!important;box-shadow:none!important;flex:0 0 auto!important}
+.xbw-topo .xbw-retrato{width:clamp(2.4rem,5.4vh,3rem)!important}
+.xbw-topo .xbw-botao{width:auto!important;height:auto!important;min-width:44px!important;min-height:44px!important}
+.xbw-topo .xbw-i{width:clamp(1.25rem,3vh,1.6rem)!important}
+.xbw-topo__quem strong{font:800 clamp(1rem,2.5vh,1.3rem)/1.1 system-ui,sans-serif!important}
+.xbw-topo__quem small{font:500 clamp(.7rem,1.7vh,.9rem)/1.2 system-ui,sans-serif!important}
+
+.xbw-abas{background-image:none!important;background-color:transparent!important;
+ height:auto!important;width:min(100%,46rem)!important;margin:0 auto!important;
+ padding:.8vh 3vw max(1.4vh,env(safe-area-inset-bottom))!important;
+ gap:1vw!important;justify-content:space-around!important;border:0!important}
+.xbw-aba{flex:1 1 0!important;min-width:0;min-height:52px!important;padding:.4vh 0!important;gap:.4vh!important}
+.xbw-aba small{font:600 clamp(.6rem,1.35vh,.72rem)/1 system-ui,sans-serif!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.xbw-aba__icone .xbw-i{width:clamp(1.4rem,3.2vh,1.8rem)!important}
+.xbw-aba__icone .xbw-contador{top:-.6vh!important;right:-1.6vh!important;min-width:1.2rem!important;height:1.2rem!important;font-size:.68rem!important}
+
+.xbw-topo:has(.xbw-marca){min-height:72px!important;height:auto!important;padding-top:1.2vh!important;padding-bottom:1.2vh!important;background-image:url("/assets/xbwapp/XBW_marca-xb.webp")!important;background-size:auto 44px!important;background-position:right 5vw center!important;background-repeat:no-repeat!important}
+
+/* ordem da tela de conversas: pesquisar, todos os contatos, e a lista embaixo */
+.xbw-procura{order:1!important}
+.xbw-arquivadas{order:2!important}
+.xbw-contatos{order:3!important;flex:none!important;padding:1vh 4vw 0!important}
+.xbw-contatos ul{margin-top:1vh;max-height:46vh;overflow-y:auto}
+.xbw-conversas{order:4!important}
+.xbw-vazio{order:5!important}
+
+/* abas: os desenhos novos dele */
+.xbw-abas .xbw-aba__icone{position:relative;display:block;
+ width:clamp(1.7rem,3.9vh,2.15rem);height:clamp(1.7rem,3.9vh,2.15rem);
+ background-size:contain;background-repeat:no-repeat;background-position:center}
+.xbw-abas .xbw-aba__icone .xbw-i{display:none!important}
+.xbw-aba small{font:600 clamp(.37rem,.85vh,.48rem)/1.1 system-ui,sans-serif!important;letter-spacing:-.02em;
+ overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap}
+.xbw-abas{gap:.3vw!important;padding:.8vh 1.2vw max(1.4vh,env(safe-area-inset-bottom))!important}
+.xbw-aba{padding:.3vh .2vw!important;gap:.3vh!important}
+.xbw-aba--atual{background:rgba(24,191,234,.16)!important}
+
+/* telas novas, ainda em branco */
+.xbw-vazia{align-items:center;justify-content:flex-start;gap:0;padding:3vh 6vw;text-align:center;overflow-y:auto}
+.xbw-vazia__t{margin:0 0 .6vh!important;font:800 clamp(1.3rem,3.4vh,1.9rem)/1.1 system-ui,sans-serif;color:#eaf6ff}
+.xbw-vazia__l{margin:0 0 3vh!important;font:500 clamp(.85rem,2vh,1rem)/1.35 system-ui,sans-serif;color:rgba(234,246,255,.66)}
+.xbw-vazia__caixa{width:100%;padding:5vh 6vw;border:1px solid rgba(41,168,240,.45);border-radius:2.4vh;background:rgba(8,26,48,.42)}
+.xbw-vazia__f{margin:0 0 1vh!important;font:800 clamp(1.05rem,2.7vh,1.35rem)/1.25 system-ui,sans-serif;color:#eaf6ff}
+.xbw-vazia__a{margin:0!important;font:500 clamp(.8rem,1.9vh,.95rem)/1.4 system-ui,sans-serif;color:rgba(234,246,255,.6)}
+.xbw-abas .xbw-aba:nth-child(1) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-conversas.webp")}
+.xbw-abas .xbw-aba:nth-child(2) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-atualizacoes.webp")}
+.xbw-abas .xbw-aba:nth-child(3) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-chamadas.webp")}
+.xbw-abas .xbw-aba:nth-child(4) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-ferramentas.webp")}
+.xbw-abas .xbw-aba:nth-child(5) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-entrega-rapida.webp")}
+.xbw-abas .xbw-aba:nth-child(6) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-recibo.webp")}
+
+/* TECLADO — formato certo, colado na barra de escrever */
+.xbw-teclado{background:linear-gradient(180deg,#07182b 0%,#03080f 100%)!important;
+ border-top:1px solid rgba(41,168,240,.5)!important;border-radius:2.4vh 2.4vh 0 0!important;
+ padding:.4vh 1.6vw max(.8vh,env(safe-area-inset-bottom))!important;gap:.6vh!important;
+ box-shadow:0 -.6vh 2.4vh rgba(0,0,0,.5)}
+.xbw-teclado__topo{padding:.2vh 3vw .2vh!important;min-height:0}
+.xbw-teclado__topo button{min-width:1.9rem!important;min-height:1.9rem!important}
+.xbw-teclado__linha{gap:1.1vw!important}
+.xbw-teclado>.xbw-teclado__linha:nth-child(3){padding-inline:5.2%}
+.xbw-tecla{min-height:max(40px,5.4vh)!important;text-transform:uppercase;
+ font:600 clamp(.9rem,2.3vh,1.15rem)/1 system-ui,sans-serif!important}
+.xbw-tecla--espaco,.xbw-tecla--larga{text-transform:none}
+.xbw-barra{padding:1vh 4vw .8vh!important}
+
+.xbw-tecla--larga{font:600 clamp(.6rem,1.55vh,.78rem)/1 system-ui,sans-serif!important;white-space:nowrap;letter-spacing:-.02em}
+.xbw-tecla--espaco{font:600 clamp(.68rem,1.7vh,.85rem)/1 system-ui,sans-serif!important;white-space:nowrap}
+.xbw-barra{padding:.8vh 4vw .4vh!important}
+.xbw-teclado{margin-top:0!important}
+
+/* a barra de escrever: so a peca dele, sem o contorno extra por cima */
+.xbw-campo{background:none!important;border-radius:0!important;outline:0!important}
+.xbw-campo:focus-within{outline:0!important;filter:brightness(1.12)}
+.xbw-campo input{background:none!important;outline:0!important}
+.xbw-barra{padding:.8vh 4vw .3vh!important;gap:2.2vw!important}
+
+/* fileira de cima do teclado: fechar + tres sugestoes, como no desenho dele */
+.xbw-teclado__topo{display:flex!important;align-items:center;gap:1.4vw!important;padding:.3vh 1.6vw .1vh!important}
+.xbw-teclado__fechar{flex:none}
+.xbw-teclado__topo .xbw-sugestao{flex:1 1 0;border-radius:0!important;min-width:0;min-height:max(30px,4vh);padding:0 1vw;
+ border:0;background:none;color:#dff2ff;cursor:pointer;
+ font:600 clamp(.7rem,1.75vh,.88rem)/1 system-ui,sans-serif;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+ border-style:solid!important;border-width:8px 12px 10px 12px!important;
+ border-image-source:url("/assets/xbwapp/XBW_tecla.webp");border-image-slice:18 20 22 20 fill;
+ border-image-width:8px 12px 10px 12px;border-image-repeat:stretch;
+ text-shadow:0 0 .4rem rgba(24,191,234,.6)}
+.xbw-sugestao:active{filter:brightness(1.6)}
+/* teclas de icone da fileira de baixo */
+.xbw-tecla--icone{flex:1.15 1 0;display:grid;place-items:center}
+.xbw-tecla--icone .xbw-i{width:clamp(1.1rem,2.7vh,1.5rem)}
+.xbw-tecla--enviar{flex:1.6 1 0}
+.xbw-tecla--mic .xbw-i{width:clamp(1.2rem,2.9vh,1.6rem)}
+
+/* o teclado estava caindo para fora da tela: a area da conversa nao encolhia */
+.xbw__tela{grid-template-rows:minmax(0,1fr)!important;min-height:0!important}
+.xbw__tela>section{min-height:0!important;max-height:100%!important}
+.xbw-barra,.xbw-teclado,.xbw-citando,.xbw-anexos,.xbw-respostas{flex:none!important}
+.xbw-fio{flex:1 1 0!important;min-height:0!important;overflow-y:auto!important}
+
+.xbw__tela>section{height:100%!important;overflow:hidden!important}
+
+/* teclado sem fundo: so as teclas dele sobre o fundo do aplicativo */
+.xbw-teclado{background:none!important;background-image:none!important;border-top:0!important;
+ box-shadow:none!important;border-radius:0!important;padding:.2vh 1.6vw max(.6vh,env(safe-area-inset-bottom))!important}
+.xbw-teclado__topo{padding:.1vh 3vw .1vh!important;justify-content:flex-start}
+
+/* painel do "+" sem fundo e com os desenhos no tamanho do WhatsApp */
+.xbw-anexos{background:none!important;background-color:transparent!important;border-radius:0!important;
+ padding:1.8vh 5vw 1vh!important;gap:2vh 2vw!important}
+.xbw-anexos button .xbw-i{width:clamp(1.55rem,3.5vh,1.95rem)!important;height:auto}
+.xbw-anexos button{gap:.9vh!important}
+
+/* teclado liso, azul, sem brilho — o formato anterior */
+.xbw-tecla{border-image-source:none!important;border-style:none!important;border-width:0!important;
+ background:var(--tec-tecla)!important;border-radius:.9vh!important;
+ box-shadow:0 1px rgba(0,0,0,.35)!important;text-shadow:none!important;color:var(--tec-letra)!important}
+.xbw-tecla:active{background:var(--xbw-marca)!important;color:var(--xbw-marca-texto)!important;filter:none!important}
+.xbw-tecla--larga{background:var(--tec-tecla-2)!important}
+.xbw-tecla--espaco{background:var(--tec-tecla)!important}
+.xbw-tecla--enviar{background:var(--xbw-marca)!important;filter:none!important}
+.xbw-tecla--enviar:disabled{background:var(--tec-tecla-2)!important;filter:none!important;opacity:.45}
+
+/* barra de escrever no padrao dele: carinha à esquerda, clipe e camera à direita */
+.xbw-campo{gap:1.3vw!important;padding-inline:2.4vw!important}
+.xbw-campo>.xbw-i,.xbw-campo__emoji{width:clamp(2.05rem,4.7vh,2.6rem)!important;height:auto;flex:none}
+.xbw-campo__bt{min-width:0!important;min-height:0!important;width:clamp(2.15rem,4.9vh,2.7rem);height:clamp(2.15rem,4.9vh,2.7rem);display:grid;place-items:center;flex:none}
+.xbw-campo__bt .xbw-i{width:100%!important;height:auto}
+.xbw-enviar .xbw-i{width:clamp(3.05rem,6.9vh,3.8rem)!important}
+
+.xbw-oculto{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
+/* balao encolhe no tamanho do texto, em vez de esticar ate a margem */
+.xbw-balao{width:fit-content!important;max-width:82%!important}
+.xbw-balao__texto{flex:0 1 auto!important;min-width:0!important}
+.xbw-balao__pe{margin-left:.5rem!important}
+.xbw-balao__autor,.xbw-citacao,.xbw-balao__marca-texto{flex-basis:100%}
+
+/* PAPEL CLARO — so atras dos contatos, nao na tela toda */
+.xbw-contatos ul,.xbw-conversas{
+ background-color:#eef2f6;
+ background-image:url("/assets/xbwapp/XBW_papel-claro.webp");
+ background-size:200px auto;background-repeat:repeat;background-position:top left;
+ border-radius:2.2vh;box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28)}
+.xbw-contatos ul{padding:.6vh 0!important;margin-top:1.2vh}
+.xbw-conversas{padding:.4vh 0}
+.xbw-contatos li strong,.xbw-conversas .xbw-item__linha strong{color:#0b1b2e}
+.xbw-contatos li small,.xbw-conversas .xbw-item__linha small{color:rgba(11,27,46,.62)}
+.xbw-conversas .xbw-item__linha time{color:rgba(11,27,46,.5)}
+.xbw-conversas .xbw-item--aberto{background:rgba(11,27,46,.07)}
+
+.xbw-conversas .xbw-tique,.xbw-conversas .xbw-item__marcas .xbw-i{filter:invert(1) brightness(.45)}
+
+/* a barra do desenho dele: desenhos lisos dentro da pilula, sem botao redondo */
+.xbw-campo__bt{background:none!important;border:0!important;box-shadow:none!important;
+ width:clamp(1.55rem,3.5vh,1.95rem)!important;height:clamp(1.55rem,3.5vh,1.95rem)!important}
+.xbw-campo__bt .xbw-i{width:100%!important;height:auto}
+.xbw-campo>.xbw-i,.xbw-campo__emoji{width:clamp(1.5rem,3.4vh,1.9rem)!important}
+.xbw-campo{gap:2.2vw!important;padding-inline:3.2vw!important}
+
+.xbw-teclado__topo{display:none!important}
+.xbw-teclado{padding-top:.2vh!important}
+.xbw-barra{padding:.5vh 4vw .25vh!important}
+.xbw-campo__emojibt{background:none!important;border:0!important;padding:0!important}
+.xbw-audio__bt{background:none;border:0;padding:0;display:grid;place-items:center;cursor:pointer}
+
+/* a fileira de carinhas dele, acima da barra de escrever */
+.xbw-carinhas{display:flex;align-items:center;justify-content:space-between;gap:1.4vw;
+ padding:.8vh 4vw .4vh;flex:none}
+.xbw-carinha{flex:1 1 0;min-width:0;max-width:15%;padding:0;border:0;background:none;cursor:pointer;
+ transition:transform .1s ease}
+.xbw-carinha:active{transform:scale(.9)}
+.xbw-carinha .xbw-i{width:100%!important;height:auto}
+
+/* BARRA DE CIMA DA CONVERSA — no desenho dele */
+.xbw-conversa .xbw-topo{
+ display:flex;align-items:center;gap:2.4vw;
+ height:clamp(68px,9.2vh,82px)!important;min-height:0!important;max-height:none!important;
+ margin:max(1.1vh,env(safe-area-inset-top)) 2.6vw 0!important;
+ padding:0 3vw 0 2.4vw!important;box-sizing:border-box;
+ background:none!important;box-shadow:none!important;border-radius:0!important;
+ border:0 solid transparent;
+ border-image-source:url("/assets/xbwapp/XBW_campo.webp");
+ border-image-slice:44 fill;border-image-width:30px;border-image-repeat:stretch}
+.xbw-conversa .xbw-topo .xbw-botao{min-width:0!important;min-height:0!important;width:auto;height:auto}
+.xbw-conversa .xbw-topo .xbw-botao .xbw-i{width:clamp(1.25rem,2.9vh,1.6rem)!important}
+.xbw-conversa .xbw-topo__abrir{display:flex;align-items:center;gap:2.8vw;flex:1;min-width:0;
+ border:0;background:none;color:inherit;text-align:left;cursor:pointer;padding:0}
+.xbw-conversa .xbw-topo .xbw-retrato{width:clamp(2.7rem,6.1vh,3.3rem)!important}
+.xbw-conversa .xbw-topo__quem{display:grid;gap:.1vh;min-width:0}
+.xbw-conversa .xbw-topo__quem strong{font:800 clamp(1rem,2.5vh,1.28rem)/1.15 system-ui,sans-serif!important;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.xbw-conversa .xbw-topo__online,.xbw-conversa .xbw-topo__quem small{
+ font:500 clamp(.72rem,1.75vh,.92rem)/1.2 system-ui,sans-serif!important;
+ color:rgba(234,246,255,.66)!important;background:none!important;padding:0!important}
+.xbw-conversa .xbw-topo .xbw-i{width:clamp(1.9rem,4.3vh,2.35rem)!important}
+.xbw-retrato__online{background:#22c55e!important;box-shadow:0 0 0 .32vh rgba(6,18,34,.9)!important}
+
+/* acertos da barra de cima */
+.xbw-conversa .xbw-topo{border-style:solid!important;border-width:0!important}
+.xbw-conversa .xbw-topo>.xbw-botao:first-child .xbw-i{width:clamp(1.2rem,2.8vh,1.5rem)!important}
+.xbw-conversa .xbw-topo>.xbw-botao:not(:first-child){width:clamp(2rem,4.6vh,2.5rem)!important;height:clamp(2rem,4.6vh,2.5rem)!important;display:grid;place-items:center}
+.xbw-conversa .xbw-topo>.xbw-botao:not(:first-child) .xbw-i{width:100%!important;height:auto}
+.xbw-conversa .xbw-topo .xbw-retrato__online{width:26%!important;right:0!important;bottom:0!important}
+
+/* a moldura da barra de cima, com a pilula limpa */
+.xbw-conversa .xbw-topo{
+ border-style:solid!important;border-width:0!important;
+ border-image-source:url("/assets/xbwapp/XBW_pilula.webp")!important;
+ border-image-slice:60 fill!important;border-image-width:34px!important;border-image-repeat:stretch!important}
+.xbw-conversa .xbw-topo .xbw-retrato__online{
+ width:clamp(.72rem,1.65vh,.9rem)!important;height:clamp(.72rem,1.65vh,.9rem)!important;
+ right:2%!important;bottom:2%!important}
+
+.xbw-perfil__trocar{position:relative;display:block;padding:0;border:0;background:none;cursor:pointer;flex:none}
+.xbw-perfil__cam{position:absolute;right:-2%;bottom:-2%;width:34%;aspect-ratio:1;border-radius:50%;
+ background:#12547a;border:.3vh solid #0b1b2e;display:grid;place-items:center}
+.xbw-perfil__cam .xbw-i{width:62%!important}
+
+/* sem linhas entre os contatos, e a placa clara some quando nao ha nada nela */
+.xbw-conversas li+li,.xbw-contatos li+li{border-top:0!important}
+.xbw-conversas:empty{background:none!important;background-image:none!important;box-shadow:none!important;
+ min-height:0!important;flex:0 0 auto!important;padding:0!important}
+.xbw-contatos ul:empty{background:none!important;box-shadow:none!important;padding:0!important;margin:0!important}
+
+/* a conversa ganha a mesma placa clara dos contatos */
+.xbw-fio{
+ background-color:#eef2f6!important;
+ background-image:url("/assets/xbwapp/XBW_papel-claro.webp")!important;
+ background-size:200px auto!important;background-repeat:repeat!important;background-position:top left!important;
+ border-radius:2.2vh!important;margin:1vh 2.6vw .3vh!important;
+ box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28);padding:2vh 3.4vw!important}
+.xbw-fio .xbw-etiqueta,.xbw-fio .xbw-aviso{background:rgba(11,27,46,.10)!important;color:rgba(11,27,46,.72)!important}
+/* nada de barra lateral: so deslizar a tela */
+.xbw *{scrollbar-width:none!important;-ms-overflow-style:none!important}
+.xbw *::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+
+/* a hora ocupava metade do balao: encolheu e colou no texto */
+.xbw-balao{gap:.15rem .3rem!important}
+.xbw-balao__pe{gap:.22rem!important;margin-left:.35rem!important;align-self:flex-end}
+.xbw-hora{font:500 clamp(.58rem,1.3vh,.68rem)/1 system-ui,sans-serif!important;opacity:.72}
+.xbw-tique{width:clamp(.7rem,1.55vh,.85rem)!important;height:auto}
+
+/* TELA INICIAL — pesquisar ao lado do selo, no mesmo cinza das placas */
+.xbw__tela>section:has(.xbw-contatos){position:relative}
+.xbw-topo:has(.xbw-marca){position:absolute!important;top:max(1vh,env(safe-area-inset-top))!important;
+ right:3.4vw!important;left:auto!important;
+ width:clamp(42px,6.2vh,56px)!important;height:clamp(42px,6.2vh,56px)!important;
+ min-height:0!important;margin:0!important;padding:0!important;
+ background-size:contain!important;background-position:center center!important;z-index:6}
+.xbw__tela>section:has(.xbw-contatos) .xbw-procura{
+ margin:max(1.4vh,env(safe-area-inset-top)) calc(7vw + clamp(42px,6.2vh,56px)) 0 4vw!important;
+ padding:0 3.4vw!important;min-height:0!important;height:clamp(30px,4vh,36px)!important;gap:2.2vw!important}
+
+/* as duas placas claras no mesmo padrao: mesma margem, mesmo canto */
+.xbw-contatos{padding:1.2vh 4vw 0!important}
+.xbw-contatos ul{margin:0!important}
+.xbw-conversas{margin:1.2vh 4vw 0!important}
+.xbw-contatos ul,.xbw-conversas{border-radius:2.2vh!important;box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28)!important}
+
+.xbw__tela>section:has(.xbw-contatos) .xbw-procura input{font:500 clamp(.78rem,1.85vh,.92rem)/1 system-ui,sans-serif!important}
+.xbw__tela>section:has(.xbw-contatos) .xbw-procura .xbw-i{width:clamp(.9rem,2vh,1.1rem)!important}
+
+/* LIGACOES no mesmo formato das conversas */
+.xbw-chamadas{position:relative}
+.xbw-chamadas>.xbw-topo{position:absolute!important;top:max(1vh,env(safe-area-inset-top))!important;
+ right:3.4vw!important;left:auto!important;
+ width:clamp(42px,6.2vh,56px)!important;height:clamp(42px,6.2vh,56px)!important;
+ min-height:0!important;margin:0!important;padding:0!important;background:none;
+ background-image:url("/assets/xbwapp/XBW_marca-xb.webp")!important;
+ background-size:contain!important;background-repeat:no-repeat!important;background-position:center!important;z-index:6}
+.xbw-chamadas>ul{
+ margin:calc(max(1vh,env(safe-area-inset-top)) + clamp(42px,6.2vh,56px) + 1.4vh) 4vw 0!important;
+ background-color:#eef2f6;
+ background-image:url("/assets/xbwapp/XBW_papel-claro.webp");
+ background-size:200px auto;background-repeat:repeat;background-position:top left;
+ border-radius:2.2vh;box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28);padding:.4vh 0}
+.xbw-chamadas .xbw-chamada strong{color:#0b1b2e}
+.xbw-chamadas .xbw-chamada small{color:rgba(11,27,46,.62)}
+.xbw-chamadas .xbw-chamada--perdida strong{color:#b4381c!important}
+.xbw-chamadas .xbw-vazio{color:rgba(234,246,255,.6)}
+
+.xbw-chamadas>ul:empty{background:none!important;background-image:none!important;box-shadow:none!important;
+ padding:0!important;flex:0 0 auto!important;min-height:0!important}
+.xbw-chamadas>.xbw-vazio{margin-top:calc(max(1vh,env(safe-area-inset-top)) + clamp(42px,6.2vh,56px) + 2vh)}
+
+/* nas ligacoes: o botao dos contatos primeiro, a lista de chamadas embaixo */
+.xbw-chamadas>.xbw-contatos{margin-top:calc(max(1vh,env(safe-area-inset-top)) + clamp(42px,6.2vh,56px) + 1vh)!important}
+.xbw-chamadas>ul{margin:1.2vh 4vw 0!important}
+.xbw-chamadas>.xbw-vazio{margin-top:2vh!important}
+.xbw-contatos__ligar{width:clamp(1.7rem,3.9vh,2.1rem)!important;margin-left:auto;flex:none}
+
+/* chamada de verdade: imagem da camera e a barrinha da voz */
+.xbw-chamada-tela__video{width:min(72vw,320px);aspect-ratio:3/4;object-fit:cover;border-radius:2.4vh;
+ border:2px solid rgba(41,168,240,.6);background:#04101f;margin-bottom:1.4vh}
+.xbw-voz{display:block;width:min(60vw,240px);height:.9vh;min-height:6px;margin:1.4vh auto 0;
+ border-radius:999px;background:rgba(255,255,255,.14);overflow:hidden}
+.xbw-voz i{display:block;height:100%;background:#22c55e;transition:width .1s linear}
+.xbw-voz__aviso{display:block;margin-top:.8vh;color:#ff9d8a!important}
+
+/* chamada em curso: mesmo padrao da chamada chegando */
+.xbw-toque--curso .xbw-toque__botoes--so-um{justify-content:center}
+.xbw-toque__palavra{display:block;margin-top:.6vh;font:800 clamp(.62rem,1.5vh,.78rem)/1 system-ui,sans-serif;
+ letter-spacing:.12em;color:#ffb3a3}
+.xbw-toque--curso .xbw-chamada-tela__video{width:min(62vw,260px);aspect-ratio:3/4;object-fit:cover;
+ border-radius:2.4vh;border:2px solid rgba(41,168,240,.6);background:#04101f;margin-bottom:1.2vh}
+.xbw-toque--curso .xbw-voz{margin-top:1.6vh}
+
+/* modo de voz na chamada */
+.xbw-voz-bt{display:grid;justify-items:center;gap:.5vh;padding:0;border:0;background:none;cursor:pointer;opacity:.65}
+.xbw-voz-bt img{width:clamp(2.6rem,6vh,3.4rem);height:auto}
+.xbw-voz-bt small{font:800 clamp(.56rem,1.35vh,.7rem)/1 system-ui,sans-serif;letter-spacing:.1em;color:#9fd4ef}
+.xbw-voz-bt--on{opacity:1}
+.xbw-voz-bt--on small{color:#22c55e}
+.xbw-fala{width:min(84vw,340px);margin:1.4vh auto 0;display:grid;gap:.7vh;text-align:left}
+.xbw-fala p{margin:0;padding:.8vh 3.4vw;border-radius:1.6vh;font:500 clamp(.8rem,1.9vh,.95rem)/1.35 system-ui,sans-serif}
+.xbw-fala__meu{background:rgba(18,84,122,.75);justify-self:end}
+.xbw-fala__dele{background:rgba(9,18,34,.75);justify-self:start}
+
+/* nas ligacoes: contatos em cima, historico (placa cinza) embaixo */
+.xbw-chamadas>.xbw-contatos{order:1!important}
+.xbw-chamadas>ul{order:5!important;flex:0 1 auto!important;align-self:stretch}
+.xbw-chamadas>.xbw-vazio{order:6!important}
+
+/*
+ * ── UM ACERTO QUE SO VALE DENTRO DO JOGO ──────────────────────────────────
+ *
+ * As regras do teclado logo acima vieram da pagina de teste, e la a tecla era
+ * uma LETRA ESCRITA: por isso ela precisava de um fundo azul pintado por cima.
+ *
+ * Aqui dentro do jogo a tecla JA E o desenho dele — cada letra, o espaco, o
+ * enviar e o microfone sao recortes da folha que ele mandou, e o azul liso ja
+ * vem pintado na propria arte. Pintar um fundo atras seria pintar duas vezes:
+ * apareceria uma borda azul escapando nos cantos arredondados do desenho.
+ *
+ * Entao a tecla-com-desenho nao ganha fundo nenhum: so o desenho dele, do
+ * tamanho do botao. Ao apertar, ela acende — e o mesmo aviso de toque, feito
+ * com luz em vez de troca de cor, que e o que a arte dele pede.
+ */
+.xbw-tecla--desenho {
+  background: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.xbw-tecla--desenho img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.xbw-tecla--desenho:active {
+  background: none !important;
+  filter: brightness(1.45);
+}
+
+/*
+ * ── A TECLA QUE ACENDE ENQUANTO A RESPOSTA E DIGITADA ─────────────────────
+ *
+ * Ordem dele, 08/09/2026: a resposta ao Renan tem de ser DIGITADA, e nao
+ * aparecer pronta. A tela da conversa escreve letra por letra e acende a
+ * tecla de cada uma por um instante.
+ *
+ * O aviso e feito com LUZ, e nao com troca de cor: a tecla e um desenho dele,
+ * com o azul ja pintado na arte. Trocar a cor apagaria o desenho; acender
+ * mantem a tecla dele e ainda assim mostra o toque.
+ *
+ * Sem transicao na ida e com transicao na volta: acende no mesmo instante em
+ * que a letra entra, e apaga desmaiando. E o mesmo tempo de um dedo saindo.
+ */
+.xbw-tecla--acesa {
+  filter: brightness(1.75) saturate(1.15);
+  transform: translateY(1px) scale(0.97);
+}
+
+.xbw-tecla {
+  transition:
+    filter 140ms ease-out,
+    transform 140ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-tecla {
+    transition: none;
+  }
+  .xbw-tecla--acesa {
+    transform: none;
+  }
+}
+
+/*
+ * ── A TELA DE LIGACAO TREME ───────────────────────────────────────────────
+ *
+ * Ordem dele, 08/09/2026: "a tela de ligacao do Renan deve tremer um
+ * pouquinho, e deve ter toque".
+ *
+ * O "um pouquinho" e a parte importante e a mais facil de errar. Nao e a tela
+ * balancando: e a mao que segura o aparelho enquanto ele vibra. Por isso o
+ * passo e pequeno — menos de dois pixels — e vem em rajada, com uma pausa
+ * longa entre uma e outra: dois tremores curtos e depois quase um segundo
+ * parado, no mesmo compasso do toque. Tremor continuo enjoa em dez segundos.
+ *
+ * O ciclo dura o mesmo que o toque (2,2 segundos), entao o olho e o ouvido
+ * andam juntos sem ninguem ter de acertar isso na mao.
+ *
+ * Quem pediu menos movimento no aparelho nao treme: fica o toque e o desenho.
+ */
+@keyframes xbw-toque-treme {
+  0%,
+  16%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  2% {
+    transform: translate3d(-1.5px, 1px, 0);
+  }
+  4% {
+    transform: translate3d(1.5px, -1px, 0);
+  }
+  6% {
+    transform: translate3d(-1.2px, -1px, 0);
+  }
+  8% {
+    transform: translate3d(1.2px, 1px, 0);
+  }
+  10% {
+    transform: translate3d(-1px, 0.5px, 0);
+  }
+  12% {
+    transform: translate3d(1px, -0.5px, 0);
+  }
+  14% {
+    transform: translate3d(-0.6px, 0, 0);
+  }
+}
+
+.xbw-toque {
+  animation: xbw-toque-treme 2.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* Em curso a chamada nao treme mais: ja foi atendida, ninguem esta chamando. */
+.xbw-toque--curso {
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-toque {
+    animation: none;
+  }
+}
+
+/*
+ * ── O AVISO DO XBWAPP, NO ALTO DA TELA ────────────────────────────────────
+ *
+ * Ordem dele, 08/09/2026: depois que a caixa abre, chega um aviso na tela com
+ * o selo do XBWAPP, no alto; ao tocar, abre a mensagem do Renan.
+ *
+ * O desenho e o de um aviso de telefone, e o que ele mostra e o que importa:
+ * o selo da marca, quem mandou, de onde veio, e A FRASE. E a frase que faz a
+ * pessoa tocar. Um aviso dizendo "1 mensagem" nao da vontade de abrir nada;
+ * "Achei que era minha pizza" da.
+ *
+ * Ele desce de cima, como todo aviso de telefone, e FICA ate ser tocado. Aqui
+ * nao e um recado a mais no dia: e por onde a historia continua. Um aviso que
+ * some levaria a historia junto.
+ *
+ * Fica acima do bairro e abaixo do aplicativo: com o aplicativo na frente, o
+ * aviso ja fez o que tinha para fazer.
+ */
+@keyframes xbw-avisinho-desce {
+  from {
+    opacity: 0;
+    transform: translateY(-140%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes xbw-avisinho-respira {
+  0%,
+  100% {
+    box-shadow:
+      0 1.2vh 3vh rgba(0, 0, 0, 0.5),
+      0 0 0.6rem rgba(24, 191, 234, 0.18);
+  }
+  50% {
+    box-shadow:
+      0 1.2vh 3vh rgba(0, 0, 0, 0.5),
+      0 0 1.8rem rgba(24, 191, 234, 0.42);
+  }
+}
+
+/*
+ * PRESO A TELA, E NAO AO BAIRRO.
+ *
+ * Ordem dele, 08/09/2026: "independente do zoom, a notificacao fica no topo".
+ *
+ * Com o aviso preso ao bairro, aproximar ou afastar o mapa levava o aviso
+ * junto — ele subia para fora da tela ou encolhia com a paisagem. Preso a
+ * TELA ele fica onde um aviso de telefone fica: no alto, do mesmo tamanho,
+ * aconteca o que acontecer com o mapa atras.
+ */
+/*
+ * ── POR QUE ESTA LINHA EXISTE ────────────────────────────────────────────
+ *
+ * A camada de telas do jogo deixa o dedo ATRAVESSAR: ela e transparente ao
+ * toque de proposito, para o toque chegar ao bairro em 3D que esta atras.
+ * Cada tela que precisa responder ao dedo tem de dizer isso de si mesma.
+ *
+ * Sem esta linha o aviso aparecia certinho no alto da tela e simplesmente
+ * nao respondia ao toque: o dedo passava por ele e ia parar no bairro. Nao
+ * era o toque que estava errado nem o abrir do aplicativo — era o aviso que
+ * nao existia para o dedo.
+ */
+.xbw-avisinho {
+  pointer-events: auto;
+  position: fixed;
+  top: max(1.4vh, env(safe-area-inset-top));
+  right: 2vw;
+  left: auto;
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  gap: 2.6vw;
+  width: min(80vw, 23rem);
+  padding: 1.1vh 3.2vw 1.1vh 2.6vw;
+  border: 1px solid rgba(24, 191, 234, 0.38);
+  border-radius: 1.8vh;
+  background: linear-gradient(
+    180deg,
+    rgba(16, 38, 62, 0.95),
+    rgba(9, 18, 34, 0.95)
+  );
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  text-align: left;
+  animation:
+    xbw-avisinho-desce 340ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both,
+    xbw-avisinho-respira 2.4s ease-in-out 340ms infinite;
+}
+
+.xbw-avisinho:active {
+  transform: scale(0.98);
+}
+
+/* O selo da marca, do tamanho de um icone de aplicativo no aviso. */
+.xbw-avisinho__selo {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: clamp(2.1rem, 4.6vh, 2.7rem);
+}
+
+/*
+ * O SELO COLORIDO — folhas dele, 08/09/2026.
+ *
+ * Antes o selo era a marca achatada para branco por CSS, porque ele tinha
+ * pedido "simbolo branco da XB". Ele mandou depois os dois desenhos proprios
+ * de aviso — o verde e o prata — e desenho pronto nao se pinta por cima: o
+ * brilho de neon que ele fez sumiria inteiro no achatamento. Entra do jeito
+ * que veio, e o escuro do cartao ja da o contraste que a silhueta branca dava.
+ */
+.xbw-avisinho__selo img {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Um halo de leve, para o selo nao encostar no escuro do cartao. */
+  filter: drop-shadow(0 0.2vh 0.5vh rgba(0, 0, 0, 0.55));
+}
+
+.xbw-avisinho__texto {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: 0.25vh;
+}
+
+/* Nome de quem mandou a esquerda; de onde veio, discreto, a direita. */
+.xbw-avisinho__linha {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2vw;
+}
+
+.xbw-avisinho__linha strong {
+  font: 800 clamp(0.84rem, 2vh, 1.02rem) / 1.1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-avisinho__linha em {
+  flex: none;
+  font: 700 clamp(0.55rem, 1.3vh, 0.68rem) / 1 system-ui, sans-serif;
+  font-style: normal;
+  letter-spacing: 0.1em;
+  color: rgba(24, 191, 234, 0.85);
+}
+
+/* A frase: uma linha so. Cortada com reticencias, como em todo aviso. */
+.xbw-avisinho__texto small {
+  font: 500 clamp(0.74rem, 1.75vh, 0.9rem) / 1.25 system-ui, sans-serif;
+  color: #cfe6f4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-avisinho {
+    animation: none;
+  }
+}
+
+/*
+ * ── VOLTAR AO GAME, AO LADO DE TODOS OS CONTATOS ──────────────────────────
+ *
+ * Ordem dele, 08/09/2026: "ao lado de todos os contatos precisamos criar um
+ * botao bonito, voltar ao game".
+ *
+ * Os dois dividem a linha, mas nao sao iguais de proposito. O de contatos e
+ * uma acao de dentro do aplicativo: azul escuro, do mesmo tom das placas. O
+ * de voltar SAI do aplicativo, e sai para o bairro — por isso ele traz o
+ * verde-agua da marca, o mesmo do jogo. A cor ja diz para onde cada um leva,
+ * antes de a pessoa ler.
+ *
+ * A seta aponta para tras. Ela e o desenho de voltar que o aplicativo inteiro
+ * usa; trocar por outro so para este botao faria a pessoa aprender duas vezes
+ * a mesma coisa.
+ *
+ * Numa tela estreita o texto sai e fica so a seta: melhor um botao redondo
+ * que se entende do que duas palavras cortadas pela metade.
+ */
+.xbw-contatos__linha {
+  display: flex;
+  align-items: stretch;
+  gap: 2vw;
+}
+
+.xbw-contatos__linha .xbw-contatos__abrir {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+}
+
+.xbw-contatos__jogo {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.6vw;
+  padding: 0 3.4vw;
+  min-height: var(--xbw-toque);
+  border: 1px solid rgba(24, 191, 234, 0.55);
+  border-radius: var(--xbw-canto-2);
+  background: linear-gradient(
+    180deg,
+    rgba(24, 191, 234, 0.28),
+    rgba(18, 84, 122, 0.42)
+  );
+  color: #eaf9ff;
+  font: 700 clamp(0.78rem, 1.85vh, 0.95rem) / 1.1 system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0.4vh 1.2vh rgba(0, 0, 0, 0.32);
+  transition:
+    filter var(--xbw-tempo) var(--xbw-curva),
+    transform var(--xbw-tempo) var(--xbw-curva);
+}
+
+.xbw-contatos__jogo .xbw-i {
+  width: clamp(1rem, 2.3vh, 1.25rem);
+  flex: none;
+}
+
+.xbw-contatos__jogo:active {
+  filter: brightness(1.25);
+  transform: scale(0.97);
+}
+
+/* Tela estreita: fica so a seta, num botao redondo. */
+@media (max-width: 22rem) {
+  .xbw-contatos__jogo span {
+    display: none;
+  }
+  .xbw-contatos__jogo {
+    padding: 0;
+    width: var(--xbw-toque);
+    border-radius: 50%;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O BALCAO DE ENTREGA RAPIDA — 08/09/2026
+ *
+ * Ordem dele: "QUANDO CLIENTE SOLICITAR UMA COLETA E ENTREGA DEVEMOS CRIAR UM
+ * SISTEMA FUNCIONAL NESTA TELA."
+ *
+ * O desenho segue o resto do aplicativo: fundo escuro azulado, cartao de vidro
+ * e o azul da XB no que e acao. A unica cor que foge disso e a barrinha de
+ * prazo, que fica amarela e depois vermelha — e ela PRECISA fugir, porque e a
+ * unica coisa da tela que anda sozinha e cobra decisao.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.xbw-balcao {
+  height: 100%;
+  overflow-y: auto;
+  padding: 2vh 4vw 3vh;
+  display: grid;
+  align-content: start;
+  gap: 1.6vh;
+}
+
+.xbw-balcao__topo h2 {
+  margin: 0;
+  font: 800 clamp(1.15rem, 3vh, 1.6rem) / 1.1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-balcao__topo p {
+  margin: 0.4vh 0 0;
+  font: 500 clamp(0.72rem, 1.7vh, 0.9rem) / 1.3 system-ui, sans-serif;
+  color: #8fb6d8;
+}
+
+/* O placar: quatro números que respondem "como está o dia" sem abrir nada. */
+.xbw-balcao__placar {
+  margin: 1.4vh 0 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2vw;
+  padding: 1.2vh 3vw;
+  border-radius: 1.2vh;
+  background: rgba(12, 34, 60, 0.62);
+  border: 1px solid rgba(120, 190, 255, 0.22);
+}
+
+.xbw-balcao__placar div {
+  display: grid;
+  gap: 0.2vh;
+  text-align: center;
+}
+
+.xbw-balcao__placar dt {
+  font: 600 clamp(0.56rem, 1.3vh, 0.7rem) / 1 system-ui, sans-serif;
+  color: #7ea6c9;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.xbw-balcao__placar dd {
+  margin: 0;
+  font: 800 clamp(0.85rem, 2.1vh, 1.1rem) / 1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-balcao__titulo {
+  margin: 0.8vh 0 0;
+  font: 700 clamp(0.68rem, 1.6vh, 0.85rem) / 1 system-ui, sans-serif;
+  color: #7ea6c9;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.xbw-balcao__vazio {
+  margin-top: 2vh;
+  padding: 3vh 5vw;
+  border-radius: 1.4vh;
+  background: rgba(12, 34, 60, 0.5);
+  border: 1px solid rgba(120, 190, 255, 0.18);
+  text-align: center;
+}
+
+.xbw-balcao__vazio-f {
+  margin: 0;
+  font: 800 clamp(0.9rem, 2.2vh, 1.15rem) / 1.25 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-balcao__vazio-a {
+  margin: 1vh 0 0;
+  font: 500 clamp(0.7rem, 1.7vh, 0.88rem) / 1.4 system-ui, sans-serif;
+  color: #8fb6d8;
+}
+
+.xbw-balcao__lista,
+.xbw-balcao__historico {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1.2vh;
+}
+
+/* A bolinha do pino — a mesma cor que o mapa usa para aquele pedido. */
+.xbw-balcao__bolinha {
+  flex: none;
+  width: 1.1vh;
+  height: 1.1vh;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0.6vh currentColor;
+}
+
+.xbw-pedido {
+  display: grid;
+  gap: 0.9vh;
+  padding: 1.6vh 4vw;
+  border-radius: 1.4vh;
+  background: rgba(12, 34, 60, 0.66);
+  border: 1px solid rgba(120, 190, 255, 0.2);
+}
+
+/*
+ * A MOLDURA SEGUE O RELOGIO.
+ *
+ * Ordem dele, 08/09/2026: "a bolinha do pino deve ser conforme relogio". A
+ * bolinha e a barra ja mudam de cor sozinhas; a moldura acompanha nos dois
+ * degraus de baixo, que sao os que custam reclamacao. Nos degraus bons ela
+ * fica quieta — cartao que pisca o tempo todo para de avisar.
+ */
+.xbw-pedido--laranja {
+  border-color: rgba(242, 146, 29, 0.6);
+}
+
+.xbw-pedido--muito-atrasado {
+  border-color: rgba(232, 116, 59, 0.7);
+}
+
+.xbw-pedido--perdeu {
+  border-color: rgba(217, 83, 79, 0.75);
+  opacity: 0.85;
+}
+
+.xbw-pedido__cabeca {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+}
+
+.xbw-pedido__num {
+  font: 800 clamp(0.82rem, 2vh, 1rem) / 1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-pedido__hora {
+  flex: 1 1 auto;
+  font: 500 clamp(0.6rem, 1.4vh, 0.74rem) / 1 system-ui, sans-serif;
+  color: #7ea6c9;
+}
+
+.xbw-pedido__frete {
+  font: 800 clamp(0.85rem, 2.1vh, 1.05rem) / 1 system-ui, sans-serif;
+  color: #58d68d;
+}
+
+.xbw-pedido__trajeto {
+  margin: 0;
+  font: 600 clamp(0.78rem, 1.9vh, 0.98rem) / 1.25 system-ui, sans-serif;
+  color: #cfe6ff;
+}
+
+.xbw-pedido__dados {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5vw;
+}
+
+.xbw-pedido__dados div {
+  display: grid;
+  gap: 0.15vh;
+}
+
+.xbw-pedido__dados dt {
+  font: 600 clamp(0.52rem, 1.2vh, 0.64rem) / 1 system-ui, sans-serif;
+  color: #6f97ba;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.xbw-pedido__dados dd {
+  margin: 0;
+  font: 700 clamp(0.7rem, 1.7vh, 0.86rem) / 1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-pedido__prazo small {
+  display: block;
+  margin-top: 0.5vh;
+  font: 500 clamp(0.6rem, 1.45vh, 0.76rem) / 1 system-ui, sans-serif;
+  color: #8fb6d8;
+}
+
+.xbw-pedido__barra {
+  height: 0.7vh;
+  min-height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.xbw-pedido__barra span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #3aa0ff;
+  transition: width 400ms linear;
+}
+
+/*
+ * A COR DA BARRA VEM DO CODIGO, e nao daqui: ela e a MESMA da bolinha, e as
+ * duas saem da tabela de faixas. Repetir as cores no CSS criaria uma segunda
+ * fonte da verdade, e um dia as duas discordariam.
+ */
+
+.xbw-pedido__quem {
+  margin: 0;
+  font: 600 clamp(0.66rem, 1.6vh, 0.82rem) / 1 system-ui, sans-serif;
+  color: #58d68d;
+}
+
+.xbw-pedido__botoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2vw;
+}
+
+.xbw-pedido__bt {
+  flex: 1 1 auto;
+  min-width: 30vw;
+  padding: 1.1vh 3vw;
+  border: 0;
+  border-radius: 1vh;
+  font: 700 clamp(0.7rem, 1.7vh, 0.88rem) / 1 system-ui, sans-serif;
+  color: #06203a;
+  background: #3aa0ff;
+  cursor: pointer;
+}
+
+.xbw-pedido__bt--fila {
+  background: #f2b134;
+}
+
+.xbw-pedido__bt--nao {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cfe6ff;
+}
+
+.xbw-pedido__bt:active {
+  transform: scale(0.98);
+}
+
+.xbw-balcao__historico li {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  padding: 0.9vh 3vw;
+  border-radius: 1vh;
+  background: rgba(12, 34, 60, 0.42);
+  font: 500 clamp(0.65rem, 1.55vh, 0.8rem) / 1 system-ui, sans-serif;
+  color: #a8c8e4;
+}
+
+.xbw-balcao__historico strong {
+  color: #eaf6ff;
+}
+
+.xbw-balcao__historico span {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-balcao__historico em {
+  font-style: normal;
+  color: #7ea6c9;
+}
+
+.xbw-balcao__historico b {
+  color: #58d68d;
+}
+
+
+/* ── O QUE ENTROU COM O RELOGIO DAS BOLINHAS — 08/09/2026 ────────────────*/
+
+.xbw-balcao__bolinha--grande {
+  width: 1.5vh;
+  height: 1.5vh;
+  min-width: 11px;
+  min-height: 11px;
+}
+
+.xbw-balcao__caixinha {
+  margin: 0.8vh 0 0;
+  font: 600 clamp(0.65rem, 1.55vh, 0.8rem) / 1 system-ui, sans-serif;
+  color: #58d68d;
+}
+
+/* O aviso de porta fechada. Ordem dele: 3 reclamacoes e o cliente some. */
+.xbw-balcao__castigo {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8vh;
+}
+
+.xbw-balcao__castigo li {
+  padding: 1.1vh 3vw;
+  border-radius: 1vh;
+  background: rgba(90, 24, 24, 0.55);
+  border: 1px solid rgba(217, 83, 79, 0.5);
+  font: 500 clamp(0.66rem, 1.6vh, 0.82rem) / 1.35 system-ui, sans-serif;
+  color: #ffd9d7;
+}
+
+.xbw-balcao__castigo strong {
+  color: #fff;
+}
+
+/* A faixa do relogio, escrita ao lado do numero do pedido. */
+.xbw-pedido__faixa {
+  flex: 1 1 auto;
+  font: 700 clamp(0.62rem, 1.5vh, 0.78rem) / 1 system-ui, sans-serif;
+}
+
+/* O aviso de que este cliente ja reclamou antes. */
+.xbw-pedido__risco {
+  margin: 0;
+  font: 600 clamp(0.62rem, 1.5vh, 0.76rem) / 1.3 system-ui, sans-serif;
+  color: #ffb4a2;
+}
+
+/* As estrelas do historico: as vazias ficam apagadas, e nao somem. */
+.xbw-balcao__estrelas {
+  flex: none;
+  font-style: normal;
+  letter-spacing: -0.04em;
+  color: #f2c94c;
+}
+
+.xbw-balcao__estrelas i {
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.18);
+}
+
+.xbw-balcao__reclamou {
+  flex: none;
+  font-style: normal;
+  color: #d9534f;
+}
+
+
+/* ── O QUE ENTROU COM A REGUA DE PORCENTAGEM — 08/09/2026 ────────────────*/
+
+/*
+ * O AVISO DE CARGA. Ordem dele: "quando entregador ou usuario aceitarem mais
+ * de uma coleta por vez podem estar perdendo qualidade". A frase aparece
+ * colada em quem esta carregando, e nao num canto da tela: o custo tem de
+ * estar onde a decisao esta.
+ */
+.xbw-pedido__carga {
+  color: #f2921d;
+  font-weight: 700;
+}
+
+/* Quantas cada um ja leva, dentro do proprio botao de mandar. */
+.xbw-pedido__bt small {
+  display: block;
+  margin-top: 0.2vh;
+  font: 600 clamp(0.52rem, 1.2vh, 0.64rem) / 1 system-ui, sans-serif;
+  opacity: 0.75;
+}
+
+/* ── A CARTEIRA E A ESCADA DO CASTIGO — 08/09/2026 ───────────────────────*/
+
+.xbw-balcao__castigo li small {
+  display: block;
+  margin-top: 0.4vh;
+  font: 600 clamp(0.56rem, 1.3vh, 0.7rem) / 1 system-ui, sans-serif;
+  opacity: 0.8;
+}
+
+/* Cliente perdido é outra coisa de cliente suspenso: não tem relógio. */
+.xbw-balcao__castigo--perdido li {
+  background: rgba(60, 16, 16, 0.72);
+  border-color: rgba(217, 83, 79, 0.75);
+}
+
+/*
+ * O FIM DA LINHA — quando não sobrou cliente nenhum.
+ *
+ * Ordem dele: "ate nao restar mais ninguem entregando frete, entao o jogo
+ * sempre vai cobrar crescimento e melhorias". A tela precisa dizer isso com
+ * todas as letras, e dizer o caminho de volta na mesma frase: balcão vazio sem
+ * explicação parece defeito, não consequência.
+ */
+.xbw-balcao__fim {
+  padding: 3vh 5vw;
+  border-radius: 1.4vh;
+  background: rgba(60, 16, 16, 0.6);
+  border: 1px solid rgba(217, 83, 79, 0.6);
+  text-align: center;
+}
+
+/* A reputação de cada cliente, em barra. */
+.xbw-balcao__carteira {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.8vh;
+}
+
+.xbw-balcao__carteira li {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  font: 500 clamp(0.65rem, 1.55vh, 0.8rem) / 1 system-ui, sans-serif;
+  color: #cfe6ff;
+}
+
+.xbw-balcao__carteira li > span {
+  flex: 0 0 26vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xbw-balcao__carteira b {
+  flex: none;
+  min-width: 3.5ch;
+  text-align: right;
+  color: #eaf6ff;
+}
+
+.xbw-balcao__reput {
+  flex: 1 1 auto;
+  height: 0.7vh;
+  min-height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+
+.xbw-balcao__reput span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 600ms linear;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * A TELA DE DECISÃO — 08/09/2026
+ *
+ * Duas correções dele: "uma tela apenas para aceitar, ou recusar entrega" e
+ * "pode aparecer vários pedidos". O desenho obedece às duas — nada de placar
+ * nem de relatório, e os pedidos empilhados, cada um com o seu relógio.
+ *
+ * Cada cartão é pequeno de propósito: três deles precisam caber na tela sem
+ * rolagem, senão o terceiro — que é justamente o que faz a cabeça doer —
+ * ficaria escondido.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * A TELA DE DECISAO E UMA COLUNA, e nao uma grade.
+ *
+ * Ela era `display: grid` e nao adiantava nada: a regra `.xbw__tela > section`
+ * tem mais peso e ja a fazia coluna flexivel. Escrever grid aqui so escondia
+ * de quem lia o CSS o motivo pelo qual os cartoes encolhiam. Agora esta escrito
+ * o que ela e de verdade.
+ */
+.xbw-decisao {
+  gap: 1.1vh;
+  padding: 1.6vh 3vw 3vh 4vw;
+}
+
+/* Quem vai — o cabecalho que ficou no lugar da linha "vai fulano". */
+.xbw-decisao__topo {
+  display: flex;
+  align-items: center;
+  gap: 2.5vw;
+  padding-bottom: 0.6vh;
+}
+
+.xbw-decisao__voltar {
+  flex: none;
+  width: 4.2vh;
+  min-width: 30px;
+  aspect-ratio: 1;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: #cfe6ff;
+  font: 800 clamp(1.1rem, 2.8vh, 1.5rem) / 1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.xbw-decisao__quem {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 5.4vh;
+  min-width: 38px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #2f6f7a;
+}
+
+.xbw-decisao__quem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.xbw-decisao__quem i {
+  font: 800 clamp(0.9rem, 2.2vh, 1.1rem) / 1 system-ui, sans-serif;
+  font-style: normal;
+  color: #eaf6ff;
+}
+
+.xbw-decisao__onde {
+  display: grid;
+  gap: 0.2vh;
+  min-width: 0;
+}
+
+.xbw-decisao__onde strong {
+  font: 800 clamp(0.85rem, 2.1vh, 1.05rem) / 1.1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-decisao__onde small {
+  font: 500 clamp(0.64rem, 1.55vh, 0.78rem) / 1.2 system-ui, sans-serif;
+  color: #8fb6d8;
+}
+
+/*
+ * O AUXÍLIO. Ordem dele: ajudar no início a decidir se compensa juntar duas
+ * coletas. A dica mostra a conta e cala a boca — quem escolhe é o jogador.
+ */
+.xbw-decisao__dica {
+  margin: 0 0 0.4vh;
+  padding: 1.1vh 3vw;
+  border-radius: 1vh;
+  background: rgba(58, 160, 255, 0.14);
+  border: 1px solid rgba(58, 160, 255, 0.35);
+  font: 500 clamp(0.68rem, 1.65vh, 0.84rem) / 1.35 system-ui, sans-serif;
+  color: #cfe6ff;
+}
+
+.xbw-decisao__dica b {
+  color: #eaf6ff;
+}
+
+.xbw-decisao__vazia {
+  margin-top: 4vh;
+  text-align: center;
+}
+
+.xbw-decisao__espera {
+  margin: 0;
+  font: 800 clamp(1rem, 2.8vh, 1.4rem) / 1.2 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-decisao__espera-a {
+  margin: 0.6vh 0 0;
+  font: 500 clamp(0.72rem, 1.8vh, 0.9rem) / 1.4 system-ui, sans-serif;
+  color: #8fb6d8;
+}
+
+.xbw-decisao__rodape {
+  margin: 0.6vh 0 0;
+  font: 600 clamp(0.62rem, 1.5vh, 0.76rem) / 1.3 system-ui, sans-serif;
+  color: #6f97ba;
+}
+
+/* ── O CARTÃO DE UM PEDIDO ───────────────────────────────────────────── */
+
+.xbw-cartao {
+  display: grid;
+  gap: 0.7vh;
+  padding: 0 0 1.4vh;
+  border-radius: 1.2vh;
+  overflow: hidden;
+  background: rgba(12, 34, 60, 0.68);
+  border: 1px solid rgba(120, 190, 255, 0.22);
+}
+
+.xbw-cartao__relogio {
+  height: 0.7vh;
+  min-height: 5px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.xbw-cartao__relogio span {
+  display: block;
+  height: 100%;
+  transition: width 900ms linear;
+}
+
+.xbw-cartao__topo {
+  margin: 0.4vh 0 0;
+  padding: 0 3vw;
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  font: 700 clamp(0.68rem, 1.65vh, 0.84rem) / 1 system-ui, sans-serif;
+  color: #7ea6c9;
+}
+
+.xbw-cartao__topo b {
+  margin-left: auto;
+  font: 800 clamp(0.82rem, 2.1vh, 1.05rem) / 1 system-ui, sans-serif;
+}
+
+.xbw-cartao__bolinha {
+  width: 1.2vh;
+  height: 1.2vh;
+  min-width: 9px;
+  min-height: 9px;
+  border-radius: 50%;
+}
+
+.xbw-cartao__rota {
+  margin: 0;
+  padding: 0 3vw;
+  font: 500 clamp(0.8rem, 2vh, 1rem) / 1.25 system-ui, sans-serif;
+  color: #9dc4e6;
+}
+
+.xbw-cartao__rota strong {
+  color: #eaf6ff;
+  font-weight: 800;
+}
+
+.xbw-cartao__linha {
+  margin: 0;
+  padding: 0 3vw;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2vw;
+  font: 500 clamp(0.66rem, 1.6vh, 0.8rem) / 1 system-ui, sans-serif;
+  color: #8fb6d8;
+}
+
+.xbw-cartao__valor {
+  font: 800 clamp(1.05rem, 2.8vh, 1.4rem) / 1 system-ui, sans-serif;
+  color: #58d68d;
+}
+
+.xbw-cartao__botoes {
+  margin-top: 0.4vh;
+  padding: 0 3vw;
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 3vw;
+}
+
+.xbw-cartao__bt {
+  padding: 1.5vh 2vw;
+  border: 0;
+  border-radius: 1.1vh;
+  font: 800 clamp(0.82rem, 2.1vh, 1.05rem) / 1.1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.xbw-cartao__bt small {
+  display: block;
+  margin-top: 0.25vh;
+  font: 600 clamp(0.54rem, 1.25vh, 0.66rem) / 1 system-ui, sans-serif;
+  opacity: 0.7;
+}
+
+.xbw-cartao__bt--sim {
+  background: #2fbf71;
+  color: #04240f;
+}
+
+.xbw-cartao__bt--nao {
+  background: rgba(255, 255, 255, 0.12);
+  color: #cfe6ff;
+}
+
+.xbw-cartao__bt:active {
+  transform: scale(0.97);
+}
+
+/*
+ * A CUTCINE — 08/09/2026.
+ *
+ * Ordem dele: "na apresentação do game devemos travar tudo, teclado não pode
+ * ser digitado, deve ser uma cutcine."
+ *
+ * O teclado continua na tela e continua acendendo tecla por tecla — é ele que
+ * conta a história. O que some é a resposta ao toque. Esconder o teclado seria
+ * mais simples e perderia a cena; deixar digitar seria deixar a pessoa
+ * atropelar a própria abertura.
+ */
+.xbw-escrever--travado {
+  pointer-events: none;
+  user-select: none;
+}
+
+.xbw-escrever--travado input,
+.xbw-escrever--travado button {
+  pointer-events: none;
+}
+
+/* O cursor de texto sumindo é o que diz "não é a sua vez" sem escrever nada. */
+.xbw-escrever--travado .xbw-campo input {
+  caret-color: transparent;
+}
+
+/*
+ * ONDE TOCAR — 08/09/2026.
+ *
+ * Havia aqui uma mão desenhada apontando o cartão de aviso. Foi apagada no
+ * mesmo dia: a silhueta de uma mão fechada com o indicador em pé é obscena em
+ * boa parte do mundo, e nenhuma dica de interface vale esse risco.
+ *
+ * No lugar dela, duas coisas que não têm como ser lidas errado: um halo que
+ * pulsa em volta do cartão e as palavras "toque para abrir" dentro dele. O
+ * halo puxa o olho, as palavras dizem o que fazer, e o cartão continua sendo
+ * a coisa mais clicável da tela.
+ */
+.xbw-avisinho__toque {
+  display: block;
+  margin-top: 0.4vh;
+  font: 800 clamp(0.55rem, 1.3vh, 0.68rem) / 1 system-ui, sans-serif;
+  font-style: normal;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #58d68d;
+}
+
+/* O halo: um anel que abre a partir da borda do cartão, sem cobrir nada. */
+.xbw-avisinho--chamando::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: max(1.5px, 0.2vh) solid rgba(88, 214, 141, 0.85);
+  animation: xbw-avisinho-halo 1.9s ease-out infinite;
+  pointer-events: none;
+}
+
+/*
+ * A LUVA XB NO CANTO DO AVISO — folha dele, 09/09/2026.
+ *
+ * Ela sai um pouco para fora do cartao de proposito: mao encostada na borda
+ * parece adesivo colado; mao passando por cima da borda parece mao chegando de
+ * fora para tocar.
+ *
+ * O toque bate no MESMO tempo do halo (1,9s). Dois ritmos diferentes no mesmo
+ * cartao ficam nervosos.
+ */
+.xbw-avisinho__luva {
+  position: absolute;
+  /*
+   * A LUVA VEM DE BAIXO DO CARTAO, e nao de dentro dele.
+   *
+   * Na primeira tentativa ela ficou colada no canto e, como e mais alta que o
+   * cartao, subiu por cima do aviso e saiu pela borda de cima da tela: dedo
+   * apontando para fora, exatamente o contrario do recado.
+   *
+   * Agora ela nasce na borda DE BAIXO (`top: 100%`) e sobe so o tanto de
+   * encostar a ponta do dedo no cartao. E a mao chegando de fora para tocar —
+   * que e o gesto que a pessoa tem de repetir.
+   */
+  top: 100%;
+  right: 7%;
+  margin-top: -1.4vh;
+  width: clamp(2.1rem, 5.4vh, 2.9rem);
+  transform-origin: 50% 0;
+  animation: xbw-luva-toca 1.9s ease-in-out infinite;
+  filter: drop-shadow(0 0.4vh 1vh rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes xbw-luva-toca {
+  0%,
+  62%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  74% {
+    transform: translateY(-1.1vh) scale(1.04);
+  }
+  86% {
+    transform: translateY(0.3vh) scale(0.99);
+  }
+}
+
+/* Quem pediu menos movimento no sistema nao ganha mao pulando na tela. */
+@media (prefers-reduced-motion: reduce) {
+  .xbw-avisinho__luva {
+    animation: none;
+  }
+}
+
+@keyframes xbw-avisinho-halo {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(1.07);
+    opacity: 0;
+  }
+}
+
+
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * QUEM VAI — a tela que vem antes do balcão. 09/09/2026.
+ *
+ * Ordem dele: "uma tela antes da primeira atual, com a imagem de cada
+ * entregador, ao clicar na imagem abriremos a primeira tela atual".
+ *
+ * Retratos grandes e dois por linha: a escolha aqui é por CARA, não por nome —
+ * quem despacha reconhece a equipe pelo rosto muito antes de ler. Embaixo de
+ * cada um, a única coisa que muda a decisão: está livre, ou já leva quantas e
+ * quanto ainda tem de rua pela frente.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.xbw-equipe {
+  gap: 1.4vh;
+  padding: 2vh 4vw 3vh;
+}
+
+.xbw-equipe__topo h2 {
+  margin: 0;
+  font: 800 clamp(1.15rem, 3vh, 1.6rem) / 1.1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-equipe__topo p {
+  margin: 0.5vh 0 0;
+  font: 500 clamp(0.72rem, 1.8vh, 0.9rem) / 1.3 system-ui, sans-serif;
+  color: #8fb6d8;
+}
+
+.xbw-equipe__lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3vw;
+}
+
+.xbw-pessoa {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.6vh;
+  padding: 1.8vh 2vw;
+  border: 1px solid rgba(120, 190, 255, 0.22);
+  border-radius: 1.4vh;
+  background: rgba(12, 34, 60, 0.66);
+  cursor: pointer;
+}
+
+.xbw-pessoa:active {
+  transform: scale(0.98);
+}
+
+.xbw-pessoa__foto {
+  display: grid;
+  place-items: center;
+  width: min(28vw, 11vh);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #2f6f7a;
+  border: max(2px, 0.3vh) solid #2fbf71;
+}
+
+/* Ocupado é anel laranja: a cor já quer dizer "está andando" no resto do jogo. */
+.xbw-pessoa__foto--ocupado {
+  border-color: #f2921d;
+}
+
+.xbw-pessoa__foto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.xbw-pessoa__foto i {
+  font: 800 clamp(1.2rem, 3.4vh, 1.8rem) / 1 system-ui, sans-serif;
+  font-style: normal;
+  color: #eaf6ff;
+}
+
+.xbw-pessoa strong {
+  font: 800 clamp(0.82rem, 2.1vh, 1.02rem) / 1.1 system-ui, sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-pessoa small {
+  font: 500 clamp(0.6rem, 1.45vh, 0.74rem) / 1.25 system-ui, sans-serif;
+  color: #8fb6d8;
+  text-align: center;
+}

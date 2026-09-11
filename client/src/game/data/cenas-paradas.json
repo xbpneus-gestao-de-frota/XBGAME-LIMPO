@@ -1,0 +1,129 @@
+{
+ "nota": "Gerado por scripts/entregador/grades.py. Cenas com o menino fora da bicicleta, na porta do lugar, em DOIS TEMPOS: na coleta ele pega a caixa (1) e guarda na mochila (2); na entrega ele estende a caixa (1) e fica com a mao aberta (2). O lado e o de quem olha. frenteX/Y e trasX/Y sao as duas manchas do chao (30% e 70% da largura, na linha do pe); pousoX/Y e o meio das duas rodas da bicicleta parada, o ponto que fica em cima do caminho, para a bicicleta nao se mexer quando ele desce. 'quadros' traz a geometria de cada tempo.",
+ "cenas": [
+  {
+   "papel": "coleta",
+   "lado": "direita",
+   "frenteX": 68.8,
+   "frenteY": 95.5,
+   "trasX": 30.6,
+   "trasY": 95.5,
+   "chaoY": 95.5,
+   "pousoX": 43.7,
+   "pousoY": 92.1,
+   "quadros": [
+    {
+     "frenteX": 68.8,
+     "frenteY": 95.5,
+     "trasX": 30.6,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 43.7,
+     "pousoY": 92.1
+    },
+    {
+     "frenteX": 68.6,
+     "frenteY": 95.5,
+     "trasX": 30.9,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 43.8,
+     "pousoY": 91.8
+    }
+   ]
+  },
+  {
+   "papel": "entrega",
+   "lado": "direita",
+   "frenteX": 68.2,
+   "frenteY": 95.5,
+   "trasX": 31.8,
+   "trasY": 95.5,
+   "chaoY": 95.5,
+   "pousoX": 45.7,
+   "pousoY": 91.4,
+   "quadros": [
+    {
+     "frenteX": 68.2,
+     "frenteY": 95.5,
+     "trasX": 31.8,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 45.7,
+     "pousoY": 91.4
+    },
+    {
+     "frenteX": 67.0,
+     "frenteY": 95.5,
+     "trasX": 33.0,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 49.1,
+     "pousoY": 91.4
+    }
+   ]
+  },
+  {
+   "papel": "coleta",
+   "lado": "esquerda",
+   "frenteX": 30.6,
+   "frenteY": 95.5,
+   "trasX": 68.8,
+   "trasY": 95.5,
+   "chaoY": 95.5,
+   "pousoX": 56.8,
+   "pousoY": 91.6,
+   "quadros": [
+    {
+     "frenteX": 30.6,
+     "frenteY": 95.5,
+     "trasX": 68.8,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 56.8,
+     "pousoY": 91.6
+    },
+    {
+     "frenteX": 31.0,
+     "frenteY": 95.5,
+     "trasX": 69.0,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 56.0,
+     "pousoY": 91.6
+    }
+   ]
+  },
+  {
+   "papel": "entrega",
+   "lado": "esquerda",
+   "frenteX": 31.8,
+   "frenteY": 95.5,
+   "trasX": 68.2,
+   "trasY": 95.5,
+   "chaoY": 95.5,
+   "pousoX": 53.5,
+   "pousoY": 91.1,
+   "quadros": [
+    {
+     "frenteX": 31.8,
+     "frenteY": 95.5,
+     "trasX": 68.2,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 53.5,
+     "pousoY": 91.1
+    },
+    {
+     "frenteX": 32.8,
+     "frenteY": 95.5,
+     "trasX": 66.7,
+     "trasY": 95.5,
+     "chaoY": 95.5,
+     "pousoX": 49.9,
+     "pousoY": 91.4
+    }
+   ]
+  }
+ ]
+}

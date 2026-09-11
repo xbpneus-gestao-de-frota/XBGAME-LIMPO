@@ -60,7 +60,7 @@ export default function FirstDelivery({
       <header className="primeira__marca">
         <img src={GAME_ASSETS.logo} alt="" aria-hidden="true" />
         <span>
-          <strong>XB PNEUS</strong>
+          <strong>XB TECHNOLOGY</strong>
           <small>CENTRAL LOGÍSTICA</small>
         </span>
       </header>

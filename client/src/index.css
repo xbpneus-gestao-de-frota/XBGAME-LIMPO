@@ -5,6 +5,7 @@
  */
 @import "tailwindcss";
 @import "./styles/pilot-focus.css";
+@import "./styles/xbwapp.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -147,7 +148,11 @@ button:not(:disabled) {
 .loading-screen,
 .experience-settings-trigger,
 .experience-settings-overlay,
-.boasvindas {
+.portao,
+.mapa,
+.xbw,
+.mapa__xbwapp,
+.xbw-avisinho {
   pointer-events: auto;
 }
 
@@ -7815,198 +7820,152 @@ body {
   bottom: auto;
 }
 
-/* ─── BOAS-VINDAS (v3.8) ───────────────────────────────────────────────────
+/* ─── O PORTAO — a tela de quem acabou de chegar (v3.9) ───────────────────
  *
- * Feita para o celular primeiro: uma coluna, retrato em cima, controles
- * embaixo. So a partir de 900 px de largura ela vira duas colunas.
+ * Celular ou tablet, uma coluna so, que cresce de um tamanho ao outro e para
+ * ali. Num monitor mostra o tamanho de tablet, no meio, com a cena enchendo o
+ * resto — nao existe versao larga desta tela, de proposito: duas versoes sao
+ * dois lugares para o defeito se esconder, e a que quase ninguem usa e sempre
+ * a que ninguem testa.
  *
- * O que aprendemos na auditoria da tela Central e que esta obedece:
- *  - alvo de toque nunca abaixo de 48 px (la havia botao de 34 px);
- *  - nada de rolagem escondida: a fita de miniaturas mostra que rola;
- *  - texto nunca cortado por altura fixa.
+ * A cena do portao entra INTEIRA como fundo e escurece para baixo, ate o
+ * painel. Nada de cabecalho com logotipo por cima: o simbolo ja esta aceso na
+ * arte, e repetir seria dizer duas vezes a mesma coisa na mesma tela.
  */
-.boasvindas {
-  /*
-   * SEMPRE CELULAR, em qualquer tela.
-   *
-   * O jogo e de celular, e por isso a tela nao ganha versao de monitor: no
-   * monitor ela e a mesma coluna estreita, centralizada, com o fundo enchendo
-   * o resto. Isso nao e preguica de fazer o layout largo — e o contrario.
-   * Duas versoes da mesma tela significam dois lugares para o defeito se
-   * esconder, e a que quase ninguem usa e sempre a que ninguem testa. Como o
-   * alvo e o celular, a versao do celular e a unica.
-   */
+.portao {
   position: fixed;
-  /* Acima da interface do jogo (5) e abaixo do filme de abertura (400): os
-   * dois nunca aparecem juntos, mas a ordem escrita evita a surpresa. */
   z-index: 380;
   inset: 0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  background: #070a0e;
-  color: #eef3f8;
-  padding: max(16px, env(safe-area-inset-top)) 16px
-    max(16px, env(safe-area-inset-bottom));
-  gap: 14px;
+  justify-content: flex-end;
   align-items: center;
-  /* Sobrando altura (monitor), a coluna centraliza em vez de esticar: fica
-   * com cara de tela de celular, e nao de coluna estirada. */
-  justify-content: center;
+  overflow: hidden;
+  background: #05080c;
+  color: #eef3f8;
+  padding: 0 clamp(12px, 3.4vw, 26px)
+    max(clamp(12px, 3vw, 24px), env(safe-area-inset-bottom));
 }
 
-/* A coluna: tamanho de celular, centralizada, valha a tela o que valer. */
-.boasvindas__marca,
-.boasvindas__miolo {
-  width: 100%;
-  max-width: 440px;
-}
-.boasvindas__miolo {
-  max-height: 760px;
-}
-
-/* A cidade ao fundo, bem apagada: dá lugar sem disputar com os bonecos. */
-.boasvindas__fundo {
+/* A cena continua: o filme nao cortou, so ficou quieto. */
+.portao__cena {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(120% 80% at 50% 0%, rgba(24, 191, 234, 0.16), transparent 60%),
-    linear-gradient(180deg, #0a1018 0%, #070a0e 60%);
-  pointer-events: none;
+  background-position: center 18%;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+.portao__cena::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 8, 12, 0.12) 0%,
+    rgba(5, 8, 12, 0) 20%,
+    rgba(5, 8, 12, 0.55) 46%,
+    rgba(5, 8, 12, 0.97) 68%
+  );
 }
 
-.boasvindas__marca {
+/* O painel: a voz da XB Technology falando com quem chegou. */
+.portao__painel {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  width: 100%;
+  max-width: clamp(360px, 92vw, 680px);
+  border-radius: clamp(16px, 3.4vw, 24px);
+  padding: clamp(14px, 3.4vw, 22px);
+  background: linear-gradient(
+    180deg,
+    rgba(10, 22, 31, 0.93),
+    rgba(6, 13, 19, 0.97)
+  );
+  border: 1px solid rgba(35, 203, 243, 0.42);
+  box-shadow:
+    0 0 0 1px rgba(35, 203, 243, 0.12),
+    0 18px 44px rgba(0, 0, 0, 0.75),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  animation: portao-sobe 320ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
 }
-.boasvindas__marca img {
-  width: 38px;
-  height: 38px;
-  object-fit: contain;
-}
-.boasvindas__marca span {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-}
-.boasvindas__marca strong {
-  font-size: 15px;
-  letter-spacing: 0.06em;
-}
-.boasvindas__marca small {
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  color: #7d8b9c;
-}
-
-.boasvindas__miolo {
-  position: relative;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 0;
-}
-
-.boasvindas__palco {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  /* Encolhe quando o teclado do celular sobe, em vez de empurrar o botão
-   * para fora da tela. É por isso que a altura é mínima e não fixa. */
-  min-height: 34vh;
-  flex: 1 1 34vh;
-}
-
-.boasvindas__retrato {
-  height: 100%;
-  max-height: 38vh;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.6));
-  animation: boasvindas-entra 260ms ease-out both;
-}
-@keyframes boasvindas-entra {
+@keyframes portao-sobe {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.97);
+    transform: translateY(16px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .boasvindas__retrato {
+  .portao__painel {
     animation: none;
   }
 }
 
-.boasvindas__ficha {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.boasvindas__olho {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.16em;
+/* A marca aparece AQUI e em nenhum outro lugar da tela: so como quem fala. */
+.portao__quem {
+  margin: 0 0 clamp(6px, 1.4vw, 10px);
+  font-size: clamp(9px, 1.9vw, 11px);
+  letter-spacing: 0.22em;
   color: #18bfea;
 }
-.boasvindas__ficha h1 {
-  margin: 0;
-  font-size: clamp(24px, 6vw, 34px);
-  line-height: 1.1;
+
+.portao__fala {
+  margin: 0 0 clamp(9px, 2vw, 14px);
+  font-size: clamp(16px, 3.4vw, 23px);
+  font-weight: 500;
+  line-height: 1.3;
+  color: #dfe9f2;
+  /* A linha da esquerda diz "alguem esta falando" sem gastar um balao. */
+  border-left: 4px solid #18bfea;
+  border-radius: 2px;
+  padding-left: clamp(9px, 2vw, 14px);
+}
+.portao__fala strong {
+  color: #23cbf3;
+  font-weight: 800;
 }
 
-.boasvindas__nomeEscolhido {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.boasvindas__nomeEscolhido strong {
-  font-size: 20px;
-  color: #18bfea;
-}
-.boasvindas__nomeEscolhido span {
-  font-size: 14px;
+.portao__jeito {
+  margin: 0 0 clamp(8px, 1.8vw, 12px);
+  font-size: clamp(12px, 2.4vw, 16px);
   color: #9fb0c2;
 }
+.portao__jeito b {
+  color: #eef3f8;
+}
 
-/* A fita de oito. Rola de lado, e o degradê na borda direita conta que há
- * mais gente ali — rolagem sem pista é rolagem que ninguém encontra. */
-.boasvindas__fita {
+/* A fita dos oito. O degrade na borda conta que ha mais gente ali. */
+.portao__fila {
   display: flex;
-  gap: 8px;
+  gap: clamp(6px, 1.4vw, 10px);
   overflow-x: auto;
-  padding: 4px 2px 8px;
+  padding: 2px 2px clamp(8px, 1.8vw, 12px);
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   mask-image: linear-gradient(90deg, #000 88%, transparent 100%);
 }
-.boasvindas__fita::-webkit-scrollbar {
-  height: 4px;
+.portao__fila::-webkit-scrollbar {
+  height: 3px;
 }
-.boasvindas__fita::-webkit-scrollbar-thumb {
+.portao__fila::-webkit-scrollbar-thumb {
   background: #24313f;
   border-radius: 999px;
 }
 
-.boasvindas__selo {
+.portao__pessoa {
   flex: 0 0 auto;
   scroll-snap-align: center;
-  width: 72px;
-  min-height: 92px;
+  width: clamp(64px, 13vw, 96px);
+  min-height: clamp(84px, 17vw, 122px);
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-end;
   gap: 2px;
-  padding: 6px 4px 5px;
-  border-radius: 14px;
-  border: 2px solid #1d2836;
-  background: #0d141c;
-  color: #7d8b9c;
-  font-size: 11px;
+  padding: clamp(4px, 1vw, 7px) 4px clamp(4px, 1vw, 6px);
+  border-radius: clamp(11px, 2.2vw, 15px);
+  border: 2px solid #1b2734;
+  background: #0b131b;
+  color: #6d7d8f;
+  font-size: clamp(9px, 1.8vw, 12px);
   font-weight: 700;
   cursor: pointer;
   transition:
@@ -8014,102 +7973,2723 @@ body {
     background 140ms ease,
     color 140ms ease;
 }
-.boasvindas__selo img {
+.portao__pessoa img {
   width: 100%;
-  height: 62px;
+  height: clamp(54px, 11vw, 84px);
   object-fit: contain;
   object-position: top center;
 }
-.boasvindas__selo[data-escolhido="true"] {
-  border-color: #18bfea;
-  background: #10202b;
+.portao__pessoa[data-escolhido="true"] {
+  border-color: #23cbf3;
+  background: #0f2130;
   color: #eef3f8;
 }
-.boasvindas__selo:focus-visible {
-  outline: 3px solid #18bfea;
+.portao__pessoa:focus-visible {
+  outline: 3px solid #23cbf3;
   outline-offset: 2px;
 }
 
-.boasvindas__campo {
+.portao__campo {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: clamp(4px, 1vw, 7px);
+  margin-bottom: clamp(9px, 2vw, 14px);
 }
-.boasvindas__campo span {
-  font-size: 11px;
-  letter-spacing: 0.14em;
+.portao__campo span {
+  font-size: clamp(9px, 1.9vw, 11px);
+  letter-spacing: 0.17em;
   color: #7d8b9c;
 }
-.boasvindas__campo input {
-  min-height: 52px;
-  padding: 0 14px;
-  border-radius: 14px;
-  border: 2px solid #1d2836;
-  background: #0d141c;
+.portao__campo input {
+  min-height: clamp(48px, 8vw, 62px);
+  padding: 0 clamp(12px, 2.4vw, 18px);
+  border-radius: clamp(12px, 2.4vw, 16px);
+  border: 2px solid #23cbf3;
+  background: #060d13;
   color: #eef3f8;
-  /* 16 px é o mínimo que impede o iPhone de dar zoom ao focar o campo. */
-  font-size: 17px;
-  font-weight: 600;
+  /* 16px e o minimo que impede o iPhone de dar zoom ao focar o campo. */
+  font-size: max(17px, clamp(17px, 2.8vw, 20px));
+  font-weight: 700;
 }
-.boasvindas__campo input:focus {
+.portao__campo input:focus {
   outline: none;
-  border-color: #18bfea;
+  box-shadow: 0 0 0 3px rgba(35, 203, 243, 0.28);
 }
-.boasvindas__campo input::placeholder {
+.portao__campo input::placeholder {
   color: #4c5a6a;
 }
 
-.boasvindas__acao {
-  min-height: 56px;
+.portao__acao {
+  width: 100%;
+  min-height: clamp(52px, 8.5vw, 66px);
   border: none;
-  border-radius: 16px;
-  background: linear-gradient(180deg, #23cbf3, #0f9ec6);
+  border-radius: clamp(13px, 2.6vw, 18px);
+  background: linear-gradient(180deg, #2ad2f8, #0f9ec6);
   color: #04121a;
-  font-size: 16px;
+  font-size: clamp(15px, 2.8vw, 19px);
   font-weight: 800;
   letter-spacing: 0.06em;
   cursor: pointer;
 }
-.boasvindas__acao:disabled {
+.portao__acao:disabled {
   background: #16202b;
   color: #55677a;
   cursor: default;
 }
-.boasvindas__acao:focus-visible {
-  outline: 3px solid #18bfea;
+.portao__acao:focus-visible {
+  outline: 3px solid #23cbf3;
   outline-offset: 3px;
 }
 
+/*
+ * Celular deitado, ou tela baixa: a cena cede espaco para o painel, porque a
+ * decisao nao pode nascer abaixo da dobra. Antes o botao nascia fora da tela
+ * num aparelho de 640 px de altura — funcionava, mas so para quem pensasse em
+ * rolar, que e o mesmo defeito que a tela da central ja teve.
+ */
+@media (max-height: 700px) {
+  .portao__painel {
+    padding: 11px 12px 12px;
+  }
+  .portao__fala {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  .portao__pessoa {
+    min-height: 78px;
+    width: 62px;
+  }
+  .portao__pessoa img {
+    height: 50px;
+  }
+  .portao__campo {
+    margin-bottom: 8px;
+  }
+}
+
+/* ─── A TELA DO MAPA (v3.10) ───────────────────────────────────────────────
+ *
+ * Celular ou tablet, uma coluna. O mapa ocupa a parte de cima inteira e o
+ * painel de fala fica embaixo, onde o polegar chega.
+ *
+ * O mapa NAO mostra o bairro todo: num celular o bairro inteiro vira mancha
+ * verde. Ele chega perto do pedaco que importa — base, coleta e entrega — e o
+ * resto fica de fora. Ver tudo e ver nada.
+ */
+.mapa {
+  position: fixed;
+  z-index: 370;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #05080c;
+  color: #eef3f8;
+  overflow: hidden;
+}
 
 /*
- * Celular baixo (640 px de altura ainda é comum, e é o caso mais apertado).
+ * AS DUAS LUPAS DO MAPA — folha dele de 09/09/2026.
  *
- * Sem isto o botão COMEÇAR nascia abaixo da dobra: a tela rolava, então
- * funcionava, mas a ação principal só aparecia para quem pensasse em rolar —
- * exatamente o defeito que a auditoria da Central tinha apontado. O retrato é
- * quem cede espaço, porque é o maior e o único que não é decisão.
+ * Ficam encostadas na direita, ACIMA do botao redondo do XBWAPP, que mora no
+ * canto de baixo. Empilhadas e nao lado a lado porque a mao que segura o
+ * aparelho alcanca as duas com o mesmo polegar.
+ *
+ * Sao desenho puro: nada de moldura, nada de fundo. A lupa dele ja tem corpo,
+ * vidro e brilho — por um circulo azul em volta seria por uma moldura em cima
+ * de outra.
  */
-@media (max-height: 730px) {
-  .boasvindas {
-    gap: 10px;
+.mapa__lupas {
+  position: absolute;
+  right: 3.4vw;
+  bottom: max(15vh, calc(env(safe-area-inset-bottom) + 15vh));
+  z-index: 385;
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  pointer-events: auto;
+}
+
+.mapa__lupa {
+  display: grid;
+  place-items: center;
+  width: clamp(2.9rem, 7vh, 3.8rem);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  transition:
+    transform 140ms ease,
+    opacity 140ms ease;
+  filter: drop-shadow(0 0.4vh 1.2vh rgba(0, 0, 0, 0.55));
+}
+
+.mapa__lupa img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.mapa__lupa:hover:not(:disabled) {
+  transform: scale(1.08);
+}
+
+.mapa__lupa:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/*
+ * NO FIM DO CURSO A LUPA APAGA, e nao some.
+ *
+ * Botao que desaparece faz a pessoa achar que o jogo perdeu alguma coisa; a
+ * lupa apagada diz "daqui nao passa" e continua no lugar de sempre.
+ */
+.mapa__lupa:disabled {
+  opacity: 0.34;
+  cursor: default;
+}
+
+.mapa__moldura {
+  position: relative;
+  width: 100%;
+  max-width: clamp(360px, 100vw, 820px);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  background: #0a1016;
+}
+.mapa__moldura::after {
+  /* O mapa escurece para baixo, para o painel nascer da imagem em vez de
+     ficar colado por cima dela. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 8, 12, 0.35) 0%,
+    rgba(5, 8, 12, 0) 24%,
+    rgba(5, 8, 12, 0) 62%,
+    rgba(5, 8, 12, 0.92) 100%
+  );
+}
+
+/* So o mapa: sem painel embaixo, a sombra de baixo nao tem o que apresentar —
+   ela existia para o painel nascer da imagem. Sem ela, o desenho chega
+   inteiro ate a borda. */
+.mapa--so-mapa .mapa__moldura::after {
+  display: none;
+}
+
+/* OS PINOS EXISTEM, MAS AINDA NAO APARECEM.
+   Estao montados no lugar certo — so nao sao pintados. Nao usamos display:
+   none de proposito: assim eles continuam ocupando o seu lugar na tela, e o
+   dia de mostra-los nao move nada. E nao roubam o toque de quem arrasta. */
+.mapa--pinos-ocultos .mapa__pino {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* A caixa que carrega o desenho e os pinos juntos. Guarda a proporcao do
+   mapa, entao a altura sai sozinha e nao sobra preto. */
+.mapa__caixa {
+  position: absolute;
+}
+.mapa__foto {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+
+/*
+ * O PINO DO MAPA — uma peca, e nao um desenho de traco.
+ *
+ * O CORPO e uma imagem renderizada: bisel de cromo com a luz vindo de cima,
+ * esmalte azul-noite por dentro, fio de neon com brilho somado de verdade e
+ * sombra de contato. Foi desenhado quatro vezes maior e reduzido — e o que
+ * deixa a aresta limpa em vez de escada de pixel — e a imagem chega em 128
+ * de largura para nao borrar em tela retina.
+ *
+ * O SIMBOLO vem por cima, desenhado aqui. Separado assim, um comercio novo e
+ * um desenho novo; se ele estivesse dentro da imagem, cada loja nova pediria
+ * um render inteiro.
+ *
+ * A PONTA pousa no TELHADO do lugar, e a peca sobe dali: de cima, um pino no
+ * meio-fio parece apontar a rua. Centrado no alvo tambem nao serve — tapa
+ * justamente o que aponta.
+ *
+ * A COR diz o PAPEL na corrida — azul da marca na base, verde neon na coleta,
+ * laranja na entrega — e o simbolo diz o lugar. Separar as duas coisas e o
+ * que deixa "pegar na Pizzaria, deixar na casa 18" legivel sem uma palavra
+ * escrita.
+ */
+.mapa__pino {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  /*
+   * Vinte por cento menor do que o primeiro tamanho, a pedido: "senão
+   * teremos tela muito poluída futuramente". Sao tres pinos hoje e podem ser
+   * muitos amanha — um pino confortavel sozinho vira um tapete de pinos
+   * quando o bairro inteiro acender.
+   *
+   * O PINO CRESCE MENOS QUE O BAIRRO, E NAO FICA PARADO.
+   *
+   * Antes ele tinha tamanho fixo de tela. Parece certo — recado se le do
+   * mesmo jeito de perto e de longe — mas afastado o bairro encolhe e o pino
+   * nao, e ai um pino cobria mais chao que uma casa inteira. Foi o que o
+   * Fernando viu: de longe os pinos mandavam na tela.
+   *
+   * Entao ele acompanha o zoom pela RAIZ dele: dobrando a aproximacao o pino
+   * cresce so quarenta por cento. Afastado ele sai da frente, aproximado ele
+   * ganha corpo, e nunca vira nem tapete nem grao de arroz.
+   */
+  width: clamp(26px, calc(30px * var(--zoom-raiz, 1.35)), 52px);
+}
+.mapa__corpo {
+  display: block;
+  width: 100%;
+  height: auto;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+/*
+ * A BOLINHA — desenhada na tela, e nao assada na imagem.
+ *
+ * Ela virou o RELOGIO da entrega: a cor muda o tempo todo, conforme o que
+ * sobra de prazo. Uma cor que muda nao pode morar dentro de um desenho pronto,
+ * senao cada estagio viraria um arquivo novo — e sao cinco estagios vezes tres
+ * papeis. Entao o desenho traz so o BURACO escuro, e a bola e feita aqui, com
+ * uma cor so trocando de lugar.
+ *
+ * O corpo diz O QUE o lugar e e nunca muda. A bolinha diz QUANTO FALTA.
+ */
+.mapa__bolinha {
+  position: absolute;
+  left: 50%;
+  top: 24.5%;
+  width: 49%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 31% 25%,
+      rgba(255, 255, 255, 0.98) 0 5%,
+      rgba(255, 255, 255, 0.5) 13%,
+      rgba(255, 255, 255, 0) 32%
+    ),
+    radial-gradient(
+      circle at 35% 29%,
+      var(--bolinha-clara) 0%,
+      var(--bolinha) 54%,
+      var(--bolinha-escura) 100%
+    );
+  transition:
+    background 0.5s linear,
+    filter 0.5s linear;
+}
+
+/*
+ * OS CINCO ESTAGIOS DO RELOGIO.
+ *
+ * A COR NAO CARREGA O RECADO SOZINHA: a bolinha tambem PULSA, e cada vez mais
+ * rapido conforme esquenta. Isso resolve dois problemas de uma vez — a
+ * bolinha laranja em cima da loja laranja, que perderia contraste justamente
+ * no momento mais tenso, e o jogador que nao distingue as cores.
+ */
+.mapa__pino[data-bolinha="no-prazo"] {
+  --bolinha: #8fc9ec;
+  --bolinha-clara: #dff1fc;
+  --bolinha-escura: #3f7ea6;
+}
+.mapa__pino[data-bolinha="folga-acabando"] {
+  --bolinha: #4fd48a;
+  --bolinha-clara: #c8f7dc;
+  --bolinha-escura: #1c7a49;
+}
+.mapa__pino[data-bolinha="atrasando"] {
+  --bolinha: #f2d13e;
+  --bolinha-clara: #fdf3c0;
+  --bolinha-escura: #97781a;
+}
+.mapa__pino[data-bolinha="no-limite"] {
+  --bolinha: #ff8f2c;
+  --bolinha-clara: #ffd8a8;
+  --bolinha-escura: #a04d09;
+}
+.mapa__pino[data-bolinha="estourou"] {
+  --bolinha: #ec3a32;
+  --bolinha-clara: #ffb9b3;
+  --bolinha-escura: #85110d;
+}
+.mapa__pino[data-bolinha="atrasando"] .mapa__bolinha {
+  animation: mapa-pulso 1.5s ease-in-out infinite;
+}
+.mapa__pino[data-bolinha="no-limite"] .mapa__bolinha {
+  animation: mapa-pulso 0.85s ease-in-out infinite;
+}
+@keyframes mapa-pulso {
+  50% {
+    filter: brightness(1.5);
+    transform: translate(-50%, -50%) scale(1.1);
   }
-  .boasvindas__palco {
-    min-height: 21vh;
-    flex-basis: 21vh;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mapa__bolinha {
+    animation: none !important;
   }
-  .boasvindas__retrato {
-    max-height: 25vh;
+}
+
+/*
+ * O PINO QUE FALHOU: um X, e a peca inteira vermelha.
+ *
+ * Ordem dele, e melhor do que a explosao que ele mesmo tinha proposto: le no
+ * tamanho do pino, nao comemora o fracasso, e FICA NA TELA COMO REGISTRO em
+ * vez de piscar e sumir.
+ */
+.mapa__pino[data-bolinha="estourou"] .mapa__corpo {
+  filter: saturate(0.15) sepia(1) hue-rotate(-32deg) saturate(4.2)
+    brightness(0.92);
+}
+.mapa__pino[data-bolinha="estourou"] .mapa__simbolo {
+  display: none;
+}
+.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::before,
+.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  top: 46%;
+  width: 76%;
+  height: 12%;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(90, 8, 6, 0.9);
+}
+.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::before {
+  transform: rotate(45deg);
+}
+.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::after {
+  transform: rotate(-45deg);
+}
+
+/* O simbolo mora DENTRO da esfera de vidro, e nao em cima da peca inteira. */
+.mapa__simbolo {
+  position: absolute;
+  left: 50%;
+  top: 25%;
+  transform: translate(-50%, -50%);
+  width: 27%;
+  height: auto;
+  stroke-linejoin: round;
+}
+/*
+ * ESCURO SOBRE O VIDRO, e nao neon.
+ *
+ * No pino antigo o simbolo ficava sobre esmalte escuro e precisava brilhar.
+ * Agora ele pousa numa esfera clara: neon sobre claro some. O que le e o
+ * contrario — tinta escura, com um fio de luz embaixo para nao grudar no
+ * reflexo da esfera.
+ */
+.mapa__simbolo-furo,
+.mapa__simbolo-risco {
+  fill: #08182e;
+  stroke: #08182e;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+}
+.mapa__simbolo-furo {
+  stroke: none;
+}
+.mapa__simbolo-risco {
+  fill: none;
+}
+.mapa__pino .mapa__simbolo {
+  fill: #08182e;
+  filter: drop-shadow(0 1px 0 rgba(255, 255, 255, 0.5));
+}
+
+/*
+ * OS MODOS DE COR — ordem dele: "modos de mudanca de cores, conforme modo de
+ * game, cores mais vivas, ou apagadas dependendo da situacao".
+ *
+ * E UM DESENHO SO. O pino nao tem uma imagem por estado: a cor e a viveza
+ * mudam na hora, em cima da mesma peca. Por isso um estado novo custa uma
+ * linha, e nao um render novo — e por isso a mudanca pode ser suave em vez de
+ * um corte seco.
+ *
+ *   agora   — a parada da vez: cor cheia, brilho em volta, e so ela respira
+ *   espera  — existe, mas nao e agora: cor lavada, quase um lembrete
+ *   feito   — ja resolvida: quase cinza, sai da frente sem sumir
+ *   urgente — guardado para a corrida com pressa: vermelho e pulso
+ *
+ * O "espera" e o que faz o bairro inteiro aceso caber na tela sem virar
+ * tapete: cem pinos lavados nao competem com os tres que importam.
+ */
+.mapa__pino {
+  transition:
+    filter 0.35s ease,
+    opacity 0.35s ease;
+}
+.mapa__pino[data-situacao="agora"][data-papel="coleta"] {
+  filter: saturate(1.15) drop-shadow(0 0 7px rgba(45, 230, 140, 0.85));
+}
+.mapa__pino[data-situacao="agora"][data-papel="entrega"] {
+  filter: saturate(1.15) drop-shadow(0 0 7px rgba(255, 150, 50, 0.85));
+}
+.mapa__pino[data-situacao="agora"][data-papel="base"] {
+  filter: saturate(1.15) drop-shadow(0 0 7px rgba(70, 150, 255, 0.85));
+}
+/*
+ * QUEM NAO E DA CORRIDA NAO APARECE.
+ *
+ * Ordem dele depois de conferir a marcacao: "deve aparecer na tela apenas
+ * ativos, os outros devem ficar invisiveis".
+ *
+ * O pino continua montado, no lugar exato, ligado a rua e a distancia — so
+ * nao e pintado. E a mesma coisa que ele pediu la no comeco, "pinos devem
+ * existir mas invisivel ao jogador", e e o certo para o jogo: um bairro
+ * inteiro de pinos vira tapete e esconde justamente o que aponta.
+ *
+ * Tentei antes deixa-los LAVADOS em vez de invisiveis. Lavado ainda disputa
+ * atencao: sessenta e cinco pinos sem cor continuam sendo sessenta e cinco
+ * manchas em cima das casas.
+ */
+.mapa__pino[data-situacao="espera"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+.mapa__pino[data-situacao="feito"] {
+  filter: saturate(0.18) brightness(0.72);
+  opacity: 0.85;
+}
+.mapa__pino[data-situacao="urgente"] {
+  filter: saturate(1.35) drop-shadow(0 0 9px rgba(255, 70, 60, 0.95));
+  animation: mapa-urgente 1.1s ease-in-out infinite;
+}
+
+/* So a parada da vez respira. Se todos balancassem, nenhum chamaria. */
+.mapa__pino[data-situacao="agora"] {
+  animation: mapa-flutua 2.4s ease-in-out infinite;
+}
+@keyframes mapa-flutua {
+  50% {
+    transform: translate(-50%, -100%) translateY(-4px);
   }
-  .boasvindas__ficha {
-    gap: 9px;
+}
+@keyframes mapa-urgente {
+  50% {
+    transform: translate(-50%, -100%) translateY(-5px) scale(1.06);
   }
-  .boasvindas__ficha h1 {
-    font-size: 22px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mapa__pino[data-situacao="agora"],
+  .mapa__pino[data-situacao="urgente"] {
+    animation: none;
   }
-  .boasvindas__selo {
-    min-height: 84px;
+}
+
+/*
+ * A LUZ DO DIA — a primeira camada de vida do bairro.
+ *
+ * "Tem hora do dia, no relogio do jogo." A luz vira sozinha durante a corrida:
+ * amanhecer frio, manha limpa, meio-dia sem cor nenhuma, tarde dourada,
+ * entardecer quente e mais baixo. Depois volta.
+ *
+ * NAO HA NOITE FECHADA. Noite de verdade escureceria as ruas, e a rua e onde
+ * moram a rota e os pinos — nada pode disputar a leitura delas. O entardecer ja
+ * e escuro o bastante para uma janela acesa fazer sentido mais adiante.
+ *
+ * Os marcos do ciclo (0%, 20%, 45%, 70%, 88%) sao os mesmos de game/aLuzDoDia,
+ * e ha teste amarrando os dois arquivos: fracao repetida em dois lugares e
+ * fracao que envelhece torta.
+ *
+ * A multiplicacao e o que faz virar LUZ e nao verniz colorido: ela escurece o
+ * que ja e escuro e deixa o claro tomar a cor, que e como o sol se comporta.
+ */
+.mapa__luz {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  animation: luz-do-dia var(--dia, 240s) linear infinite;
+}
+
+@keyframes luz-do-dia {
+  0% {
+    background: rgba(150, 176, 214, 0.3);
   }
-  .boasvindas__selo img {
-    height: 56px;
+  20% {
+    background: rgba(206, 222, 240, 0.16);
+  }
+  45% {
+    background: rgba(255, 255, 255, 0);
+  }
+  70% {
+    background: rgba(255, 214, 150, 0.22);
+  }
+  88% {
+    background: rgba(226, 150, 96, 0.34);
+  }
+  100% {
+    background: rgba(150, 176, 214, 0.3);
+  }
+}
+
+/*
+ * A SOMBRA DE NUVEM E A LUZ ENTRE AS COPAS.
+ *
+ * Duas manchas moles atravessando o bairro devagar, e um malhado muito leve por
+ * baixo. Nenhuma tem contorno proprio — e a regra da camada que respira: o olho
+ * registra que o lugar esta vivo e nao olha para la.
+ *
+ * E o jeito honesto de a mata "balancar" num desenho parado: nao da para mexer
+ * a arvore que esta pintada, mas da para mexer a luz que passa entre os galhos.
+ *
+ * Muito devagar de proposito. Uma nuvem que atravessa em dez segundos e um
+ * efeito; em dois minutos e clima.
+ */
+.mapa__nuvens {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+  opacity: 0.5;
+  background:
+    radial-gradient(
+      38% 26% at 22% 30%,
+      rgba(58, 74, 96, 0.5),
+      rgba(58, 74, 96, 0) 70%
+    ),
+    radial-gradient(
+      30% 20% at 74% 66%,
+      rgba(58, 74, 96, 0.42),
+      rgba(58, 74, 96, 0) 70%
+    );
+  animation: nuvens-passam var(--nuvens, 130s) linear infinite;
+}
+
+@keyframes nuvens-passam {
+  from {
+    transform: translate(-14%, -6%);
+  }
+  to {
+    transform: translate(14%, 6%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Quem pediu menos movimento fica com o bairro no meio-dia, parado: a luz
+   * congela sem cor e as nuvens somem. O desenho continua o que sempre foi.
+   */
+  .mapa__luz {
+    animation: none;
+    background: none;
+  }
+
+  .mapa__nuvens {
+    animation: none;
+    opacity: 0.22;
+  }
+}
+
+/*
+ * A VIDA DO MAPA — os pontos que se mexem no bairro.
+ *
+ * Tudo aqui e medido em porcentagem do MAPA, e nao corrigido pelo zoom: a
+ * fumaca que sai de uma chamine tem o tamanho da chamine e cresce junto com
+ * ela. Quem e corrigido pelo zoom e o entregador, porque ele e peca de jogo.
+ */
+.vida {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.vida__ponto {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+
+/*
+ * A FONTE DA PRACA — o unico ponto de agua do bairro.
+ *
+ * E a base da corrida, entao a pessoa olha para ela toda vez. Merece capricho,
+ * e capricho aqui nao e jato desenhado: e o BRILHO na agua, que e o que o olho
+ * usa para saber que ha agua mexendo. Dois aneis de luz nascendo do meio e
+ * abrindo, fora de fase — que e como ondulacao se parece de cima.
+ */
+.vida__agua,
+.vida__agua::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2.4%;
+  aspect-ratio: 1.7;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(232, 250, 255, 0.5);
+  animation: agua-abre 3.4s ease-out infinite;
+}
+
+.vida__agua {
+  width: 2.4%;
+  aspect-ratio: 1.7;
+}
+
+.vida__agua::after {
+  width: 100%;
+  animation-delay: 1.7s;
+}
+
+@keyframes agua-abre {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  35% {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/*
+ * AS PETALAS das arvores floridas.
+ *
+ * Quatro, nao quarenta. A lista do que NAO animar comeca com "particulas
+ * soltas" justamente porque elas competem com o desenho — que e a coisa mais
+ * bonita que o jogo tem. Quatro petalas descendo devagar num canto da praca
+ * nao competem: passam.
+ */
+.vida__petalas {
+  width: 3.4%;
+  aspect-ratio: 1.4;
+}
+
+.vida__petalas::before,
+.vida__petalas::after {
+  content: "";
+  position: absolute;
+  width: 9%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 206, 224, 0.72);
+  animation: petala-cai 9s linear infinite;
+}
+
+.vida__petalas::before {
+  left: 24%;
+}
+
+.vida__petalas::after {
+  left: 66%;
+  animation-delay: 4.5s;
+}
+
+@keyframes petala-cai {
+  from {
+    opacity: 0;
+    transform: translate(0, -10%) rotate(0deg);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-120%, 90%) rotate(220deg);
+  }
+}
+
+/*
+ * A FUMACA DE CHAMINE — o melhor custo-beneficio de encanto do mapa inteiro.
+ *
+ * Chamine e o item mais repetido do bairro, e nenhuma precisou ser desenhada:
+ * ja estao todas la. Sai de UMA por vez, sorteada, e some.
+ *
+ * Tres bafos em fila, cada um subindo, abrindo e sumindo. Nao ha jato continuo
+ * de proposito — fumaca de casa sai em bafo, e bafo tem silencio entre um e
+ * outro, que e o que separa chamine de incendio.
+ */
+.vida__fumaca {
+  width: 2.6%;
+  aspect-ratio: 0.6;
+}
+
+.vida__fumaca::before,
+.vida__fumaca::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(236, 238, 242, 0.62),
+    rgba(236, 238, 242, 0) 100%
+  );
+  animation: fumaca-sobe 3.6s ease-out infinite;
+}
+
+.vida__fumaca::after {
+  animation-delay: 1.8s;
+}
+
+@keyframes fumaca-sobe {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-95%, -320%) scale(1.9);
+  }
+}
+
+/*
+ * O PASSARINHO NO FIO.
+ *
+ * Ele pousa, fica, e levanta. E a unica coisa do mapa que tem contorno proprio
+ * e mesmo assim pode aparecer — porque dura sete segundos e depois nao existe
+ * mais. Contorno permanente e o que rouba o olho; contorno que passa e encanto.
+ */
+.vida__passaro {
+  width: 1%;
+  aspect-ratio: 1.6;
+  border-radius: 46% 46% 40% 40%;
+  background: rgba(38, 42, 52, 0.82);
+  animation: passaro-pousa 7s ease-in-out both;
+}
+
+@keyframes passaro-pousa {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -420%) scaleX(1.6);
+  }
+  14% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scaleX(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-10%, -430%) scaleX(1.6);
+  }
+}
+
+/*
+ * AS LUZES QUE ACENDEM AO ENTARDECER — coreto e rua do comercio.
+ *
+ * Estas NAO sao sorteadas: dependem da hora. Foi por elas que a pergunta da luz
+ * do dia travava metade da lista — sem entardecer, nao ha quando acender.
+ *
+ * O ciclo tem o MESMO tempo da luz do dia e comeca junto com ela, entao as duas
+ * andam em fase sem ninguem sincronizar nada. Acende no fim da tarde, fica
+ * acesa no entardecer e apaga no amanhecer.
+ */
+.vida__acende {
+  width: 5%;
+  aspect-ratio: 1.6;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(255, 206, 122, 0.55),
+    rgba(255, 186, 96, 0.22) 55%,
+    rgba(255, 186, 96, 0) 100%
+  );
+  opacity: 0;
+  animation: luz-acende var(--dia, 240s) linear infinite;
+}
+
+@keyframes luz-acende {
+  0%,
+  70% {
+    opacity: 0;
+  }
+  82% {
+    opacity: 0.35;
+  }
+  88%,
+  97% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Quem pediu menos movimento fica com o bairro parado. As luzes do entardecer
+   * tambem somem: elas sao movimento lento, e movimento lento tambem incomoda
+   * quem pediu para nao ter.
+   */
+  .vida {
+    display: none;
+  }
+}
+
+/*
+ * O GAROTO EM PE NA PRACA.
+ *
+ * Pendurado pelo PE, e nao pelo meio: o desenho e recortado rente ao contorno,
+ * entao a linha de baixo dele e a sola do tenis. Assim o ponto do mapa e onde
+ * ele pisa, e nao ha numero de geometria nenhum para envelhecer torto — que e o
+ * problema que o entregador teve e que custou meio dia para achar.
+ *
+ * Ele encolhe pela raiz do zoom, igual ao entregador: e peca de jogo, e nao
+ * bairro. Aproximar a cidade nao pode transformar um menino num predio.
+ */
+.garoto {
+  position: absolute;
+  height: calc(var(--garoto-altura, 2.4%) / var(--zoom-raiz, 1));
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  will-change: transform;
+}
+
+/*
+ * A SOMBRA DE CONTATO DA MALA — a mesma que o garoto ja tinha.
+ *
+ * E o cuidado que mais rende de todos: sem uma mancha embaixo, o desenho
+ * recortado FLUTUA sobre o cenario por mais certa que esteja a cor, porque o
+ * olho procura onde o objeto toca o chao e nao acha. Ela e larga e baixa pelo
+ * mesmo motivo da dele — de cima, a 31 graus do chao, sombra e uma poca
+ * achatada, e nao um risco atras.
+ */
+.caixa-no-chao::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 104%;
+  aspect-ratio: 3.4;
+  transform: translate(-50%, 34%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(6, 12, 20, 0.62),
+    rgba(6, 12, 20, 0.3) 55%,
+    rgba(6, 12, 20, 0) 100%
+  );
+  z-index: -1;
+}
+
+/*
+ * E A COR: um pouco menos berrante, um pouco mais quente.
+ *
+ * O bairro e uma pintura ao sol, com um veu de ar por cima — nela nada tem preto
+ * puro nem cor cheia. As pecas vieram de fundo escuro, com contraste de estudio
+ * e azul saturado, e e por isso que saltavam. Baixar a saturacao e o contraste e
+ * dar um fio de calor poe as duas no mesmo ar do resto do desenho.
+ *
+ * O grosso do encaixe, porem, nao esta aqui: esta em elas serem pintadas ANTES
+ * da camada de luz, que e o que faz as duas mudarem de cor junto com o bairro ao
+ * longo do dia. Isto aqui e o acabamento.
+ */
+.garoto__desenho,
+.caixa-no-chao__desenho {
+  filter: saturate(0.88) contrast(0.94) brightness(1.04) sepia(0.1)
+    hue-rotate(-8deg);
+}
+
+/*
+ * A MALA APANHA MAIS QUE O GAROTO, e com razao.
+ *
+ * Ele veio com pele, jeans e tecido — cores que ja existem na pintura. Ela veio
+ * com azul de catalogo e neon ciano, que nao existem em lugar nenhum daquele
+ * bairro: sao a coisa mais berrante da tela inteira. Um pouco mais de sujeira e
+ * um pouco menos de brilho poem os dois no mesmo ar.
+ */
+.caixa-no-chao__desenho {
+  filter: saturate(0.76) contrast(0.9) brightness(1.02) sepia(0.16)
+    hue-rotate(-10deg);
+}
+
+.garoto__desenho {
+  display: block;
+  height: 100%;
+  width: auto;
+  -webkit-user-drag: none;
+}
+
+/*
+ * A MANCHA DO CHAO embaixo dele.
+ *
+ * Sem ela o menino fica pousado sobre a praca em vez de estar nela — e o mesmo
+ * defeito que o entregador teve, resolvido do mesmo jeito: uma sombra achatada
+ * exatamente onde o pe encosta.
+ */
+.garoto::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 108%;
+  aspect-ratio: 3.4;
+  transform: translate(-50%, 42%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(6, 12, 20, 0.5),
+    rgba(6, 12, 20, 0.24) 55%,
+    rgba(6, 12, 20, 0) 100%
+  );
+}
+
+/*
+ * A CHAMADA QUE ABRE O JOGO — na tela inteira.
+ *
+ * "Deve ser aplicada na tela toda; o game e mobile." Ela nao e um cartao no meio
+ * do bairro: ela TOMA a tela, como uma ligacao toma o celular na mao de quem
+ * esta jogando.
+ *
+ * O verde e o do desenho dele, medido nele: quase preto no fundo (1,37,29) e um
+ * pouco mais vivo nas ondas (2,67,46).
+ */
+.chamada {
+  position: fixed;
+  inset: 0;
+  /*
+   * ACIMA DO MAPA, e nao acima de "tudo".
+   *
+   * O mapa mora em 370 — e ele que ocupa a tela quando o jogo esta no bairro.
+   * Ja custou uma volta: em 60 a tela existia, respondia ao teclado e era
+   * invisivel, escondida atras do proprio bairro.
+   */
+  z-index: 400;
+  /*
+   * A camada de telas do jogo deixa o toque passar para o canvas; toda tela que
+   * responde precisa reativar isso por conta propria.
+   */
+  pointer-events: auto;
+  overflow: hidden;
+  color: #eef7f1;
+  background: #012019;
+  animation: chamada-entra 300ms ease-out both;
+}
+
+@keyframes chamada-entra {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * A TELA DO APLICATIVO, e o que treme.
+ *
+ * "Ficar tremendo bem pouquinho, parecendo que e o celular que treme." Agora a
+ * tela inteira E o celular, entao e ela que treme — meio grau e meio por cento,
+ * duas tremidas e uma pausa, no mesmo desenho do toque. De perto se ve; de longe
+ * so se sente.
+ *
+ * O fundo com as ondas e do desenho dele, refeito com luz em vez de imagem:
+ * quatro clarões moles nos cantos por cima do verde quase preto. Feito assim ele
+ * serve em qualquer tela, do celular em pe ao monitor deitado, sem esticar.
+ */
+.chamada__tela {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto auto;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(0.6rem, 2.4vh, 2rem);
+  padding: clamp(1rem, 4vh, 3rem) 6% clamp(1rem, 3vh, 2.4rem);
+  background:
+    radial-gradient(
+      120% 60% at 100% 8%,
+      rgba(2, 92, 62, 0.55),
+      transparent 62%
+    ),
+    radial-gradient(90% 50% at 0% 42%, rgba(2, 78, 53, 0.42), transparent 62%),
+    radial-gradient(120% 55% at 8% 100%, rgba(2, 84, 57, 0.5), transparent 62%),
+    linear-gradient(168deg, #06382a 0%, #012519 52%, #011d17 100%);
+  animation: aparelho-treme 2.4s ease-in-out infinite;
+}
+
+@keyframes aparelho-treme {
+  0%,
+  14%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  3% {
+    transform: translate3d(-0.5%, 0.2%, 0) rotate(-0.5deg);
+  }
+  6% {
+    transform: translate3d(0.5%, -0.2%, 0) rotate(0.5deg);
+  }
+  9% {
+    transform: translate3d(-0.4%, 0.1%, 0) rotate(-0.35deg);
+  }
+  12% {
+    transform: translate3d(0.3%, 0, 0) rotate(0.25deg);
+  }
+  27% {
+    transform: translate3d(-0.5%, 0.2%, 0) rotate(-0.5deg);
+  }
+  30% {
+    transform: translate3d(0.5%, -0.2%, 0) rotate(0.5deg);
+  }
+  33% {
+    transform: translate3d(-0.4%, 0.1%, 0) rotate(-0.35deg);
+  }
+  36% {
+    transform: translate3d(0.3%, 0, 0) rotate(0.25deg);
+  }
+  40% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+}
+
+.chamada__marca {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  gap: 0 0.55em;
+  text-align: center;
+}
+
+.chamada__logo {
+  display: grid;
+  place-items: center;
+  width: 1.7em;
+  height: 1.7em;
+  border-radius: 50%;
+  border: 0.14em solid #eef7f1;
+  font:
+    800 clamp(0.9rem, 2.4vh, 1.5rem) / 1 system-ui,
+    sans-serif;
+  color: #3ddc84;
+}
+
+.chamada__marca strong {
+  font:
+    800 clamp(1.5rem, 4.4vh, 3rem) / 1 system-ui,
+    sans-serif;
+  letter-spacing: 0.01em;
+}
+
+.chamada__marca strong span {
+  color: #3ddc84;
+}
+
+.chamada__marca small {
+  grid-column: 1 / -1;
+  margin-top: 0.7vh;
+  /* Numa linha so: quebrado no meio ele deixa de ser assinatura e vira frase. */
+  white-space: nowrap;
+  font:
+    600 clamp(0.55rem, 1.5vh, 0.95rem) / 1 system-ui,
+    sans-serif;
+  letter-spacing: 0.22em;
+  color: rgba(226, 244, 234, 0.72);
+}
+
+.chamada__quem {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: clamp(0.4rem, 1.6vh, 1.2rem);
+  min-height: 0;
+}
+
+.chamada__retrato {
+  width: min(72vw, 42vh);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: clamp(3px, 0.6vh, 8px) solid rgba(74, 186, 128, 0.85);
+  box-shadow: 0 0 6vh rgba(60, 200, 130, 0.25);
+  object-fit: cover;
+}
+
+.chamada__nome {
+  margin: 0;
+  font:
+    800 clamp(1.8rem, 5.2vh, 3.6rem) / 1 system-ui,
+    sans-serif;
+}
+
+.chamada__estado {
+  margin: 0;
+  font:
+    500 clamp(0.9rem, 2.3vh, 1.5rem) / 1 system-ui,
+    sans-serif;
+  color: rgba(226, 244, 234, 0.76);
+}
+
+/*
+ * OS TRES DO MEIO — enfeite marcado como enfeite.
+ *
+ * Estao no desenho e sao eles que fazem aquilo parecer aplicativo de verdade,
+ * mas ainda nao fazem nada. Entao nao sao botoes: quem navega por teclado nao
+ * para neles e o leitor de tela nao os anuncia. Prometer botao que nao responde
+ * e pior do que nao ter botao.
+ */
+.chamada__meio {
+  display: flex;
+  gap: clamp(1.4rem, 8vw, 4rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chamada__meio li {
+  display: grid;
+  justify-items: center;
+  gap: 0.7vh;
+}
+
+.chamada__meio span {
+  display: grid;
+  place-items: center;
+  width: clamp(2.6rem, 7vh, 4.4rem);
+  height: clamp(2.6rem, 7vh, 4.4rem);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  font-size: clamp(1rem, 2.8vh, 1.8rem);
+}
+
+.chamada__meio em {
+  font:
+    500 clamp(0.75rem, 1.9vh, 1.15rem) / 1 system-ui,
+    sans-serif;
+  font-style: normal;
+  color: rgba(226, 244, 234, 0.82);
+}
+
+.chamada__resposta {
+  display: flex;
+  gap: clamp(2.5rem, 16vw, 8rem);
+}
+
+/*
+ * Os dois botoes tem tamanho de dedo de verdade e nao dependem de cor para se
+ * distinguir: um tem X, o outro tem telefone, e os dois tem nome escrito.
+ */
+.chamada__botao {
+  display: grid;
+  justify-items: center;
+  gap: 1.2vh;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.chamada__botao span {
+  display: grid;
+  place-items: center;
+  width: clamp(3.6rem, 10vh, 6rem);
+  height: clamp(3.6rem, 10vh, 6rem);
+  min-width: 56px;
+  min-height: 56px;
+  border-radius: 50%;
+  font-size: clamp(1.4rem, 4vh, 2.4rem);
+  transition: transform 120ms ease-out;
+}
+
+.chamada__botao em {
+  font:
+    600 clamp(0.9rem, 2.3vh, 1.4rem) / 1 system-ui,
+    sans-serif;
+  font-style: normal;
+}
+
+.chamada__botao--recusa span {
+  background: linear-gradient(180deg, #f0483f, #c92f28);
+  box-shadow: 0 0 4vh rgba(240, 72, 63, 0.34);
+}
+
+.chamada__botao--atende span {
+  background: linear-gradient(180deg, #2fe07f, #12a95a);
+  box-shadow: 0 0 4vh rgba(47, 224, 127, 0.42);
+}
+
+.chamada__botao:hover span,
+.chamada__botao:focus-visible span {
+  transform: scale(1.06);
+}
+
+.chamada__botao:focus-visible {
+  outline: 3px solid #eef7f1;
+  outline-offset: 8px;
+  border-radius: 1.5rem;
+}
+
+.chamada__rodape {
+  display: grid;
+  justify-items: center;
+  font:
+    600 clamp(0.6rem, 1.6vh, 1rem) / 1.6 system-ui,
+    sans-serif;
+  letter-spacing: 0.2em;
+  color: rgba(110, 200, 155, 0.62);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+   * Sem tremor e sem entrada. A ligacao continua acontecendo — o que sai e o
+   * movimento, que e o que foi pedido para sair.
+   */
+  .chamada {
+    animation: none;
+  }
+
+  .chamada__tela {
+    animation: none;
+  }
+}
+
+/*
+ * A CONVERSA COM O RENAN.
+ *
+ * As cores sao as do desenho dele, medidas nele: o verde do fundo (1,44,31), o
+ * do cabecalho (0,55,39), o balao dele em cinza-ardosia (48,58,60) e o seu em
+ * verde escuro (1,64,50). Os rabiscos do fundo sao um pedaco da propria imagem.
+ */
+.conversa {
+  position: fixed;
+  inset: 0;
+  /* Acima do mapa, pela mesma razao da ligacao — o mapa mora em 370. */
+  z-index: 400;
+  pointer-events: auto;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  color: #eaf5ee;
+  background-color: #012c1f;
+  background-image: url("/assets/XB_conversa_fundo.webp");
+  background-size: min(62vw, 42vh);
+  background-repeat: repeat;
+  animation: chamada-entra 260ms ease-out both;
+}
+
+.conversa__topo {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  padding: max(1.6vh, env(safe-area-inset-top)) 4vw 1.6vh;
+  background: linear-gradient(180deg, #01462f 0%, #013a27 100%);
+  border-radius: 0 0 2.2vh 2.2vh;
+  box-shadow: 0 0.4vh 2vh rgba(0, 0, 0, 0.35);
+}
+
+.conversa__voltar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: inherit;
+  font-size: clamp(1.4rem, 3.6vh, 2rem);
+  cursor: pointer;
+}
+
+.conversa__voltar:focus-visible {
+  outline: 3px solid #eaf5ee;
+  outline-offset: 2px;
+}
+
+.conversa__retrato {
+  position: relative;
+  display: block;
+  width: clamp(2.6rem, 6.4vh, 4rem);
+  aspect-ratio: 1;
+  flex: none;
+}
+
+.conversa__retrato img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* A bolinha de "esta online" — verde, no canto de baixo, como todo mundo espera. */
+.conversa__retrato i {
+  position: absolute;
+  right: 2%;
+  bottom: 2%;
+  width: 30%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #25d366;
+  box-shadow: 0 0 0 0.35vh #01402b;
+}
+
+.conversa__quem {
+  display: grid;
+  line-height: 1.1;
+  margin-right: auto;
+}
+
+.conversa__quem strong {
+  font:
+    800 clamp(1.1rem, 3vh, 1.8rem) / 1.1 system-ui,
+    sans-serif;
+}
+
+.conversa__quem small {
+  font:
+    500 clamp(0.75rem, 1.9vh, 1.1rem) / 1.2 system-ui,
+    sans-serif;
+  color: rgba(226, 244, 234, 0.72);
+}
+
+.conversa__acoes {
+  display: flex;
+  gap: 4vw;
+  font-size: clamp(1.1rem, 2.8vh, 1.6rem);
+  color: rgba(238, 250, 243, 0.92);
+}
+
+.conversa__acoes i {
+  font-style: normal;
+}
+
+.conversa__fio {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+  overflow-y: auto;
+  padding: 2.4vh 4vw;
+}
+
+/*
+ * OS BALOES.
+ *
+ * Sao feitos, e nao colados. O texto de cada fala tem tamanho proprio, e balao
+ * que e imagem nao estica com o texto sem entortar as pontas — o rabinho vira um
+ * triangulo esparramado assim que a frase passa de uma linha. Aqui a forma e do
+ * desenho dele e o tamanho e do texto.
+ */
+.conversa__balao {
+  position: relative;
+  max-width: 78%;
+  margin: 0;
+  padding: 1.3vh 4vw;
+  border-radius: 1.6vh;
+  font:
+    500 clamp(0.95rem, 2.3vh, 1.4rem) / 1.35 system-ui,
+    sans-serif;
+  box-shadow: 0 0.2vh 0.8vh rgba(0, 0, 0, 0.28);
+}
+
+.conversa__balao::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  width: 2.2vh;
+  height: 1.6vh;
+}
+
+.conversa__balao--renan {
+  align-self: flex-start;
+  border-bottom-left-radius: 0.3vh;
+  background: #303a3c;
+}
+
+.conversa__balao--renan::after {
+  left: -1vh;
+  background: #303a3c;
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
+}
+
+.conversa__balao--voce {
+  align-self: flex-end;
+  border-bottom-right-radius: 0.3vh;
+  background: #014032;
+}
+
+.conversa__balao--voce::after {
+  right: -1vh;
+  background: #014032;
+  clip-path: polygon(0 0, 0 100%, 100% 100%);
+}
+
+/*
+ * O "DIGITANDO" — tres pontinhos subindo e descendo.
+ *
+ * Sao um segundo e pouco de espera, e fazem toda a diferenca: mensagem que nasce
+ * pronta na tela e texto de jogo; mensagem que aparece depois de alguem digitar
+ * e alguem falando com voce.
+ */
+.conversa__digitando {
+  display: flex;
+  gap: 0.8vh;
+  padding: 1.6vh 4vw;
+}
+
+.conversa__digitando i {
+  width: 1vh;
+  height: 1vh;
+  min-width: 6px;
+  min-height: 6px;
+  border-radius: 50%;
+  background: rgba(232, 244, 238, 0.72);
+  animation: digitando-pula 1.1s ease-in-out infinite;
+}
+
+.conversa__digitando i:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.conversa__digitando i:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes digitando-pula {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  30% {
+    transform: translateY(-0.7vh);
+    opacity: 1;
+  }
+}
+
+/*
+ * A BARRA DE BAIXO E ENFEITE, e esta marcada como enfeite.
+ *
+ * Escrever ainda nao faz nada — quem responde nesta conversa e o jogo, com as
+ * falas prontas. Campo que aceita texto e nao usa e pior que campo nenhum: a
+ * pessoa escreve, manda, e nada acontece.
+ */
+.conversa__barra {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  padding: 1.4vh 4vw max(1.4vh, env(safe-area-inset-bottom));
+}
+
+.conversa__campo {
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  flex: 1;
+  padding: 1.4vh 4vw;
+  border-radius: 4vh;
+  background: rgba(20, 32, 30, 0.86);
+  color: rgba(214, 228, 222, 0.75);
+  font-size: clamp(1rem, 2.4vh, 1.4rem);
+}
+
+.conversa__campo em {
+  flex: 1;
+  font-style: normal;
+}
+
+.conversa__campo i {
+  font-style: normal;
+}
+
+.conversa__microfone {
+  display: grid;
+  place-items: center;
+  width: clamp(3rem, 7vh, 4.4rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #16c55f;
+  font-size: clamp(1.2rem, 3vh, 1.8rem);
+}
+
+/*
+ * O BOTAO DE ENVIAR — a vez dela.
+ *
+ * Ele ocupa o lugar do microfone quando a fala dela esta pronta no campo. Pulsa
+ * devagar porque a conversa PAROU esperando: sem isso a pessoa acha que o jogo
+ * travou, e o que travou foi so a vez dela.
+ */
+.conversa__enviar {
+  display: grid;
+  place-items: center;
+  width: clamp(3rem, 7vh, 4.4rem);
+  aspect-ratio: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #16c55f;
+  color: #06231a;
+  font-size: clamp(1.2rem, 3vh, 1.8rem);
+  cursor: pointer;
+  animation: conversa-chama 1.8s ease-in-out infinite;
+}
+
+.conversa__enviar span {
+  transform: translateX(4%);
+}
+
+/* A fala dela no campo e texto de verdade, e nao o cinza de "Mensagem". */
+.conversa__barra--sua-vez .conversa__campo {
+  color: #eaf5ef;
+}
+
+@keyframes conversa-chama {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(22, 197, 95, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 0 1.2vh rgba(22, 197, 95, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversa {
+    animation: none;
+  }
+
+  .conversa__digitando i {
+    animation: none;
+  }
+
+  .conversa__enviar {
+    animation: none;
+  }
+}
+
+.entregador {
+  position: absolute;
+  /*
+   * ELE ENCOLHE QUANDO A PESSOA APROXIMA — e cresce quando ela afasta.
+   *
+   * Pedido dele, 07/09/2026: "neste ponto da camera nada deve ser alterado, mas
+   * ao aplicar o zoom na cidade o garoto deve encolher para 1x2".
+   *
+   * O menino tem tamanho de MUNDO: ele cobre uma fatia fixa do bairro, entao
+   * aproximar o bairro o aproximava junto. Afastado ele ficava do tamanho certo
+   * de peca; aproximado virava um gigante ao lado das casas — e foi por isso
+   * que a cena da parada nunca achou lugar perto da porta.
+   *
+   * Dividir pela RAIZ do zoom e a mesma regra que o pino ja usava, so que do
+   * outro lado da conta: o bairro cresce inteiro, a peca cresce a metade disso.
+   * O numero cai certinho no que ele pediu — no zoom maximo do mapa, 3,5 vezes,
+   * a raiz da 1,87 e ele fica com pouco mais da METADE do tamanho de agora. No
+   * mapa cheio, que e onde ele estava olhando, nada muda: a raiz de 1 e 1.
+   *
+   * O --zoom-raiz desce por heranca do mapa. Sem ele, o valor de socorro e 1 e
+   * a peca volta a ter tamanho de mundo puro.
+   */
+  width: calc(var(--tamanho-de-mundo, 4.06%) / var(--zoom-raiz, 1));
+  /*
+   * ELE E PENDURADO PELAS RODAS, E NAO PELO PE DA MOLDURA.
+   *
+   * Estava em translate(-50%, -100%): o canto de baixo da MOLDURA e que
+   * pousava no ponto do mapa. So que nesta folha o meio da pegada da bicicleta
+   * — o ponto entre a roda de tras e a da frente — fica em 60% da largura e
+   * 89% da altura. Pendurado pelo pe da moldura, o menino nascia ONZE POR
+   * CENTO DA PROPRIA ALTURA ACIMA DO CHAO. Em tamanho grande isso e um palmo
+   * de ar embaixo dele: e a parte do "flutuando" que era codigo.
+   *
+   * Os numeros de cada rumo NAO moram mais aqui: moram em GEOMETRIA, em
+   * game/rumoDoEntregador, medidos folha por folha e entregues em variaveis.
+   * Ja estiveram escritos nestes comentarios e ficaram para tras na primeira
+   * troca de arte — numero repetido em dois lugares e numero que vai mentir.
+   */
+  /*
+   * AFUNDAR NO MAPA — pedido dele em 06/09/2026: "abaixe imagem de entregador
+   * mais proximo de mapa".
+   *
+   * A ancora certa pela geometria e o meio da pegada das duas rodas, e e o
+   * componente que a calcula por rumo. Mas as folhas de hoje foram desenhadas
+   * de uma camera baixa, e desenho de camera baixa colado num mapa visto de
+   * cima sempre parece pousado um palmo acima do chao, por mais certa que a
+   * conta esteja.
+   *
+   * Entao ele afunda de proposito. E um numero so, separado da conta, para
+   * sumir quando as folhas certas chegarem — igual ao aumento para olhar.
+   *
+   * 06/09/2026: foi de 8% para 17% junto com a mancha de contato, e voltou para
+   * 1% em tres etapas, conforme o CORTE na linha do chao foi entrando e ele foi
+   * olhando na tela. "Suba 1mm a bicicleta." No tamanho em que ele aparece hoje,
+   * 4% da altura da moldura e mais ou menos um milimetro de tela — entao 5%
+   * virou 1%. Sao dois remedios para a mesma
+   * doenca, e com os dois juntos o de baixo pode ser menor: quem prende o pneu
+   * agora e o corte, e o afundar so acomoda. "Precisamos subir apenas um
+   * pouquinho." Voltar e trocar este numero.
+   */
+  /*
+   * OS PONTOS DE ENCOSTO VEM DO COMPONENTE, um por rumo (ver GEOMETRIA, em
+   * game/rumoDoEntregador). Aqui ficam so os valores de socorro, para a peca
+   * nunca aparecer torta se alguem esquecer de passar os numeros — sao os do
+   * sudeste, que e o rumo mais usado na primeira corrida.
+   */
+  --frente-x: 72.8%;
+  --frente-y: 97%;
+  --tras-x: 44%;
+  --tras-y: 79%;
+  --pouso-x: -58.4%;
+  --pouso-y: -88%;
+  --corte: polygon(-20% -30%, 120% -30%, 120% 123.5%, -20% 36%);
+
+  /*
+   * QUANTO DA RODA ENTRA NO CHAO.
+   *
+   * Ideia dele: "da pra fazer metade das rodas entrarem na imagem do mapa?".
+   * Da, e e o melhor truque que existe para esta folha: em vez de tentar pousar
+   * a bicicleta em cima do asfalto, o desenho e CORTADO na linha do chao e o
+   * que fica abaixo dela some. O pneu deixa de ter borda — e borda de pneu no
+   * ar e o que denuncia o adesivo.
+   *
+   * A linha do corte e a que passa pelos dois pontos de encosto, levantada
+   * deste tanto. Ele escolheu olhando as quatro versoes lado a lado sobre a rua
+   * de verdade: 3% da altura da moldura, que some com a faixa de baixo do pneu
+   * e nao mais que isso. Subir este numero afunda mais; os tres numeros do
+   * poligono do corte, logo abaixo, andam junto.
+   */
+  --enterrar: 3%;
+
+  /*
+   * ONDE ELE POUSA — AGORA E CONTA, E NAO OLHOMETRO.
+   *
+   * "Sem flutuar, mas deve estar em contato com o chao." Isso e uma medida, e eu
+   * estava deixando uma folga sem perceber.
+   *
+   * O ponto que pousa no mapa era o meio da pegada, a 85% da altura. So que o
+   * desenho e CORTADO na linha do chao, que passa --enterrar acima disso. Ou
+   * seja: a borda de baixo do menino ficava --enterrar ACIMA do ponto do mapa —
+   * flutuando exatamente esse tanto, por construcao.
+   *
+   * Agora quem pousa e a PROPRIA LINHA DO CORTE. Sobe o --enterrar e o menino
+   * afunda; desce e ele sobe — mas a borda dele sempre encosta no chao, sem
+   * folga e sem sobra. E o --afundar fica em zero, guardado so para um ajuste
+   * de olho se um dia for preciso.
+   */
+  --afundar: 0%;
+  transform: translate(var(--pouso-x), calc(var(--pouso-y) + var(--enterrar)))
+    translateY(var(--afundar));
+  pointer-events: none;
+  will-change: transform;
+  /*
+   * O PISO EM PIXEL DE TELA — AGORA E SO REDE DE SEGURANCA.
+   *
+   * Ele nasceu para o menino nao sumir com o bairro inteiro na tela. So que o
+   * piso andava multiplicado pelo AUMENTO PARA OLHAR, e ai virava outra coisa:
+   * afastado, a conta do mundo pedia 36 pixels e o piso mandava 51, entao o
+   * menino PARAVA DE ACOMPANHAR O ZOOM. O Fernando viu na tela — "o garoto nao
+   * esta acompanhando zoom" — e esta certo: quem mora no bairro tem de crescer
+   * e encolher com ele.
+   *
+   * Agora o piso e um numero fixo e pequeno, longe da conta do mundo em todo o
+   * intervalo de zoom que o mapa oferece. Ele so aparece se um dia o mapa
+   * afastar muito mais do que hoje.
+   */
+  min-width: 12px;
+}
+
+/*
+ * O ESPELHO TROCA TUDO DE LADO.
+ *
+ * Tres dos oito rumos pintam o espelho da unica folha que existe. Nele, o que
+ * era medido a 76% da esquerda passa a estar a 24%, e o ponto de pouso vai de
+ * 62% para 38%. Sao as mesmas medidas, lidas do outro lado.
+ */
+.entregador__contato {
+  /*
+   * AS MANCHAS DO CHAO — a sombra e a mordida, nos MESMOS dois pontos.
+   *
+   * "Nao e tirar sombra: analise onde esta sombra e faca pneus estarem naquele
+   * lugar." Ele estava certo, e o defeito era meu: as manchas eram medidas na
+   * folha original, e tres dos oito rumos pintam o ESPELHO dela. No espelho a
+   * roda da frente sai de 76% da largura para 24% — a sombra ficava a meia
+   * bicicleta de distancia do pneu, e sombra longe do pneu e a definicao de
+   * coisa no ar.
+   *
+   * Agora os dois pontos moram em variaveis, e o rumo espelhado troca as duas.
+   *
+   * Cada roda ganha DUAS manchas no mesmo lugar: uma larga e clara por baixo do
+   * desenho, que e a sombra no asfalto, e uma pequena e escura por cima, que
+   * come os ultimos dedos de borracha. E o par que faz o pneu tocar o chao em
+   * vez de pousar sobre ele.
+   */
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.entregador__contato::before,
+.entregador__contato::after {
+  content: "";
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(6, 12, 20, 0.72),
+    rgba(6, 12, 20, 0.4) 52%,
+    rgba(6, 12, 20, 0) 100%
+  );
+}
+
+/* a mordida da roda da frente */
+.entregador__contato::before {
+  left: var(--frente-x);
+  top: calc(var(--frente-y) - var(--enterrar));
+  width: 24%;
+  height: 8%;
+}
+
+/* a mordida da roda de tras */
+.entregador__contato::after {
+  left: var(--tras-x);
+  top: calc(var(--tras-y) - var(--enterrar));
+  width: 20%;
+  height: 7%;
+}
+
+/* a sombra no asfalto, por baixo do desenho — mesmos pontos, maior e mais clara */
+.entregador::before,
+.entregador::after {
+  content: "";
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(4, 10, 18, 0.44),
+    rgba(4, 10, 18, 0.24) 58%,
+    rgba(4, 10, 18, 0) 100%
+  );
+}
+
+.entregador::before {
+  left: var(--frente-x);
+  top: calc(var(--frente-y) - var(--enterrar));
+  width: 40%;
+  height: 13%;
+}
+
+.entregador::after {
+  left: var(--tras-x);
+  top: calc(var(--tras-y) - var(--enterrar));
+  width: 34%;
+  height: 11%;
+}
+
+/*
+ * O CORTE NA LINHA DO CHAO.
+ *
+ * O poligono guarda tudo o que esta ACIMA da linha que passa pelos dois pontos
+ * de encosto, levantada em --enterrar. A linha e inclinada porque as duas rodas
+ * encostam em alturas diferentes na moldura: 76% a de tras, 94% a da frente.
+ *
+ * Os numeros saem dessa reta esticada para fora da moldura, para o corte nao
+ * ter ponta: com --enterrar em 3%, ela cruza a borda esquerda em 31,4% e a
+ * direita em 118,3%. No desenho espelhado a inclinacao vira do outro lado, e os
+ * dois numeros trocam de lugar.
+ */
+/*
+ * O CORTE MORA NA CAIXA, E NAO NA IMAGEM — desde que ele pende na curva.
+ *
+ * "Vamos adicionar animacoes ao entregador." Ele passou a pender para dentro da
+ * curva, e inclinar e girar a imagem. Enquanto o corte estava na propria
+ * imagem, ele girava junto: a seis graus a linha do chao pende tambem, come uns
+ * cinco por cento da moldura de um lado e deixa o pneu do outro lado pendurado
+ * no ar. Numa caixa que nao gira, o corte fica onde o chao esta.
+ */
+.entregador__camada {
+  display: block;
+  position: relative;
+  clip-path: var(--corte);
+}
+
+/*
+ * A IMAGEM DE TRAS, EM CIMA DA DA FRENTE — mesma caixa, mesmo lugar.
+ *
+ * O desenho novo entra nela escondido e so aparece quando ja virou pixel; ai
+ * as duas trocam de papel no mesmo quadro. Escondida e visibility, e nao
+ * transparencia: nunca ha um instante com o menino meio apagado.
+ */
+.entregador__desenho--reserva {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.entregador__desenho {
+  display: block;
+  width: 100%;
+  height: auto;
+  /*
+   * ELE PENDE EM TORNO DO MEIO DA PEGADA DOS PNEUS, e nao do meio da moldura.
+   * Girar por qualquer outro ponto levanta um pneu do chao.
+   */
+  transform-origin: var(--giro-x, 50%) var(--giro-y, 97%);
+  /*
+   * SEM SOMBRA DE RECORTE.
+   *
+   * Havia um drop-shadow no contorno inteiro do menino. E o efeito de adesivo
+   * colado por cima do papel: a silhueta ganha borda escura e descola do
+   * desenho. "Parece estar flutuando sobre o mapa ate aparece a sombra dele" —
+   * era esta. Quem prende o menino no chao e a mancha embaixo das rodas, e nao
+   * um halo em volta dele.
+   */
+  -webkit-user-drag: none;
+}
+
+/*
+ * A TROCA DEIXA DE SER UM CORTE.
+ *
+ * "Precisamos melhorar e muito a alteracao de posicao do entregador."
+ *
+ * Duas camadas empilhadas no mesmo lugar: a de baixo e o desenho que sai, a de
+ * cima o que entra. Durante um sexto de segundo os dois aparecem, um apagando
+ * e o outro acendendo, e o olho le uma virada em vez de um pulo.
+ *
+ * As duas ficam EMPILHADAS, e nao lado a lado: a de baixo sai do fluxo e ocupa
+ * exatamente a mesma caixa. Sem isso o menino apareceria duas vezes, um ao lado
+ * do outro, no instante da troca.
+ */
+.entregador__camada--sai {
+  position: absolute;
+  inset: 0;
+  animation: entregador-sai var(--cruzamento, 160ms) linear forwards;
+}
+
+.entregador__camada--entra {
+  animation: entregador-entra var(--cruzamento, 160ms) linear;
+}
+
+@keyframes entregador-sai {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes entregador-entra {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * Quem pediu menos movimento continua vendo o corte seco — que e o que ele
+ * pediu. O cruzamento e enfeite de suavidade, e enfeite de suavidade e a
+ * primeira coisa que sai quando alguem diz que movimento lhe faz mal.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .entregador__camada--sai {
+    display: none;
+  }
+
+  .entregador__camada--entra {
+    animation: none;
+  }
+
+  /*
+   * Quem pediu menos movimento tambem nao pende na curva nem levanta poeira.
+   * Sao enfeites de movimento, e enfeite de movimento e a primeira coisa que
+   * sai quando alguem diz que movimento lhe faz mal.
+   */
+  .entregador__desenho {
+    transform: none !important;
+  }
+
+  .mapa__poeira {
+    display: none;
+  }
+}
+
+/*
+ * A POEIRA DO PNEU DE TRAS.
+ *
+ * "Fumaca saindo dos pneus a cada curva?" Quase: em TODA curva viraria fumaca
+ * de carro derrapando, e bicicleta nao faz isso. Medido em quarenta rotas, ele
+ * anda quase sempre reto — a mediana da velocidade de giro e um grau por
+ * segundo. Acima de sessenta ela sai, o que da uma vez a cada trinta segundos,
+ * nas esquinas de verdade.
+ *
+ * Ela nasce no chao onde o pneu passou e FICA LA enquanto o menino segue — por
+ * isso e pintada pelo mapa, e nao pelo entregador. Poeira que anda junto com
+ * quem a levantou nao e poeira.
+ */
+.mapa__poeira {
+  position: absolute;
+  /* Segue a mesma regra do menino, senao ela cresce sozinha ao aproximar. */
+  width: calc(2.2% / var(--zoom-raiz, 1));
+  aspect-ratio: 1.6;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    rgba(214, 202, 178, 0.5),
+    rgba(214, 202, 178, 0.26) 55%,
+    rgba(214, 202, 178, 0) 100%
+  );
+  animation: poeira-sobe var(--poeira, 900ms) ease-out forwards;
+}
+
+@keyframes poeira-sobe {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.4);
+  }
+  30% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -62%) scale(1.9);
+  }
+}
+
+/*
+ * O nome fica escrito, mas nao pintado: quem usa leitor de tela ouve
+ * "Pizzaria" e quem olha ve so o pino. Com o bairro cheio, um nome ao lado de
+ * cada pino empilharia texto em cima do desenho.
+ */
+.mapa__nome {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mapa__painel {
+  position: relative;
+  width: 100%;
+  max-width: clamp(360px, 100vw, 820px);
+  padding: clamp(12px, 3vw, 20px) clamp(14px, 3.4vw, 26px)
+    max(clamp(14px, 3vw, 22px), env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(6, 13, 19, 0.96), #060d13);
+  border-top: 1px solid rgba(35, 203, 243, 0.3);
+}
+
+.mapa__quem {
+  margin: 0 0 clamp(5px, 1.2vw, 9px);
+  font-size: clamp(9px, 1.9vw, 11px);
+  letter-spacing: 0.22em;
+  color: #18bfea;
+}
+
+.mapa__fala {
+  margin: 0 0 clamp(10px, 2.2vw, 16px);
+  font-size: clamp(15px, 3.2vw, 21px);
+  font-weight: 500;
+  line-height: 1.32;
+  color: #dfe9f2;
+  border-left: 4px solid #18bfea;
+  border-radius: 2px;
+  padding-left: clamp(9px, 2vw, 14px);
+}
+.mapa__fala strong {
+  color: #23cbf3;
+  font-weight: 800;
+}
+
+.mapa__conta {
+  display: flex;
+  gap: clamp(10px, 2.4vw, 18px);
+  margin: 0 0 clamp(10px, 2.2vw, 16px);
+}
+.mapa__conta div {
+  flex: 1;
+  border: 1px solid #1b2734;
+  border-radius: clamp(10px, 2vw, 14px);
+  padding: clamp(7px, 1.6vw, 11px) clamp(9px, 2vw, 14px);
+  background: #0b131b;
+}
+.mapa__conta dt {
+  font-size: clamp(8px, 1.7vw, 10px);
+  letter-spacing: 0.16em;
+  color: #7d8b9c;
+  margin-bottom: 2px;
+}
+.mapa__conta dd {
+  margin: 0;
+  font-size: clamp(17px, 3.4vw, 23px);
+  font-weight: 800;
+}
+
+.mapa__acao {
+  width: 100%;
+  min-height: clamp(52px, 8.5vw, 66px);
+  border: none;
+  border-radius: clamp(13px, 2.6vw, 18px);
+  background: linear-gradient(180deg, #2ad2f8, #0f9ec6);
+  color: #04121a;
+  font-size: clamp(15px, 2.8vw, 19px);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.mapa__acao:focus-visible {
+  outline: 3px solid #23cbf3;
+  outline-offset: 3px;
+}
+
+/* O mapa e para arrastar: o dedo mexe no mapa, e nao rola a pagina. */
+.mapa__moldura {
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mapa__moldura:active {
+  cursor: grabbing;
+}
+.mapa__foto {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+/*
+ * O DRONE DA XBPNEUS — a cena que responde ao "vamos resolver isso".
+ *
+ * O voo inteiro e um quadro-chave so: quem interpola e o navegador, que faz isso
+ * melhor do que qualquer conta rodando a cada quadro. As paradas sao as mesmas
+ * fracoes que oDrone.ts publica em MARCOS — 26% a passagem, 50% a chegada, 74% a
+ * caixa no chao.
+ *
+ * A REGUA AQUI E A DA TELA. Ele passa rente aos nossos olhos: entra por fora de
+ * uma borda e sai pela outra, e "borda" so quer dizer alguma coisa na moldura.
+ * Onde ele PARA, esse ponto e do bairro — vem em --drone-x e --drone-y, ja
+ * traduzido para a tela por aReguaDoVoo.
+ */
+.drone-cena {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.drone {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  animation: drone-voo var(--voo, 6200ms) cubic-bezier(0.4, 0, 0.4, 1) forwards;
+  will-change: left, top, width;
+  filter: drop-shadow(0 1.2vh 1.8vh rgba(0, 0, 0, 0.42));
+}
+
+.drone__desenho--frente {
+  position: relative;
+  display: block;
+  width: 100%;
+  animation: drone-de-frente var(--voo, 6200ms) linear forwards;
+}
+
+.drone__desenho--voando {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 100%;
+  transform: translate(-50%, -50%);
+  animation: drone-de-cima var(--voo, 6200ms) linear forwards;
+}
+
+/*
+ * A CAIXA E PENDURADA PELA BASE, como o garoto: o ponto e onde ela encosta no
+ * chao, e nao o meio dela. Assim ela pousa NO chao, e nao dentro dele.
+ */
+.drone-caixa {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  animation: drone-caixa-voo var(--voo, 6200ms) cubic-bezier(0.4, 0, 0.4, 1)
+    forwards;
+  will-change: left, top, width;
+  filter: drop-shadow(0 0.8vh 1vh rgba(0, 0, 0, 0.35));
+}
+
+/*
+ * DEPOIS QUE ENCOSTA, A CAIXA E DO BAIRRO.
+ *
+ * Esta peca mora DENTRO da foto do bairro, e nao na tela: ela cai ao lado do
+ * garoto e continua ao lado dele quando a pessoa arrasta ou aproxima o mapa.
+ * Cresce pela raiz do zoom, que e a regra dele.
+ */
+/*
+ * SEM NUMERO DE CAMADA, DE PROPOSITO.
+ *
+ * Ela tinha um, e era ele que a deixava fora do bairro: peca com numero de
+ * camada pula na frente de tudo que nao tem, e a luz do dia nao tem. A mala
+ * ficava com a cor do desenho enquanto o bairro escurecia em volta. Sem o
+ * numero, quem manda e a ordem do desenho — e ali ela vem ANTES da luz.
+ */
+.caixa-no-chao {
+  position: absolute;
+  display: block;
+  isolation: isolate;
+  width: calc(var(--caixa-no-mapa, 1.47%) / var(--zoom-raiz, 1));
+  transform: translate(-50%, -100%);
+  animation: drone-caixa-pousada var(--brilho-da-caixa, 1200ms) ease-out
+    forwards;
+  pointer-events: none;
+}
+
+/*
+ * A MALA ABRE ALI MESMO, do tamanho que esta.
+ *
+ * Ordem dele, 07/09/2026: "apenas uma animacao simples da caixa abrindo ao lado
+ * do garoto, nada de zoom da caixa."
+ *
+ * Sao dois desenhos com quase o mesmo retangulo — fechada 1,10 de largura por
+ * altura, aberta 1,08 — e e por isso que trocar um pelo outro le como a TAMPA
+ * SALTANDO, e nao como uma figura virando outra. A fechada fica no fluxo e da
+ * altura ao conjunto; a aberta entra por cima, no mesmo lugar.
+ */
+.caixa-no-chao__desenho--fechada {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.caixa-no-chao__desenho--aberta {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  opacity: 0;
+}
+
+/*
+ * ELA AGACHA ANTES DE SALTAR.
+ *
+ * E o gesto que qualquer coisa faz antes de pular. Sem ele a tampa apenas
+ * apareceria aberta, e aparecer nao e abrir. O agacho vai da BASE para cima, que
+ * e onde a mala encosta no chao.
+ */
+.caixa-no-chao--aberta {
+  transform-origin: 50% 100%;
+  animation:
+    drone-caixa-pousada var(--brilho-da-caixa, 1200ms) ease-out forwards,
+    caixa-agacha var(--abre, 520ms) ease-out forwards;
+}
+
+.caixa-no-chao--aberta .caixa-no-chao__desenho--fechada {
+  animation: caixa-tampa-some var(--abre, 520ms) linear forwards;
+}
+
+.caixa-no-chao--aberta .caixa-no-chao__desenho--aberta {
+  animation: caixa-tampa-salta var(--abre, 520ms) linear forwards;
+}
+
+@keyframes caixa-agacha {
+  0% {
+    transform: translate(-50%, -100%) scaleY(1);
+  }
+
+  32% {
+    transform: translate(-50%, -100%) scaleY(0.86);
+  }
+
+  62% {
+    transform: translate(-50%, -100%) scaleY(1.06);
+  }
+
+  100% {
+    transform: translate(-50%, -100%) scaleY(1);
+  }
+}
+
+/* A troca acontece no alto do salto, que e onde o olho esta menos parado. */
+@keyframes caixa-tampa-some {
+  0%,
+  40% {
+    opacity: 1;
+  }
+
+  58%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes caixa-tampa-salta {
+  0%,
+  40% {
+    opacity: 0;
+  }
+
+  58%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes drone-voo {
+  0% {
+    left: -32%;
+    top: 64%;
+    width: var(--drone-perto);
+  }
+
+  14% {
+    left: 50%;
+    top: 56%;
+    width: var(--drone-perto);
+  }
+
+  26% {
+    left: 96%;
+    top: 46%;
+    width: calc(var(--drone-perto) * 0.45);
+  }
+
+  34% {
+    left: 78%;
+    top: 34%;
+    width: calc(var(--drone-perto) * 0.14);
+  }
+
+  50%,
+  74% {
+    left: var(--drone-x);
+    top: var(--drone-y);
+    width: var(--drone-longe);
+  }
+
+  84% {
+    left: calc(var(--drone-x) + 6%);
+    top: 50%;
+    width: calc(var(--drone-volta) * 0.2);
+  }
+
+  100% {
+    left: 44%;
+    top: 76%;
+    width: var(--drone-volta);
+  }
+}
+
+@keyframes drone-caixa-voo {
+  0% {
+    left: -24%;
+    top: 88%;
+    width: var(--caixa-perto);
+  }
+
+  14% {
+    left: 58%;
+    top: 80%;
+    width: var(--caixa-perto);
+  }
+
+  26% {
+    left: 104%;
+    top: 62%;
+    width: calc(var(--caixa-perto) * 0.45);
+  }
+
+  34% {
+    left: 82%;
+    top: 42%;
+    width: calc(var(--caixa-perto) * 0.14);
+  }
+
+  50%,
+  52% {
+    left: var(--caixa-x);
+    top: var(--caixa-no-ar);
+    width: var(--caixa-longe);
+  }
+
+  74%,
+  100% {
+    left: var(--caixa-x);
+    top: var(--caixa-chao);
+    width: calc(var(--caixa-longe) * 1.05);
+  }
+}
+
+/* Ele so vira de frente nas duas pontas; no meio, visto de cima. */
+@keyframes drone-de-frente {
+  0%,
+  20% {
+    opacity: 1;
+  }
+
+  30%,
+  80% {
+    opacity: 0;
+  }
+
+  92%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes drone-de-cima {
+  0%,
+  20% {
+    opacity: 0;
+  }
+
+  30%,
+  80% {
+    opacity: 1;
+  }
+
+  92%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes drone-caixa-pousada {
+  from {
+    filter: drop-shadow(0 0 0.9vh rgba(126, 255, 176, 0.95));
+  }
+
+  to {
+    filter: drop-shadow(0 0.3vh 0.5vh rgba(0, 0, 0, 0.45));
+  }
+}
+
+/*
+ * QUEM PEDIU MENOS MOVIMENTO NAO VE O VOO — mas ve a caixa.
+ *
+ * A cena existe para dizer uma coisa: a XB atendeu. Tirar o voo tira o enjoo;
+ * tirar a caixa tiraria o recado, e ai a pessoa nao entenderia por que ha uma
+ * encomenda no chao na cena seguinte.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .drone-cena {
+    display: none;
+  }
+
+  .caixa-no-chao {
+    animation: none;
+  }
+
+  /* A mala continua abrindo — o que sai e o agacho, nao o recado. */
+  .caixa-no-chao--aberta .caixa-no-chao__desenho--fechada,
+  .caixa-no-chao--aberta .caixa-no-chao__desenho--aberta {
+    animation: none;
+  }
+
+  .caixa-no-chao--aberta .caixa-no-chao__desenho--fechada {
+    opacity: 0;
+  }
+
+  .caixa-no-chao--aberta .caixa-no-chao__desenho--aberta {
+    opacity: 1;
+  }
+}
+
+/*
+ * ── A PRACA VOLTA A SER SO A PRACA ────────────────────────────────────────
+ *
+ * Ordem dele, 08/09/2026: ao voltar do XBWAPP, o bau e o Renan nao devem mais
+ * estar na praca.
+ *
+ * Eles nao somem de um quadro para o outro: apagam devagar e sobem um
+ * tiquinho, como quem se afasta. Sumir de repente parece defeito; sumir
+ * devagar parece que foram embora — e e isso que aconteceu, ele foi buscar a
+ * pizza.
+ *
+ * Depois de apagar continuam sem receber toque, para nao sobrar um vulto
+ * invisivel no caminho do dedo.
+ */
+@keyframes xb-foi-embora {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -104%) scale(0.98);
+  }
+}
+
+/*
+ * O MENINO se afasta um tiquinho enquanto apaga: e alguem indo embora.
+ */
+.garoto--foi-embora {
+  animation: xb-foi-embora 900ms ease-in forwards;
+  pointer-events: none;
+}
+
+/*
+ * A CAIXA so apaga, sem se mexer.
+ *
+ * Ela ja tem animacao propria de pouso e de abrir, com o desenho parando numa
+ * posicao agachada. Trocar a animacao por uma que mexe no lugar faria a caixa
+ * dar um pulo de volta antes de sumir. So a opacidade some — e uma caixa
+ * levada embora sai da vista, nao anda sozinha.
+ */
+.caixa-no-chao--foi-embora {
+  transition: opacity 900ms ease-in;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .garoto--foi-embora {
+    animation: none;
+    opacity: 0;
+  }
+  .caixa-no-chao--foi-embora {
+    transition: none;
+  }
+}
+
+/*
+ * ── ENTREGADORES NA RUA E LIVRES, NO ALTO DA CENTRAL ──────────────────────
+ *
+ * Ordem dele, 08/09/2026: deixar visivel o nivel e quantos entregadores estao
+ * ligados e desligados.
+ *
+ * A peca fica na mesma fila de CAIXA, REP e OP, e usa a mesma casca — nao e
+ * um aviso, e mais um numero que a pessoa le de relance. O que muda e que
+ * este traz DOIS numeros, e por isso cada um vem com a palavra dele embaixo:
+ * um "3 / 1" solto ali no meio nao diz qual e qual.
+ *
+ * O verde so acende quando ha alguem livre. Cor que esta sempre acesa nao
+ * informa nada; acesa so quando ha gente disponivel, ela vira resposta.
+ */
+.base-entregadores {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.base-entregadores b {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.base-entregadores i {
+  font-style: normal;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.62;
+}
+
+.base-entregadores b + i {
+  margin-right: 0.3rem;
+}
+
+.base-entregadores--tem-livre b:last-of-type {
+  color: #22c55e;
+}
+
+/*
+ * ── O QUADRO DA OPERACAO, NA CENTRAL ──────────────────────────────────────
+ *
+ * Ordem dele, 08/09/2026: os numeros da empresa precisam estar visiveis nesta
+ * tela.
+ *
+ * Ele mora no lado direito, embaixo do botao das missoes e a esquerda da
+ * coluna de navegacao — a unica faixa livre desta tela. Nao briga com o
+ * painel de despacho (esquerda embaixo) nem com a jornada (esquerda em cima).
+ *
+ * Rola por dentro quando a equipe cresce: uma central com dez contratados nao
+ * pode empurrar o quadro para fora da tela. O limite de altura e o que sobra
+ * ate a faixa de baixo, e nao um numero escolhido no olho.
+ */
+.base-operacao {
+  position: absolute;
+  top: 145px;
+  right: 5.8rem;
+  z-index: 14;
+  display: grid;
+  gap: 0.55rem;
+  width: min(320px, 26vw);
+  max-height: calc(100% - 145px - 230px);
+  overflow-y: auto;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(151, 184, 201, 0.2);
+  background: rgba(2, 25, 42, 0.86);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(6px);
+}
+
+.base-operacao header small {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  color: var(--xb-electric-cyan, #24bfea);
+}
+
+.base-operacao header strong {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  opacity: 0.82;
+}
+
+/* Os quatro numeros do topo: duas colunas, para caberem sem apertar. */
+.base-operacao__numeros {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.7rem;
+  margin: 0;
+}
+
+.base-operacao__numeros div {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.base-operacao__numeros dt {
+  font-size: 0.56rem;
+  letter-spacing: 0.1em;
+  opacity: 0.6;
+}
+
+.base-operacao__numeros dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.base-operacao__bloco {
+  display: grid;
+  gap: 0.3rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(151, 184, 201, 0.16);
+}
+
+.base-operacao__bloco > small {
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  opacity: 0.6;
+}
+
+.base-operacao__bloco p {
+  margin: 0;
+  font-size: 0.72rem;
+  opacity: 0.55;
+}
+
+.base-operacao__bloco ul {
+  display: grid;
+  gap: 0.18rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/*
+ * Nome a esquerda, o que ele dirige no meio, o repasse a direita. O nome
+ * encolhe com reticencias porque e o unico que pode ser longo — o resto tem
+ * largura conhecida.
+ */
+.base-operacao__bloco li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  font-size: 0.74rem;
+}
+
+.base-operacao__bloco li span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.base-operacao__bloco li em {
+  flex: none;
+  font-style: normal;
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
+}
+
+.base-operacao__bloco li b {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--xb-electric-cyan, #24bfea);
+}
+
+/*
+ * O ENTREGADOR EM PERCURSO — marcador provisório.
+ *
+ * Ordem dele, 08/09/2026: ao aceitar, o entregador começa o percurso. Os
+ * desenhos novos do entregador ainda não existem (ele pediu para tirar os
+ * antigos e refazer mirando o percurso), então entra um marcador: um disco da
+ * XB com um pulso em volta.
+ *
+ * A transição de um segundo é o que faz o passo virar movimento: o balcão
+ * anda uma vez por segundo, e sem ela o marcador pularia.
+ */
+.mapa__entregador-xb {
+  position: absolute;
+  z-index: 6;
+  width: calc(1.6% * var(--zoom-raiz, 1));
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  transition:
+    left 1s linear,
+    top 1s linear;
+  pointer-events: none;
+}
+
+.mapa__entregador-xb::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #3aa0ff;
+  box-shadow:
+    0 0 0 max(1px, 0.18vh) rgba(255, 255, 255, 0.9),
+    0 0.4vh 1vh rgba(0, 0, 0, 0.5);
+}
+
+.mapa__entregador-xb span {
+  position: absolute;
+  inset: -60%;
+  border-radius: 50%;
+  border: max(1px, 0.15vh) solid rgba(58, 160, 255, 0.6);
+  animation: xb-pulso-entregador 1.8s ease-out infinite;
+}
+
+@keyframes xb-pulso-entregador {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 0;
   }
 }

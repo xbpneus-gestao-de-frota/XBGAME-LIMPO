@@ -178,3 +178,49 @@ describe("a apresentacao dentro do jogo", () => {
     expect(precisaSeApresentar(store.value)).toBe(true);
   });
 });
+
+describe("rever a entrada sem perder o jogo", () => {
+  it("esquecer quem esta jogando NAO apaga a campanha", () => {
+    /*
+     * Este teste existe porque a promessa e forte: o botao dos ajustes devolve
+     * o filme e a escolha do entregador "sem perder o jogo". Se ele zerar o
+     * dinheiro de quem chegou ao nivel 7, a promessa vira estrago — e estrago
+     * que a pessoa so descobre depois de clicar.
+     */
+    /*
+     * A campanha nasce ja com vida dentro, pelo save — e nao mexendo no
+     * `value` do estado, que devolve uma COPIA. A primeira versao deste teste
+     * escrevia na copia e reprovava codigo certo: o dinheiro que ele conferia
+     * nunca tinha entrado.
+     */
+    const storage = installBrowserWindow();
+    seedCampaign(storage, {
+      credits: 1202,
+      reputation: 78,
+      deliveries: 41,
+      companyXp: 340,
+    } as never);
+    const store = new CampaignStore();
+    store.definirJogador("Fernando", "lia");
+    expect(store.value.credits).toBe(1202);
+
+    expect(store.esquecerJogador().ok).toBe(true);
+
+    // Some quem e a pessoa...
+    expect(store.value.playerName).toBe("");
+    expect(store.value.playerAvatarId).toBe("");
+    expect(precisaSeApresentar(store.value)).toBe(true);
+
+    // ...e fica tudo o que ela construiu.
+    expect(store.value.credits).toBe(1202);
+    expect(store.value.reputation).toBe(78);
+    expect(store.value.deliveries).toBe(41);
+    expect(store.value.companyXp).toBe(340);
+
+    // E continua tudo la depois de fechar e abrir o jogo.
+    const depois = new CampaignStore();
+    expect(depois.value.credits).toBe(1202);
+    expect(depois.value.companyXp).toBe(340);
+    expect(precisaSeApresentar(depois.value)).toBe(true);
+  });
+});

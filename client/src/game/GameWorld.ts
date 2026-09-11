@@ -465,6 +465,14 @@ export class GameWorld {
     return resultado;
   }
 
+  /** Esquece o nome e o entregador, para a apresentacao acontecer de novo. */
+  esquecerJogador() {
+    const r = this.store.esquecerJogador();
+    this.notice = r.message;
+    this.publish();
+    return r;
+  }
+
   buyBikeUnit(): void {
     const result = this.store.buyBikeUnit();
     this.notice = result.message;
@@ -480,6 +488,21 @@ export class GameWorld {
 
   hireCourier(): void {
     const result = this.store.hireCourier();
+    this.notice = result.message;
+    this.publish();
+  }
+
+  /*
+   * A primeira bicicleta, entregue a mao ao amigo. Chamada pela CENA da
+   * abertura, e nao por um botao: aqui nao ha preco nem escolha.
+   *
+   * Nao mostra recado quando falha, e de proposito: a unica falha possivel e
+   * a cena ter acontecido duas vezes, e avisar "ele ja esta com a bicicleta"
+   * no meio do bairro so confundiria quem esta jogando.
+   */
+  entregarAPrimeiraBike(nome: string, candidatoId: string): void {
+    const result = this.store.entregarAPrimeiraBike(nome, candidatoId);
+    if (!result.ok) return;
     this.notice = result.message;
     this.publish();
   }

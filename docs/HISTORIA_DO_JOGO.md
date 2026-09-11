@@ -32,6 +32,9 @@ Contratar tem duas formas, com contas diferentes:
 **Ninguém sobe sozinho.** O salto de degrau não é comprado com uma entrega grande: é
 comprado com muita gente rodando ao mesmo tempo.
 
+**E depois a mesma escolha volta, com gente.** A partir da van, promover um amigo tira ele
+da rua e abre uma área da empresa: troca-se renda de hoje por estrutura que rende sempre.
+
 ## A escada — nove degraus, três atos
 
 ### Ato 1 — a rua (o jogo se monta; um elenco entra por degrau)
@@ -45,15 +48,91 @@ sem ninguém dizer a palavra "empresa". O primeiro deles virar funcionário tem 
 quem foi contratado na bicicleta atravessa junto, cada um com rota própria. O ajudante
 mostra a primeira tela e a primeira conta: o XB Technology nasce na mão de um adolescente.
 
-**3. VAN — entram os mascotes.** Cada um dos sete ganha o seu mascote XB, e cada mascote
-chega ensinando uma parte do sistema: calibragem, carga, rota, alinhamento. Os três
-elencos em campo pela primeira vez, sem um único tutorial.
+**3. VAN — começam as promoções.** Aqui os sete param de ser só entregadores. **Um de cada
+vez** — nunca em bloco — cada um sobe de cargo e passa a responder por uma área.
+
+**Cada promoção abre uma ÁREA NOVA do jogo.** Não é cena nem recompensa simbólica: é uma
+tela que passa a existir e uma conta que passa a ser sua. Promover o Financeiro abre o
+controle de despesas — e a partir dali o jogador enxerga custo por quilômetro, planeja a
+manutenção em vez de pagar conserto na correria, e gasta menos.
+
+Quem sobe sai da rua: perde-se a renda que aquela pessoa trazia entregando e ganha-se uma
+área inteira funcionando. É a mesma escolha do primeiro minuto — render agora ou render
+sempre — agora com nome e rosto.
+
+**A ordem é do jogador**, e muda a partida: quem promove a oficina cedo quase não quebra
+veículo; quem promove o comercial cedo quase não fica com veículo parado.
+
+### Os vilões — o vilão é um erro de verdade
+
+**O vilão é um erro real de operação: um imposto pago incorretamente, uma manutenção não
+efetuada, uma rota mal calculada.** Não é criatura nem metáfora — é a coisa exata que faz
+uma transportadora perder dinheiro. Ele pode ter cara (o Cabeça de Prego continua sendo o
+rosto do erro de manutenção, e as armas dele são os desgastes que o descuido produz), mas
+**o nome dele é o erro**.
+
+| Área fechada | O erro que está rodando solto | O XB que resolve |
+|---|---|---|
+| Financeiro | imposto pago incorretamente, custo sem rateio, frete sem custo por km real | XB Financeiro |
+| Oficina | manutenção não efetuada, calibragem ignorada, rodízio nunca feito | Capitão Roda |
+| Rotas | rota mal calculada, veículo rodando vazio na volta, saída com meia carga | XB Controle |
+| Frota | veículo sem revisão na rua, documento vencido, motorista sem descanso | XB Frota |
+| Despacho | coleta mal agendada, entrega fora da janela, retorno sem carga | XB Rotas |
+| Armazém | carga mal amarrada, volume errado no romaneio, sobrepeso no eixo | XB Estoque |
+| Comercial | tabela desatualizada, frete abaixo do custo, cliente sem contrato | XB Comunicação |
+| Gente | motorista sem habilitação para a categoria, gente sem treino | XB Análise |
+
+**ÁREA FECHADA = o erro está rodando.** Ele já acontece desde a primeira entrega, e o
+jogador NÃO VÊ. Só sente que o dinheiro rende menos do que devia. Está pagando uma conta
+que ninguém mostrou.
+
+**ÁREA ABERTA = o XB resolve.** O diretor assume e cada um resolve o problema da área dele
+com o seu respectivo XB. Não existe combate para o jogador operar: o erro para de acontecer
+porque agora existe quem cuide dele.
+
+**E é nesse momento que o jogo mostra a conta** — quanto aquele erro estava custando por
+semana, e o número para de sair. A recompensa não é troféu: é a sangria parando.
+
+Pode haver cena (o XB expulsando o vilão, três segundos, com as animações que já existem).
+O que não pode haver é sistema de luta.
+
+**E é aqui que o jogo vira o produto.** Cada vilão derrotado é uma lição que vale fora do
+jogo: quem terminar vai saber, sem ter lido manual nenhum, que pneu descalibrado gasta o
+ombro, que caminhão voltando vazio come o lucro da ida e que imposto lançado errado sangra
+todo mês.
+
+### As oito áreas
+
+Sete promoções abrem sete áreas. A oitava já vem aberta: é a da criança que o jogador
+escolheu ser.
+
+| Quem sobe | Área | O que passa a existir na tela | O ganho |
+|---|---|---|---|
+| Rafa | Financeiro | despesas, custo por km, lucro por rota | manutenção planejada em vez de conserto na correria |
+| Bento | Oficina | manutenção própria, calibragem, vida do pneu | pneu dura mais, conserto mais barato |
+| Lia | Frota e segurança | ficha de cada veículo e seu desgaste | veículo parado menos tempo |
+| Téo | Operações e rotas | planejamento de rota, entregas simultâneas | menos quilômetro rodado vazio |
+| Nino | Despacho | fila de coletas e entregas do dia | mais entregas no mesmo turno |
+| Kau | Comercial | carteira de clientes e contratos fixos | carga garantida, menos ociosidade |
+| Manu | Gente e treinamento | contratação e a escada da CNH | contratar mais barato, funcionário sobe de categoria |
+| Duda | Expansão | mapa de praças novas | abre a próxima cidade antes da concorrência |
+
+A distribuição dos nomes é proposta, feita em cima da frase que cada criança já tem escrita
+no jogo. O que importa é a regra: **uma promoção, uma área, um ganho que o jogador sente na
+conta.**
+
+**A área da criança escolhida já vem aberta** — e a tela de escolha diz isso em voz alta,
+sem esconder vantagem: "Bento — sem pressa, sem erro. Sua oficina começa aberta."
+
+**Área aberta não é área pronta.** Cada uma evolui depois, e é onde o vilão daquela área vai
+bater. O Financeiro aberto é o que deixa o jogador VER o Rombo; ele não some sozinho.
 
 ### Ato 2 — a estrada (o jogador deixa de dirigir)
 
 **4. CAMINHÃO.** A carga vira frete: custo por quilômetro, custo por item, manutenção
-programada, pneu que precisa durar. **A última entrega feita pelas próprias mãos** — e o
-jogo sabe. É a virada do jogo inteiro.
+programada, pneu que precisa durar. As promoções terminam e as oito áreas estão abertas.
+**A ÚLTIMA ENTREGA DO JOGADOR, feita pelas próprias mãos** — e o jogo sabe. É a virada do
+jogo inteiro: com todas as áreas de pé, a empresa passa a funcionar sem as mãos dele.
 
 **5. CARRETA.** Eixos, implementos, carga consolidada. A diferença entre veículo próprio e
 veículo da empresa vira estratégia. Os vilões deixam de ser acidentes e viram oposição.
@@ -72,6 +151,93 @@ descoberta de que o mar é só mais um trecho: no outro lado ainda tem uma porta
 **9. GALÁXIAS.** Última cena: de dentro da torre ele vê, lá embaixo, uma criança pedalando
 com uma mochila. O sistema pergunta se ele quer escolher essa. **É a mesma pergunta que
 alguém fez sobre ele no primeiro minuto** — e é a resposta do "por que eu".
+
+## A conta que aparece quando a área abre
+
+A matemática já existe no jogo. Cada veículo carrega o custo real por km, aberto em quatro
+linhas — combustível, pneus, manutenção e depreciação — e as alavancas de redução também já
+estão no código (desconto de manutenção, redução de desgaste, redução de custo operacional).
+**Abrir uma área é puxar uma dessas alavancas no nível da empresa inteira.**
+
+### O peso de cada linha (van, R$/km)
+
+| Linha | R$/km | Peso | Quem ataca |
+|---|---|---|---|
+| Combustível | 0,681 | 57% | Rotas — km vazio, rota torta, meia carga |
+| Depreciação | 0,300 | 25% | Frota — veículo parado, revisão em dia |
+| Manutenção | 0,150 | 13% | Oficina e Frota |
+| Pneus | 0,060 | 5% | Oficina — calibragem e rodízio |
+
+Combustível é mais da metade do custo de rodar: **a área de Rotas é a que o jogador mais vai
+sentir.** Bate com a vida real — caminhão voltando vazio é o que mais come lucro.
+
+Bicicleta custa R$ 0,04/km: a economia ali é simbólica. O começo ensina a forma da conta; da
+moto em diante ela dói.
+
+### A tela — quatro linhas
+
+1. **Antes** — quanto aquela linha custava por semana
+2. **Depois** — quanto passa a custar
+3. **A economia** — a diferença
+4. **O ganho** — o que a diferença compra: quantas entregas a mais, quantos dias a menos até
+   o próximo veículo
+
+A quarta linha é a que ensina. E a tela deve mostrar os dois lados da promoção — quanto se
+deixou de faturar na rua e quanto se passou a economizar — **e a partir de que semana a
+promoção se paga**.
+
+### A regra que faz tudo caber: a conta cresce junto com a empresa
+
+**As linhas de custo não estão todas lá desde o começo — elas nascem conforme o jogo anda.**
+Na bicicleta a conta é quase nada. Na moto entra combustível. Na van, depreciação de verdade.
+No caminhão entram tributo, pedágio, motorista. Na frota, seguro e filial. O jogador nunca
+recebe uma planilha: recebe uma linha nova quando a vida dele passou a ter aquele custo.
+
+É a mesma regra da narrativa — nada é explicado antes de fazer falta — aplicada à economia.
+E é o que permite o jogo terminar ensinando gestão de frota inteira sem nunca ter parecido
+aula. O imposto lançado errado deixa de ser buraco na matemática e vira chegada marcada:
+aparece quando o jogador tem empresa que paga imposto.
+
+### Cada XB corta uma porcentagem, e elas se acumulam
+
+Toda fase libera XBs, e cada um deixa um desconto que vale para o resto do jogo. São duas
+alavancas diferentes, e é a combinação delas que faz o sistema render:
+
+1. **O pneu dura mais** — XB Pneus, −3% de desgaste. Mexe na VIDA da peça.
+2. **O pneu custa menos** — XB Financeiro, −2% na compra, por imposto aplicado corretamente
+   ao produto. Mexe no PREÇO da peça.
+
+As duas se somam no custo por quilômetro: um pneu que dura 3% mais e custa 2% menos sai cerca
+de 5% mais barato por km. Nenhum impressiona sozinho; juntos e repetidos por nove fases,
+viram metade da conta.
+
+| Fase | XB que entra | O que corta | Proposta |
+|---|---|---|---|
+| 2 · moto | XB Pneus | desgaste do pneu | −3% |
+| 2 · moto | XB Financeiro | preço de compra do pneu (imposto certo) | −2% |
+| 3 · van | XB Controle | combustível — menos km vazio | −4% |
+| 3 · van | XB Frota | manutenção — revisão em dia | −3% |
+| 4 · caminhão | XB Estoque | viagens com carga cheia | +5% carga |
+| 4 · caminhão | XB Rotas | combustível — despacho melhor | −3% |
+| 5 · carreta | XB Análise | desgaste — medição por eixo | −4% |
+| 5 · carreta | XB Comunicação | ociosidade — frete de volta | −4% |
+| 6 · frota | XB Financeiro II | tributo da operação | −3% |
+| 6 · frota | XB Visor | custo de abrir praça nova | −3% |
+
+Os percentuais são proposta, para calibrar. A forma é o que importa: pequeno, nomeado e
+permanente.
+
+**Os descontos multiplicam, não somam.** Cada um corta sobre o que sobrou, nunca sobre o
+valor cheio: vinte descontos de 3% derrubam o custo pela metade e nunca chegam a zero. É o
+que impede a economia de quebrar no fim do jogo.
+
+**E a tela mostra o acumulado, não só o último.** Sozinho, 3% não emociona ninguém. O que
+emociona é "seu custo por quilômetro hoje é 38% menor do que quando você começou". O prêmio
+de cada XB é pequeno de propósito; o prêmio de verdade é a soma — e é literalmente a mesma
+frase que a XB usa para vender.
+
+**E o pneu não fica melhor por mágica: fica por análise.** O XB não entrega um pneu novo —
+mede, aprende e diz como fazer durar mais o que já existe.
 
 ## A entrada do jogador — o primeiro minuto
 

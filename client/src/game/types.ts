@@ -54,10 +54,28 @@ export interface HiredCourier {
   vehicleUnitId: string;
   operationalPoints: number;
   /**
-   * Fatia do frete que vai para ele. E o repasse do freight.ts (0,15 para
-   * quem dirige veiculo da XB), e nao mais um numero solto.
+   * Fatia do frete que vai para ele. E o repasse do freight.ts — 0,15 para
+   * quem dirige veiculo da XB, 0,80 para quem traz o proprio.
    */
   wageRate: number;
+  /*
+   * ── DE QUEM E O VEICULO ─────────────────────────────────────────────────
+   *
+   * Ordem dele, 08/09/2026: o bairro passa a ter oito entregadores, alguns
+   * com bicicleta e outros sem.
+   *
+   * Quem TRAZ o proprio veiculo e agregado: leva 80% do frete e paga do
+   * bolso dele o combustivel, o pneu, a manutencao e a depreciacao. Quem
+   * dirige veiculo da XB leva 15% e nao gasta nada — a empresa paga tudo.
+   *
+   * Este campo e o que faz `fecharConta` saber de que lado esta o custo. Sem
+   * ele o jogo tinha a conta do agregado escrita e ninguem para viver.
+   *
+   * Save antigo, sem o campo, vira frotista — que e o que todos eram.
+   */
+  veiculoProprio?: boolean;
+  /** De qual candidato do bairro ele veio, quando veio de um. */
+  candidatoId?: string;
 }
 
 export interface OperationsSummary {

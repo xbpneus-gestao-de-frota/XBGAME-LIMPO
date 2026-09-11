@@ -6,6 +6,12 @@ import { createServer } from "node:http";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import {
+  arrumarPedido,
+  criarContador,
+  lerChave,
+  responderComoPersonagem,
+} from "./xbwapp-atendimento.mjs";
 
 const RELEASE = "3.6.1";
 
@@ -441,17 +447,106 @@ async function sendFile(request, response, filePath, urlPath) {
   streamFile(response, filePath);
 }
 
+/*
+ * ── O UNICO CAMINHO QUE ACEITA ESCRITA ───────────────────────────────────
+ *
+ * Este servidor serve arquivo e mais nada: tudo que nao for leitura leva 405,
+ * e isso e conferido por teste desde sempre. O atendimento do XBWAPP abre uma
+ * excecao de UM caminho, e ela e estreita de proposito:
+ *
+ *   - so POST, e so aqui; GET neste caminho tambem leva 405;
+ *   - o corpo tem tamanho maximo, senao um pedido gigante segura memoria;
+ *   - tem limite por pessoa e limite do dia inteiro, porque do outro lado ha
+ *     uma conta que cobra por mensagem;
+ *   - sem chave configurada ele responde 503 na hora, sem falar com ninguem.
+ *
+ * A chave NUNCA sai daqui, e erro de servico nenhum sobe para o jogador:
+ * mensagem de erro as vezes carrega pedaco de chave ou de endereco interno.
+ */
+const CAMINHO_DO_ATENDIMENTO = "/api/conversa";
+const TAMANHO_MAXIMO_DO_PEDIDO = 8 * 1024;
+const contadorDoAtendimento = criarContador();
+
+function quemPediu(request) {
+  const encaminhado = request.headers["x-forwarded-for"];
+  if (typeof encaminhado === "string" && encaminhado) {
+    return encaminhado.split(",")[0].trim();
+  }
+  return request.socket?.remoteAddress || "desconhecido";
+}
+
+async function lerCorpo(request, limite) {
+  let total = 0;
+  const pedacos = [];
+  for await (const pedaco of request) {
+    total += pedaco.length;
+    if (total > limite) return null;
+    pedacos.push(pedaco);
+  }
+  try {
+    return JSON.parse(Buffer.concat(pedacos).toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
+function responderJson(response, status, dados) {
+  sendText(
+    response,
+    status,
+    JSON.stringify(dados),
+    "application/json; charset=utf-8"
+  );
+}
+
+async function atenderConversa(request, response) {
+  if (!lerChave()) {
+    responderJson(response, 503, { falha: "sem-chave" });
+    return;
+  }
+
+  const bruto = await lerCorpo(request, TAMANHO_MAXIMO_DO_PEDIDO);
+  const pedido = arrumarPedido(bruto);
+  if (!pedido) {
+    responderJson(response, 400, { falha: "pedido-invalido" });
+    return;
+  }
+
+  if (contadorDoAtendimento.cobrar(quemPediu(request))) {
+    responderJson(response, 429, { falha: "limite" });
+    return;
+  }
+
+  const resposta = await responderComoPersonagem(pedido);
+  if (resposta.falha) {
+    responderJson(response, 502, { falha: "fora-do-ar" });
+    return;
+  }
+  responderJson(response, 200, resposta);
+}
+
 export function createStandaloneServer() {
   const server = createServer(async (request, response) => {
     applyHeaders(response);
     const method = request.method || "GET";
+    const requestUrl = new URL(request.url || "/", "http://localhost");
+
+    // A excecao estreita: o atendimento do XBWAPP, so por POST.
+    if (requestUrl.pathname === CAMINHO_DO_ATENDIMENTO) {
+      if (method !== "POST") {
+        response.setHeader("Allow", "POST");
+        sendText(response, 405, "Método não permitido");
+        return;
+      }
+      await atenderConversa(request, response);
+      return;
+    }
+
     if (method !== "GET" && method !== "HEAD") {
       response.setHeader("Allow", "GET, HEAD");
       sendText(response, 405, "Método não permitido");
       return;
     }
-
-    const requestUrl = new URL(request.url || "/", "http://localhost");
     if (requestUrl.pathname === "/healthz") {
       sendText(
         response,

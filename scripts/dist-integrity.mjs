@@ -27,7 +27,14 @@ const shouldWrite = process.argv.includes("--write");
 // o padrão do hash é o mesmo que o servidor usa para decidir o cache imutável.
 const BUNDLED_ASSET = new RegExp(`-${VITE_HASH_SOURCE}\\.[A-Za-z0-9]+$`);
 const SOURCE_PUBLIC = path.join(projectRoot, "client", "public");
-const SOURCE_SERVER = path.join(projectRoot, "server", "standalone-server.mjs");
+// O servidor autonomo vem em DUAS pecas desde 07/09/2026: quem serve o jogo e
+// quem atende o XBWAPP. As duas viajam juntas — sem a segunda, a primeira nao
+// sobe, porque a importa. Este portao confere as duas pelo conteudo.
+const PECAS_DO_SERVIDOR = [
+  "standalone-server.mjs",
+  "xbwapp-atendimento.mjs",
+];
+const SOURCE_SERVER_DIR = path.join(projectRoot, "server");
 
 const failures = [];
 
@@ -115,11 +122,11 @@ for (const [relativePath, hash] of source) {
   }
 }
 
-const serverHash = await hashFile(SOURCE_SERVER);
-if (distributed.get("standalone-server.mjs") !== serverHash) {
-  failures.push(
-    "standalone-server.mjs: distribuído diverge de server/standalone-server.mjs"
-  );
+for (const peca of PECAS_DO_SERVIDOR) {
+  const esperado = await hashFile(path.join(SOURCE_SERVER_DIR, peca));
+  if (distributed.get(peca) !== esperado) {
+    failures.push(`${peca}: distribuído diverge de server/${peca}`);
+  }
 }
 
 // Todo arquivo distribuído precisa ter uma origem conhecida: cópia literal de
@@ -127,7 +134,7 @@ if (distributed.get("standalone-server.mjs") !== serverHash) {
 // o servidor autônomo. Qualquer outra coisa entrou na distribuição por fora.
 const bundled = [];
 for (const relativePath of distributed.keys()) {
-  if (relativePath === "standalone-server.mjs") continue;
+  if (PECAS_DO_SERVIDOR.includes(relativePath)) continue;
   if (!relativePath.startsWith("public/")) {
     failures.push(`${relativePath}: arquivo fora de public/ na distribuição`);
     continue;

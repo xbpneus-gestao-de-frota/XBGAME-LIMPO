@@ -47,9 +47,18 @@ export interface GameHandle {
   upgradeTire(stat: TireStat): void;
   upgradeBikePart(partId: BikePartId): void;
   definirJogador(nome: string, entregadorId: string): StoreActionResult;
+  esquecerJogador(): StoreActionResult;
   buyBikeUnit(): void;
   buyVehicleUnit(vehicleId: VehicleId): void;
   hireCourier(): void;
+  /*
+   * A CENA DA PRIMEIRA BICICLETA.
+   *
+   * Nao e contratacao, e por isso nao entra no `hireCourier`: nao ha preco,
+   * nem escolha, nem vaga na garagem para conferir. O drone desceu, o bau
+   * abriu, e quem joga deu a unica bicicleta que existia para o amigo.
+   */
+  entregarAPrimeiraBike(nome: string, candidatoId: string): void;
   hireOperator(vehicleId: VehicleId): void;
   maintainBike(): void;
   equipCompound(vehicleId: VehicleId, compoundId: TireCompoundId): void;
@@ -372,9 +381,12 @@ export async function createGameScene(
     upgradeBikePart: partId => world.upgradeBikePart(partId),
     definirJogador: (nome: string, entregadorId: string) =>
       world.definirJogador(nome, entregadorId),
+    esquecerJogador: () => world.esquecerJogador(),
     buyBikeUnit: () => world.buyBikeUnit(),
     buyVehicleUnit: (vehicleId: VehicleId) => world.buyVehicleUnit(vehicleId),
     hireCourier: () => world.hireCourier(),
+    entregarAPrimeiraBike: (nome, candidatoId) =>
+      void world.entregarAPrimeiraBike(nome, candidatoId),
     hireOperator: (vehicleId: VehicleId) => world.hireOperator(vehicleId),
     maintainBike: () => world.maintainBike(),
     equipCompound: (vehicleId, compoundId) =>

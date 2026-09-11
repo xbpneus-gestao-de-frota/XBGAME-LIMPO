@@ -58,6 +58,7 @@ import {
   progressDailyMissions,
 } from "./missions";
 import { MAXIMO_POR_CLASSE as MAXIMO_DE_UNIDADES_POR_CLASSE } from "./hiring";
+import { candidato } from "./candidatos";
 import {
   ENTREGADOR_PADRAO,
   ehEntregador,
@@ -227,8 +228,23 @@ export const createDefaultCampaignState = (): CampaignState => ({
   dailyMissionDay: dayKey(),
   dailyMissions: [],
   bikePartLevels: emptyBikePartLevels(),
-  vehicleFleet: { bike: 1, moto: 0, van: 0, truck: 0, fleet: 0, planetary: 0 },
-  bikeFleetSize: 1,
+  /*
+   * ── A EMPRESA NASCE SEM BICICLETA ────────────────────────────────────────
+   *
+   * Ordem dele, 08/09/2026: "o usuario comeca sem bike; ele vai entregar a
+   * primeira bike a um amigo, que sera o primeiro entregador".
+   *
+   * E o que a cena de abertura ja contava e o numero desmentia: o drone
+   * desce, o bau abre, e dentro esta uma bicicleta com todo o equipamento.
+   * Se a empresa ja tivesse uma na garagem, aquela caixa nao seria nada — e
+   * a frase "nao vou te dar o peixe, vou te ensinar a pescar" perderia o
+   * sentido, porque o peixe ja estaria dado.
+   *
+   * Comecar em zero e o que faz o primeiro entregador ser uma DECISAO: a
+   * unica bicicleta do mundo esta na sua mao, e voce entrega para o Renan.
+   */
+  vehicleFleet: { bike: 0, moto: 0, van: 0, truck: 0, fleet: 0, planetary: 0 },
+  bikeFleetSize: 0,
   operationalPointsCapacity: STARTING_OPERATIONAL_POINTS,
   hiredCouriers: [],
 });
@@ -492,7 +508,15 @@ export class CampaignStore {
    * escreve nele, este, e um teste que prova que ele nunca sai do lugar.
    */
   private sincronizarFrota(): void {
-    this.state.bikeFleetSize = Math.max(1, this.state.vehicleFleet.bike ?? 1);
+    /*
+     * O PISO ERA 1 E VIROU 0.
+     *
+     * Enquanto a empresa nascia com uma bicicleta, forcar o minimo em um so
+     * consertava save torto. Agora ela nasce com nenhuma — e um piso de 1
+     * inventaria do nada a bicicleta que a cena inteira da abertura existe
+     * para entregar.
+     */
+    this.state.bikeFleetSize = Math.max(0, this.state.vehicleFleet.bike ?? 0);
   }
 
   private unidadesDe(veiculo: VehicleId): number {
@@ -558,6 +582,21 @@ export class CampaignStore {
     return { ok: true, message: `Boa viagem, ${limpo}.` };
   }
 
+  /**
+   * Esquece QUEM esta jogando, sem tocar no resto da campanha.
+   *
+   * O dinheiro, o nivel e as entregas ficam; some so o nome e o entregador
+   * escolhido. Serve para duas coisas diferentes que sao a mesma por dentro:
+   * o Fernando conferir a tela de escolha sem zerar um save de nivel 7, e a
+   * pessoa poder trocar de entregador um dia sem perder a vida que construiu.
+   */
+  esquecerJogador(): StoreActionResult {
+    this.state.playerName = "";
+    this.state.playerAvatarId = "";
+    this.save();
+    return { ok: true, message: "O jogo vai perguntar de novo quem e voce." };
+  }
+
   buyVehicleUnit(veiculo: VehicleId): StoreActionResult {
     if (!this.state.unlockedVehicles.includes(veiculo)) {
       return {
@@ -615,13 +654,37 @@ export class CampaignStore {
    * de CNH do freight.ts e do jogador, para ele proprio poder pilotar aquela
    * classe.
    */
-  hireOperator(veiculo: VehicleId, now = Date.now()): StoreActionResult {
+  hireOperator(
+    veiculo: VehicleId,
+    now = Date.now(),
+    candidatoId?: string
+  ): StoreActionResult {
     this.atualizarCapacidadeOperacional();
     const daClasse = this.operadoresDe(veiculo);
+    /*
+     * ── QUEM ESTA SENDO CONTRATADO ──────────────────────────────────────
+     *
+     * Ordem dele, 08/09/2026: o bairro tem oito entregadores, alguns com
+     * bicicleta e outros sem. Contratar um que TRAZ a bicicleta e contratar
+     * um AGREGADO — ele leva 80% do frete e banca a rodagem; a empresa nao
+     * precisa ter veiculo nenhum na garagem.
+     *
+     * Sem candidato, e o caminho antigo: um operador da frota da XB.
+     */
+    const quem = candidatoId ? candidato(candidatoId) : undefined;
+    if (candidatoId && !quem) {
+      return { ok: false, message: "Esse entregador não está no bairro." };
+    }
+    if (quem && this.state.hiredCouriers.some(c => c.candidatoId === quem.id)) {
+      return { ok: false, message: `${quem.nome} já trabalha com você.` };
+    }
+    const trazVeiculo = Boolean(quem?.veiculoProprio);
     const decisao = podeContratar(veiculo, {
       classeLiberada: this.state.unlockedVehicles.includes(veiculo),
+      trazVeiculo,
       unidades: this.unidadesDe(veiculo),
       operadoresDaClasse: daClasse.length,
+      agregadosDaClasse: daClasse.filter(c => c.veiculoProprio).length,
       pontosLivres: operationalPointsAvailable(
         this.state.operationalPointsCapacity,
         this.state.hiredCouriers
@@ -644,21 +707,33 @@ export class CampaignStore {
     const ocupadas = new Set(
       this.state.hiredCouriers.map(operador => operador.vehicleUnitId)
     );
-    const vehicleUnitId = Array.from(
-      { length: Math.max(0, this.unidadesDe(veiculo) - 1) },
-      (_, index) => `${veiculo}-${index + 2}`
-    ).find(unitId => !ocupadas.has(unitId));
+    /*
+     * O AGREGADO NAO OCUPA VAGA NA GARAGEM.
+     *
+     * A unidade dele nao e da frota da XB, e por isso nao pode sair da lista
+     * de unidades da empresa: se saisse, o proximo frotista acharia a
+     * garagem cheia sem ela estar. O identificador leva o nome dele para
+     * ficar claro, em qualquer tela, de quem e aquele veiculo.
+     */
+    const vehicleUnitId = trazVeiculo
+      ? `proprio-${quem!.id}`
+      : Array.from(
+          { length: Math.max(0, this.unidadesDe(veiculo) - 1) },
+          (_, index) => `${veiculo}-${index + 2}`
+        ).find(unitId => !ocupadas.has(unitId));
     if (!vehicleUnitId) {
       return { ok: false, message: "Nenhuma unidade livre para o operador." };
     }
     const courier: HiredCourier = {
       id: `courier-${numero}` as CourierId,
-      name: `Operador XB ${String(numero).padStart(2, "0")}`,
+      name: quem?.nome ?? `Operador XB ${String(numero).padStart(2, "0")}`,
       hiredAt: Math.max(0, Math.floor(now)),
       vehicleId: veiculo,
       vehicleUnitId,
       operationalPoints: PONTOS_DO_OPERADOR[veiculo],
-      wageRate: REPASSE.transportadora,
+      wageRate: trazVeiculo ? REPASSE.condutor : REPASSE.transportadora,
+      veiculoProprio: trazVeiculo,
+      candidatoId: quem?.id,
     };
     this.state.credits -= decisao.custo;
     this.state.hiredCouriers.push(courier);
@@ -666,7 +741,61 @@ export class CampaignStore {
     this.save();
     return {
       ok: true,
-      message: `${courier.name} contratado. Automação de rotas liberada.`,
+      message: trazVeiculo
+        ? `${courier.name} entrou como agregado, com a bicicleta dele.`
+        : `${courier.name} contratado. Automação de rotas liberada.`,
+      courierId: courier.id,
+      operationalPointsAvailable: this.operations.available,
+    };
+  }
+
+  /**
+   * ── A PRIMEIRA BICICLETA, ENTREGUE A MAO ─────────────────────────────────
+   *
+   * Ordem dele, 08/09/2026: quem joga comeca sem bicicleta e entrega a
+   * primeira ao amigo, que vira o primeiro entregador.
+   *
+   * Isto NAO passa pelas regras de contratacao, e nao e descuido: aqui nao
+   * ha escolha nem preco. O drone desceu, o bau abriu, e a pessoa deu a
+   * unica bicicleta que existia para o Renan. Cobrar dinheiro por isso, ou
+   * exigir vaga livre na garagem, seria transformar uma cena em formulario.
+   *
+   * A bicicleta ENTRA na frota da empresa no mesmo gesto: ela e da XB, e o
+   * Renan roda com ela. Por isso ele e frotista, e nao agregado — nao trouxe
+   * veiculo nenhum, recebeu o nosso.
+   *
+   * Acontece uma vez so. Chamar de novo nao faz nada, e e assim de proposito:
+   * a cena pode ser reencenada por engano, e o bairro nao pode encher de
+   * bicicleta por causa disso.
+   */
+  entregarAPrimeiraBike(
+    nome: string,
+    candidatoId: string,
+    now = Date.now()
+  ): StoreActionResult {
+    if (this.state.hiredCouriers.some(c => c.candidatoId === candidatoId)) {
+      return { ok: false, message: `${nome} já está com a bicicleta.` };
+    }
+    this.state.vehicleFleet.bike = Math.max(1, this.unidadesDe("bike") + 1);
+    this.sincronizarFrota();
+    this.atualizarCapacidadeOperacional();
+
+    const courier: HiredCourier = {
+      id: `courier-${this.state.hiredCouriers.length + 1}` as CourierId,
+      name: nome,
+      hiredAt: Math.max(0, Math.floor(now)),
+      vehicleId: "bike",
+      vehicleUnitId: "bike-1",
+      operationalPoints: PONTOS_DO_OPERADOR.bike,
+      wageRate: REPASSE.transportadora,
+      veiculoProprio: false,
+      candidatoId,
+    };
+    this.state.hiredCouriers.push(courier);
+    this.save();
+    return {
+      ok: true,
+      message: `${nome} ficou com a primeira bicicleta da XB.`,
       courierId: courier.id,
       operationalPointsAvailable: this.operations.available,
     };

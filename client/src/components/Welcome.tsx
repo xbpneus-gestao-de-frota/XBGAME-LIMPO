@@ -1,20 +1,27 @@
 /**
- * A tela de boas-vindas: a pessoa diz o nome e escolhe quem vai pedalar.
+ * A tela de boas-vindas: a XB Technology recebe quem acabou de chegar.
  *
- * Ela aparece UMA vez, entre o filme de abertura e a central, e e a primeira
- * vez que o jogo pergunta alguma coisa em vez de contar. Duas decisoes de
- * desenho valem ser ditas, porque as duas foram tomadas contra o obvio:
+ * O filme termina no portao da trilha. Esta tela NAO corta esse quadro — ela
+ * continua nele. A pessoa nao e levada para um formulario noutro lugar: ela
+ * segue parada no portao, e quem fala com ela e a XB Technology, o sistema que
+ * acompanha a crianca pelo resto do jogo.
  *
- * 1. O CAMPO DE NOME NAO PEGA O FOCO SOZINHO. No celular, focar um campo abre
- *    o teclado, e o teclado come metade da tela — a pessoa entraria no jogo
- *    vendo um teclado por cima de oito bonecos que ela nem chegou a olhar.
- *    Primeiro se escolhe (que e a parte boa), depois se digita.
+ * Sobre a marca, duas regras que valem aqui e no jogo inteiro:
  *
- * 2. OS OITO NAO APARECEM TODOS DE UMA VEZ. Numa tela de celular, oito
- *    retratos lado a lado viram oito selos de 40 px onde nao se enxerga rosto
- *    nenhum. Entao: um grande, que da para ver a cara e ler o jeito, e uma
- *    fita de miniaturas que rola — que e como todo jogo escolhe personagem no
- *    celular, e por um bom motivo.
+ * 1. O NOME E "XB TECHNOLOGY". Nao e a fabricante de pneus — e o sistema
+ *    inteligente que vive dentro da historia.
+ * 2. A MARCA APARECE UMA VEZ SO. A arte do portao ja tem o simbolo aceso em
+ *    cima; repetir o logotipo num cabecalho por cima dela seria dizer a mesma
+ *    coisa duas vezes na mesma tela. Aqui a marca aparece so como quem esta
+ *    falando, em letra pequena, e mais nada.
+ *
+ * Duas decisoes de uso, tomadas contra o obvio:
+ *
+ * - O CAMPO DE NOME NAO PEGA O FOCO SOZINHO. No celular, focar campo abre
+ *   teclado, e teclado come metade da tela: a pessoa entraria vendo um teclado
+ *   por cima da cena que ela nem chegou a olhar.
+ * - OS OITO ROLAM DE LADO. Lado a lado num celular eles virariam selos sem
+ *   rosto. Um de cada vez em tamanho de ver, e a fita rola.
  */
 import { useMemo, useState } from "react";
 import { ENTREGADORES, LIMITE_DO_NOME, nomeValido } from "@/game/identity";
@@ -30,109 +37,90 @@ export default function Welcome({
   const [escolhido, setEscolhido] = useState<EntregadorId>(ENTREGADORES[0]!.id);
 
   const entregador = useMemo(
-    () => ENTREGADORES.find(pessoa => pessoa.id === escolhido) ?? ENTREGADORES[0]!,
+    () =>
+      ENTREGADORES.find(pessoa => pessoa.id === escolhido) ?? ENTREGADORES[0]!,
     [escolhido]
   );
   const pronto = nomeValido(nome);
 
   return (
-    <section className="boasvindas" aria-labelledby="boasvindas-titulo">
-      <div className="boasvindas__fundo" aria-hidden="true" />
+    <section className="portao" aria-labelledby="portao-titulo">
+      {/*
+        O quadro em que o filme parou. Fica de fundo, sem borda e sem moldura:
+        a ideia e que a cena nao terminou, so ficou quieta esperando resposta.
+      */}
+      <div
+        className="portao__cena"
+        style={{ backgroundImage: `url(${GAME_ASSETS.openingClipPoster})` }}
+        aria-hidden="true"
+      />
 
-      <header className="boasvindas__marca">
-        <img src={GAME_ASSETS.logo} alt="" aria-hidden="true" />
-        <span>
-          <strong>XB PNEUS</strong>
-          <small>CENTRAL LOGÍSTICA</small>
-        </span>
-      </header>
+      {/* A voz da XB Technology. E o unico lugar da tela com marca. */}
+      <div className="portao__painel">
+        <p className="portao__quem">XB TECHNOLOGY</p>
 
-      <div className="boasvindas__miolo">
-        <div className="boasvindas__palco">
-          {/*
-            A arte troca junto com a escolha. A `key` forca o React a montar
-            uma imagem nova a cada troca, e e o que faz a entrada valer uma
-            animacao em vez de o retrato mudar de cara sem avisar.
-          */}
-          <img
-            key={entregador.id}
-            className="boasvindas__retrato"
-            src={entregador.arte}
-            alt={`${entregador.nome}, entregador da XB`}
+        <h1 id="portao-titulo" className="portao__fala">
+          Chegou gente nova na trilha.{" "}
+          <strong>Quem vai pegar essa bike?</strong>
+        </h1>
+
+        <p className="portao__jeito" aria-live="polite">
+          <b>{entregador.nome}</b> — {entregador.jeito}
+        </p>
+
+        {/*
+          Lista de radio de verdade, e nao divs clicaveis: a seta do teclado
+          anda entre os oito e o leitor de tela anuncia a posicao sozinho.
+        */}
+        <div
+          className="portao__fila"
+          role="radiogroup"
+          aria-label="Escolha quem vai pegar a bike"
+        >
+          {ENTREGADORES.map(pessoa => (
+            <button
+              key={pessoa.id}
+              type="button"
+              role="radio"
+              aria-checked={pessoa.id === escolhido}
+              className="portao__pessoa"
+              data-escolhido={pessoa.id === escolhido}
+              onClick={() => setEscolhido(pessoa.id)}
+            >
+              <img src={pessoa.arte} alt="" aria-hidden="true" />
+              <span>{pessoa.nome}</span>
+            </button>
+          ))}
+        </div>
+
+        <label className="portao__campo">
+          <span>E COMO EU TE CHAMO?</span>
+          <input
+            type="text"
+            value={nome}
+            maxLength={LIMITE_DO_NOME}
+            placeholder="Seu nome"
+            autoComplete="off"
+            autoCapitalize="words"
+            spellCheck={false}
+            enterKeyHint="go"
+            onChange={evento => setNome(evento.target.value)}
+            onKeyDown={evento => {
+              if (evento.key === "Enter" && pronto) {
+                aoComecar(nome, entregador.id);
+              }
+            }}
           />
-        </div>
+        </label>
 
-        <div className="boasvindas__ficha">
-          <p className="boasvindas__olho">SUA PRIMEIRA ENTREGA COMEÇA AQUI</p>
-          <h1 id="boasvindas-titulo">Quem vai pedalar?</h1>
-
-          <div className="boasvindas__nomeEscolhido">
-            <strong>{entregador.nome}</strong>
-            <span>{entregador.jeito}</span>
-          </div>
-
-          {/*
-            Uma lista de radio de verdade, e nao um punhado de divs clicaveis:
-            assim a seta do teclado anda entre os oito e o leitor de tela
-            anuncia "3 de 8" sozinho.
-          */}
-          <div
-            className="boasvindas__fita"
-            role="radiogroup"
-            aria-label="Escolha o entregador"
-          >
-            {ENTREGADORES.map(pessoa => (
-              <button
-                key={pessoa.id}
-                type="button"
-                role="radio"
-                aria-checked={pessoa.id === escolhido}
-                className="boasvindas__selo"
-                data-escolhido={pessoa.id === escolhido}
-                onClick={() => setEscolhido(pessoa.id)}
-              >
-                <img src={pessoa.arte} alt="" aria-hidden="true" />
-                <span>{pessoa.nome}</span>
-              </button>
-            ))}
-          </div>
-
-          <label className="boasvindas__campo">
-            <span>COMO VOCÊ QUER SER CHAMADO</span>
-            <input
-              type="text"
-              value={nome}
-              maxLength={LIMITE_DO_NOME}
-              placeholder="Seu nome"
-              autoComplete="off"
-              autoCapitalize="words"
-              spellCheck={false}
-              enterKeyHint="go"
-              onChange={evento => setNome(evento.target.value)}
-              onKeyDown={evento => {
-                if (evento.key === "Enter" && pronto) {
-                  aoComecar(nome, entregador.id);
-                }
-              }}
-            />
-          </label>
-
-          <button
-            className="boasvindas__acao"
-            type="button"
-            disabled={!pronto}
-            onClick={() => aoComecar(nome, entregador.id)}
-          >
-            {pronto ? "COMEÇAR A JORNADA" : "ESCREVA SEU NOME"}
-          </button>
-
-          {/*
-            Nao ha promessa de "da para trocar depois" escrita aqui: o motor
-            aceita trocar, mas ainda nao existe botao para isso. Texto de tela
-            que promete o que o jogo nao faz e a mentira mais barata de
-            escrever e a mais cara de descobrir.
-          */}
-        </div>
+        <button
+          className="portao__acao"
+          type="button"
+          disabled={!pronto}
+          onClick={() => aoComecar(nome, entregador.id)}
+        >
+          {pronto ? "ABRIR O PORTÃO →" : "ESCREVA SEU NOME"}
+        </button>
       </div>
     </section>
   );

@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Film, Gauge, Settings2, Vibrate, Volume2, X } from "lucide-react";
+import {
+  Film,
+  Gauge,
+  Settings2,
+  UserRoundCog,
+  Vibrate,
+  Volume2,
+  X,
+} from "lucide-react";
 import type { FeedbackPreferences } from "@/game/feedback";
 import type { QualityPreference, ResolvedQualityPreset } from "@/game/quality";
 import { useFocusTrap } from "./useFocusTrap";
@@ -46,6 +54,7 @@ export default function ExperienceSettings({
   onQualityChange,
   feedback,
   onFeedbackChange,
+  aoRecomecarApresentacao,
 }: {
   open: boolean;
   onOpenChange(open: boolean): void;
@@ -54,12 +63,15 @@ export default function ExperienceSettings({
   onQualityChange(preference: QualityPreference): void;
   feedback: FeedbackPreferences;
   onFeedbackChange(preferences: FeedbackPreferences): void;
+  /** Esquece nome e entregador, sem apagar a campanha. */
+  aoRecomecarApresentacao(): void;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const wasOpenRef = useRef(open);
   const [aberturaLiberada, setAberturaLiberada] = useState(false);
+  const [apresentacaoLiberada, setApresentacaoLiberada] = useState(false);
 
   useEffect(() => {
     let focusFrame: number | null = null;
@@ -240,6 +252,35 @@ export default function ExperienceSettings({
                 {aberturaLiberada
                   ? "PRONTO — ELA VOLTA NO PRÓXIMO PLAY GAME"
                   : "O FILME QUE ROLA NA PRIMEIRA VEZ"}
+              </small>
+            </span>
+          </button>
+        </div>
+
+        {/*
+          Existe porque o jogo esconde essas telas de proposito: o filme roda
+          uma vez, e a escolha do entregador so aparece enquanto ninguem se
+          apresentou. Quem ja jogou nunca mais as ve — e nao havia como
+          rever sem apagar a campanha inteira. Isto devolve as duas sem custar
+          o dinheiro, o nivel e as entregas de quem chegou longe.
+        */}
+        <div className="experience-settings-section">
+          <button
+            className="experience-settings-acao"
+            onClick={() => {
+              esquecerAbertura();
+              aoRecomecarApresentacao();
+              setAberturaLiberada(true);
+              setApresentacaoLiberada(true);
+            }}
+          >
+            <UserRoundCog aria-hidden="true" />
+            <span>
+              <strong>VER A ENTRADA DE NOVO</strong>
+              <small>
+                {apresentacaoLiberada
+                  ? "PRONTO — FILME E ESCOLHA VOLTAM NO PRÓXIMO PLAY GAME"
+                  : "O FILME E A ESCOLHA DO ENTREGADOR, SEM PERDER O JOGO"}
               </small>
             </span>
           </button>

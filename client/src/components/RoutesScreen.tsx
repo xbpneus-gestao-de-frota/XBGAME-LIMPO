@@ -47,9 +47,9 @@ const scales: RegionScale[] = ["city", "state", "country", "world"];
 function Brand() {
   return (
     <div className="brand-lockup brand-lockup--compact">
-      <img src={GAME_ASSETS.logo} alt="Símbolo da XB Pneus" />
+      <img src={GAME_ASSETS.logo} alt="Símbolo da XB Technology" />
       <div>
-        <strong>XB PNEUS</strong>
+        <strong>XB TECHNOLOGY</strong>
         <span>CENTRO DE ROTAS</span>
       </div>
     </div>

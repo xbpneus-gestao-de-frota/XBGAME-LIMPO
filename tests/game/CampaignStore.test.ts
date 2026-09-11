@@ -299,7 +299,16 @@ describe("CampaignStore bicycle-company MVP", () => {
       credits: 0,
       companyXp: 0,
       reputation: 0,
-      bikeFleetSize: 1,
+      /*
+       * ERA 1 E VIROU 0 EM 08/09/2026, por ordem dele: "o usuario comeca sem
+       * bike; ele vai entregar a primeira bike a um amigo, que sera o
+       * primeiro entregador".
+       *
+       * A cena de abertura ja contava isso e o numero desmentia: o drone
+       * desce, o bau abre, e dentro esta uma bicicleta. Se a empresa ja
+       * tivesse uma na garagem, aquela caixa nao seria nada.
+       */
+      bikeFleetSize: 0,
       operationalPointsCapacity: 5,
       hiredCouriers: [],
       bikePartLevels: {

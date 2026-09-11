@@ -247,6 +247,41 @@ export default function BaseScreen({
     snapshot.campaign.vehicleFleet,
     snapshot.campaign.hiredCouriers
   );
+  /*
+   * ── A CONTA DOS ENTREGADORES ─────────────────────────────────────────────
+   *
+   * NA RUA sao os operadores com entrega em andamento. A conta vem das
+   * entregas, e nao de uma marca no operador: e a entrega que sabe quem a
+   * esta fazendo, e ninguem faz duas ao mesmo tempo. Entregas tocadas pela
+   * propria pessoa (as automatizadas ficam de fora) contam igual: quem esta
+   * na rua esta na rua.
+   *
+   * LIVRES sao os contratados que nao estao em nenhuma. Sao esses que podem
+   * receber a proxima corrida — que e a pergunta que quem despacha faz o dia
+   * inteiro.
+   */
+  const entregadoresContratados = snapshot.campaign.hiredCouriers.length;
+  const entregadoresNaRua = new Set(
+    snapshot.campaign.activeDeliveries.map(entrega => entrega.operatorId)
+  ).size;
+  const entregadoresLivres = Math.max(
+    0,
+    entregadoresContratados - entregadoresNaRua
+  );
+
+  /*
+   * A frota, so com o que existe. A ordem e a do proprio registro da frota,
+   * que ja vai do pedal ao maior — mostrar do menor para o maior conta a
+   * historia da empresa na ordem em que ela aconteceu.
+   */
+  const frotaDaEmpresa = Object.entries(snapshot.campaign.vehicleFleet)
+    .map(([id, quantas]) => ({
+      id,
+      quantas: Number(quantas) || 0,
+      nome: getVehicle(id as never).shortName,
+    }))
+    .filter(item => item.quantas > 0);
+
   const bikeCost = secondBikeCost(snapshot.campaign.bikeFleetSize);
   const courierCost = courierHireCost(snapshot.campaign.hiredCouriers.length);
   const bikeFleetComplete =
@@ -450,9 +485,9 @@ export default function BaseScreen({
       <div className="base-screen__shade" />
       <header className="base-topbar">
         <div className="brand-lockup brand-lockup--compact">
-          <img src={GAME_ASSETS.logo} alt="Símbolo da XB Pneus" />
+          <img src={GAME_ASSETS.logo} alt="Símbolo da XB Technology" />
           <div>
-            <strong>XB PNEUS</strong>
+            <strong>XB TECHNOLOGY</strong>
             <span>CENTRAL LOGÍSTICA</span>
           </div>
         </div>
@@ -493,6 +528,40 @@ export default function BaseScreen({
           >
             <Bot size={17} /> <small>OP</small> {operations.used}/
             {operations.capacity}
+          </span>
+          {/*
+           * ── QUEM ESTA NA RUA AGORA ─────────────────────────────────────
+           *
+           * Ordem dele, 08/09/2026: deixar visivel o nivel e quantos
+           * entregadores estao ligados e desligados.
+           *
+           * O nivel ja estava no alto, do lado do nome da empresa. O que
+           * faltava era esta conta, e ela e a pergunta que quem despacha faz
+           * o dia inteiro: TENHO GENTE LIVRE AGORA?
+           *
+           * "Na rua" e quem esta com entrega em andamento. "Livre" e quem foi
+           * contratado e nao esta com nada — sao esses que podem receber a
+           * proxima corrida. O verde so acende quando ha alguem livre: sem
+           * ninguem, a cor perde a graca e vira enfeite.
+           */}
+          <span
+            className={
+              entregadoresLivres > 0
+                ? "base-entregadores base-entregadores--tem-livre"
+                : "base-entregadores"
+            }
+            aria-label={`Entregadores: ${entregadoresNaRua} na rua, ${entregadoresLivres} livres`}
+            title={
+              entregadoresContratados === 0
+                ? "Nenhum entregador contratado ainda"
+                : `${entregadoresNaRua} na rua · ${entregadoresLivres} livres`
+            }
+          >
+            <Users size={17} /> <small>ENTREGADORES</small>{" "}
+            <b>{entregadoresNaRua}</b>
+            <i>na rua</i>
+            <b>{entregadoresLivres}</b>
+            <i>livres</i>
           </span>
         </div>
       </header>
@@ -583,6 +652,83 @@ export default function BaseScreen({
           <p>{journey.text}</p>
         </div>
       </aside>
+
+      {/*
+       * ── A OPERACAO XB, NUM QUADRO SO ─────────────────────────────────────
+       *
+       * Ordem dele, 08/09/2026: os numeros da empresa precisam estar VISIVEIS
+       * nesta tela — as outras talvez nao sejam mais usadas.
+       *
+       * O que ja aparecia no alto (caixa, reputacao, nivel, pontos, quem esta
+       * na rua) e o PLACAR DE AGORA. Este quadro e o outro lado: o que a
+       * empresa juntou ate aqui e o que ela tem. Sao perguntas diferentes, e
+       * por isso ficam em lugares diferentes — juntar tudo numa fila so faria
+       * dez numeros disputando o mesmo canto do olho.
+       *
+       * A FROTA lista so o que a empresa tem de fato. Mostrar "carreta: 0" e
+       * anunciar o que falta; quem esta comecando ja sabe que falta tudo.
+       *
+       * A EQUIPE mostra cada contratado com o que ele dirige e quanto leva do
+       * frete — e o unico lugar do jogo onde isso aparece por pessoa.
+       */}
+      <section className="base-operacao" aria-label="A operação XB">
+        <header>
+          <small>A OPERAÇÃO XB</small>
+          <strong>O QUE A EMPRESA JÁ TEM</strong>
+        </header>
+
+        <dl className="base-operacao__numeros">
+          <div>
+            <dt>ENTREGAS</dt>
+            <dd>{money.format(snapshot.campaign.deliveries)}</dd>
+          </div>
+          <div>
+            <dt>RODADOS</dt>
+            <dd>{money.format(Math.round(snapshot.campaign.totalDistance))} m</dd>
+          </div>
+          <div>
+            <dt>REGIÕES</dt>
+            <dd>{snapshot.campaign.unlockedRegionIds.length}</dd>
+          </div>
+          <div>
+            <dt>ROTAS FEITAS</dt>
+            <dd>{snapshot.campaign.completedRouteIds.length}</dd>
+          </div>
+        </dl>
+
+        <div className="base-operacao__bloco">
+          <small>FROTA</small>
+          {frotaDaEmpresa.length === 0 ? (
+            <p>Nenhum veículo ainda.</p>
+          ) : (
+            <ul>
+              {frotaDaEmpresa.map(item => (
+                <li key={item.id}>
+                  <span>{item.nome}</span>
+                  <b>{item.quantas}</b>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div className="base-operacao__bloco">
+          <small>EQUIPE · {entregadoresContratados}</small>
+          {entregadoresContratados === 0 ? (
+            <p>Ninguém contratado ainda.</p>
+          ) : (
+            <ul>
+              {snapshot.campaign.hiredCouriers.map(operador => (
+                <li key={operador.id}>
+                  <span>{operador.name}</span>
+                  <em>{getVehicle(operador.vehicleId).shortName}</em>
+                  <b>{Math.round(operador.wageRate * 100)}%</b>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
 
       {snapshot.notice && (
         <div className="base-notice" role="status" aria-live="polite">

@@ -178,10 +178,28 @@ export type MotivoDeNaoContratar =
 export interface PedidoDeContratacao {
   /** A classe ja foi liberada para a empresa? */
   classeLiberada: boolean;
+  /*
+   * ELE TRAZ O PROPRIO VEICULO?
+   *
+   * Ordem dele, 08/09/2026. Quem traz nao precisa de unidade livre na
+   * garagem — e essa e a diferenca inteira. A empresa que nao tem veiculo
+   * nenhum ainda assim pode por gente na rua, contratando quem ja tem.
+   *
+   * Nao ha desconto no preco da contratacao, e nao precisa haver: um
+   * frotista custa o veiculo MAIS a contratacao; um agregado custa so a
+   * contratacao. A economia se explica sozinha.
+   */
+  trazVeiculo?: boolean;
   /** Quantas unidades desta classe a empresa tem. */
   unidades: number;
   /** Quantos operadores desta classe ja estao contratados. */
   operadoresDaClasse: number;
+  /*
+   * Quantos DESSES sao agregados. Precisa entrar na conta porque agregado
+   * nao ocupa unidade da garagem: sem separar, contratar cinco agregados
+   * faria o jogo achar que a frota inteira esta ocupada.
+   */
+  agregadosDaClasse?: number;
   /** Pontos operacionais livres. */
   pontosLivres: number;
   caixa: number;
@@ -217,12 +235,19 @@ export function podeContratar(
     return { pode: false, motivo: "classe-bloqueada", custo };
   }
   /*
-   * Uma unidade fica sempre com o jogador — e a que ele pilota. Operador
-   * precisa de veiculo proprio da empresa, senao dois sairiam na mesma.
+   * Uma unidade fica sempre com o jogador — e a que ele pilota. Operador da
+   * XB precisa de veiculo da empresa, senao dois sairiam na mesma.
+   *
+   * Quem TRAZ o proprio pula esta checagem inteira: ele chega com o veiculo
+   * embaixo do braco, e a garagem da XB nao tem nada com isso.
    */
-  const livres = Math.max(0, pedido.unidades - 1) - pedido.operadoresDaClasse;
-  if (livres < 1) {
-    return { pode: false, motivo: "sem-veiculo-livre", custo };
+  if (!pedido.trazVeiculo) {
+    const daEmpresa =
+      pedido.operadoresDaClasse - (pedido.agregadosDaClasse ?? 0);
+    const livres = Math.max(0, pedido.unidades - 1) - Math.max(0, daEmpresa);
+    if (livres < 1) {
+      return { pode: false, motivo: "sem-veiculo-livre", custo };
+    }
   }
   const pontos = PONTOS_DO_OPERADOR[veiculo];
   if (pedido.pontosLivres < pontos) {

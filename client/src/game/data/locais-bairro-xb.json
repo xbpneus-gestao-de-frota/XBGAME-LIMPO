@@ -1,0 +1,157 @@
+{
+ "_leia": "Os locais do bairro, marcados OLHANDO o mapa ampliado — nao por regra de cor, que erra o toldo verde e o laranja. NOMES SAO PROVISORIOS: batizar e do Fernando.",
+ "_como_se_reconhece": {
+  "comercio": "toldo, vitrine grande e escura, telhado plano com caixas de ar-condicionado, colado na calcada, quase sempre em esquina",
+  "galpao": "muito maior, portao de doca, patio pavimentado, van ou caminhao parado",
+  "marco": "fonte, coreto, playground — nao e predio, e ponto de referencia; nunca e parada",
+  "casa": "telhado colorido em duas aguas, chamine, varanda, jardim na frente, recuada da rua"
+ },
+ "_coordenadas": "em porcentagem do mapa (0-100), origem no canto superior esquerdo — mesma regra da malha de ruas, para sobreviver a reexportar a imagem noutro tamanho",
+ "_pendente": [
+  "Nao existe hospital neste mapa. O circuito 3D tem um.",
+  "O 3D tem 4 lugares batizados e o mapa 2D tem 11. Se os dois modos sao o mesmo bairro, a casa 12 tem de ser a mesma casa nos dois.",
+  "As casas ainda nao foram marcadas uma a uma."
+ ],
+ "locais": [
+  {
+   "tipo": "comercio",
+   "nome": "Galeria (toldos verde e laranja)",
+   "x": 936,
+   "y": 125,
+   "em": [
+    64.641,
+    11.51
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja da esquina norte",
+   "x": 801,
+   "y": 82,
+   "em": [
+    55.318,
+    7.551
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja comprida do norte",
+   "x": 814,
+   "y": 195,
+   "em": [
+    56.215,
+    17.956
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja do toldo vermelho (leste)",
+   "x": 1014,
+   "y": 545,
+   "em": [
+    70.028,
+    50.184
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja vermelha do centro",
+   "x": 505,
+   "y": 535,
+   "em": [
+    34.876,
+    49.263
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja do telhado verde",
+   "x": 358,
+   "y": 593,
+   "em": [
+    24.724,
+    54.604
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja amarela",
+   "x": 195,
+   "y": 643,
+   "em": [
+    13.467,
+    59.208
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja do toldo listrado",
+   "x": 400,
+   "y": 866,
+   "em": [
+    27.624,
+    79.742
+   ]
+  },
+  {
+   "tipo": "comercio",
+   "nome": "Loja pequena do sul",
+   "x": 285,
+   "y": 930,
+   "em": [
+    19.682,
+    85.635
+   ]
+  },
+  {
+   "tipo": "galpao",
+   "nome": "Patio industrial",
+   "x": 1289,
+   "y": 135,
+   "em": [
+    89.019,
+    12.431
+   ]
+  },
+  {
+   "tipo": "galpao",
+   "nome": "Galpao de cargas",
+   "x": 1239,
+   "y": 918,
+   "em": [
+    85.566,
+    84.53
+   ]
+  },
+  {
+   "tipo": "marco",
+   "nome": "Praca da fonte",
+   "x": 685,
+   "y": 430,
+   "em": [
+    47.307,
+    39.595
+   ]
+  },
+  {
+   "tipo": "marco",
+   "nome": "Playground",
+   "x": 1044,
+   "y": 390,
+   "em": [
+    72.099,
+    35.912
+   ]
+  },
+  {
+   "tipo": "marco",
+   "nome": "Coreto",
+   "x": 632,
+   "y": 618,
+   "em": [
+    43.646,
+    56.906
+   ]
+  }
+ ]
+}

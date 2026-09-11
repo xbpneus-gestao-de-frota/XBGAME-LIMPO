@@ -104,7 +104,7 @@ describe("servidor autônomo do game", () => {
     expect(await allowed.text()).toBe(PUBLIC_BODY);
   });
 
-  it("recusa qualquer método que não seja leitura", async () => {
+  it("recusa qualquer método que não seja leitura, fora o atendimento", async () => {
     for (const method of ["POST", "PUT", "DELETE", "PATCH"]) {
       for (const target of ["/healthz", `/${REAL_NAME}`, "/"]) {
         const response = await fetch(`${origin}${target}`, { method });
@@ -118,6 +118,35 @@ describe("servidor autônomo do game", () => {
         expect(body).not.toContain("XBPNEUS Racing");
       }
     }
+
+    /*
+     * A ÚNICA EXCEÇÃO, e ela é estreita.
+     *
+     * O atendimento do XBWAPP (07/09/2026) precisa receber a frase que o
+     * jogador digitou, e receber é escrever. Então UM caminho aceita POST — e
+     * só POST: ler esse caminho também leva 405, para ninguém confundir o
+     * atendimento com um arquivo do jogo.
+     *
+     * Sem chave de IA configurada ele responde 503 sem falar com ninguém, que
+     * é o estado normal enquanto ele não acopla a IA.
+     */
+    const atendimento = await fetch(`${origin}/api/conversa`, {
+      method: "GET",
+    });
+    expect(atendimento.status).toBe(405);
+    expect(atendimento.headers.get("allow")).toBe("POST");
+
+    const escrita = await fetch(`${origin}/api/conversa`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        situacao: { personagem: "padaria", quem: "Padaria", tipo: "loja" },
+        historico: [{ de: "voce", texto: "tô indo" }],
+      }),
+    });
+    // Sem chave: 503. Com chave: nunca 405 — o caminho aceita escrita.
+    expect(escrita.status).not.toBe(405);
+    expect(await escrita.text()).not.toContain("XBPNEUS Racing");
 
     // Leitura continua funcionando pelos dois métodos permitidos.
     const read = await fetch(`${origin}/${REAL_NAME}`);
