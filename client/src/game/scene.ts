@@ -59,6 +59,8 @@ export interface GameHandle {
    * abriu, e quem joga deu a unica bicicleta que existia para o amigo.
    */
   entregarAPrimeiraBike(nome: string, candidatoId: string): void;
+  /** Quem entra junto, sem preco — por enquanto, a Lorena. */
+  chegarNaEquipe(candidatoId: string): void;
   hireOperator(vehicleId: VehicleId): void;
   maintainBike(): void;
   equipCompound(vehicleId: VehicleId, compoundId: TireCompoundId): void;
@@ -387,6 +389,7 @@ export async function createGameScene(
     hireCourier: () => world.hireCourier(),
     entregarAPrimeiraBike: (nome, candidatoId) =>
       void world.entregarAPrimeiraBike(nome, candidatoId),
+    chegarNaEquipe: candidatoId => void world.chegarNaEquipe(candidatoId),
     hireOperator: (vehicleId: VehicleId) => world.hireOperator(vehicleId),
     maintainBike: () => world.maintainBike(),
     equipCompound: (vehicleId, compoundId) =>

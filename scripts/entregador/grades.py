@@ -1,7 +1,11 @@
 """
 O RENAN DAS GRADES — as cinco folhas de 10/09/2026 viram os desenhos do jogo.
 
-    python3 scripts/entregador/grades.py
+    python3 scripts/entregador/grades.py            (o Renan)
+    python3 scripts/entregador/grades.py lorena     (a Lorena, 11/09/2026)
+
+Cada entregador tem a sua pasta de folhas e o seu prefixo de arquivo (ver
+PESSOAS). A esteira e a mesma para todos; so muda de onde le e para onde escreve.
 
 Ordem dele, 10/09/2026: "vamos refazer renan, aplique esse formato de animacao,
 acredito que sera bem melhor, analise melhorias que deixem uma animacao
@@ -87,6 +91,27 @@ GRADES = RAIZ / "assets-source/entregador/grades"
 DESTINO = RAIZ / "client/public/assets"
 MOLDES = RAIZ / "client/src/game/data/moldes-entregador.json"
 CENAS = RAIZ / "client/src/game/data/cenas-paradas.json"
+
+# ── OS ENTREGADORES QUE TEM FOLHAS ──────────────────────────────────────────
+#
+# Ordem dele, 11/09/2026: "esta sera nossa segunda integrante da equipe Lorena"
+# e "a Lorena entre no lugar da menina de rabo de cavalo". Ela chegou com as
+# mesmas cinco folhas do Renan. O Renan continua com os nomes de sempre
+# (XB_Entregador_*), para nada que ja existe mudar de nome.
+PESSOAS = {
+    "renan": {
+        "folhas": GRADES,
+        "prefixo": "XB_Entregador",
+        "moldes": MOLDES,
+        "cenas": CENAS,
+    },
+    "lorena": {
+        "folhas": RAIZ / "assets-source/entregador/lorena",
+        "prefixo": "XB_Lorena",
+        "moldes": RAIZ / "client/src/game/data/moldes-lorena.json",
+        "cenas": RAIZ / "client/src/game/data/cenas-lorena.json",
+    },
+}
 
 LADO = 200            # moldura quadrada, igual para todos (a mesma dos desenhos antigos)
 BASE = 0.97           # onde fica o ponto mais baixo do desenho
@@ -313,10 +338,65 @@ def reguas(folhas: dict[str, list[np.ndarray]]) -> dict[str, float]:
     return {n: v * g for n, v in s.items()}
 
 
-def main() -> None:
-    folhas = {nome: desenhos_da_folha(GRADES / f"{nome}.png") for nome in [*PEDALADA, "paradas"]}
+def aro_de_perfil(folhas: dict[str, list[np.ndarray]], escala: dict[str, float]) -> float:
+    """O tamanho do aro na moldura, medido nos quatro desenhos de lado."""
+    tam = []
+    for nome in PEDALADA:
+        rs = sorted(aros(folhas[nome][7]), key=lambda r: -(r["w"] * r["h"]))[:2]
+        tam += [r["h"] * escala[nome] for r in rs]
+    return float(np.median(tam))
+
+
+def carregar(pasta: Path) -> dict[str, list[np.ndarray]]:
+    return {nome: desenhos_da_folha(pasta / f"{nome}.png") for nome in [*PEDALADA, "paradas"]}
+
+
+def em_ordem(graus: list[float | None], vai: str) -> list[float | None]:
+    """Tira da conta o rumo medido que anda para tras na folha.
+
+    As folhas viram sempre para o mesmo lado, uma celula depois da outra. Um
+    aro meio escondido atras da perna pode dar um centro errado, e o desenho
+    parece mais virado do que o vizinho de depois — no jogo ele entraria fora
+    de ordem e a tela iria e voltaria. Fica a maior sequencia que so cresce
+    (no chao); o resto volta a ser "nao medido" e e repartido entre os vizinhos.
+    Nas folhas do Renan tudo ja cresce: nada muda para ele.
+    """
+    medidos = [(k, chao_da_tela(g, vai)) for k, g in enumerate(graus) if k > 0 and g is not None]
+    if not medidos:
+        return graus
+    # maior subsequencia crescente (sao no maximo sete: a conta direta basta)
+    melhor: list[list[int]] = []
+    for i, (k, t) in enumerate(medidos):
+        cadeia = [i]
+        for c in melhor:
+            if medidos[c[-1]][1] < t and len(c) + 1 > len(cadeia):
+                cadeia = c + [i]
+        melhor.append(cadeia)
+    fica = {medidos[i][0] for i in max(melhor, key=len)}
+    return [g if (k == 0 or k in fica) else None for k, g in enumerate(graus)]
+
+
+def main(pessoa: str = "renan", destino: Path | None = None, prefixo: str | None = None,
+         moldes_em: Path | None = None, cenas_em: Path | None = None) -> None:
+    cfg = PESSOAS[pessoa]
+    destino = destino or DESTINO
+    prefixo = prefixo or cfg["prefixo"]
+    moldes_em = moldes_em or cfg["moldes"]
+    cenas_em = cenas_em or cfg["cenas"]
+    folhas = carregar(cfg["folhas"])
 
     escala = reguas(folhas)
+    if pessoa != "renan":
+        # A BICICLETA E A MESMA. Cada gerador desenha no seu tamanho; entre
+        # pessoas a regua e o aro da roda de lado: o dela fica do tamanho do
+        # aro do Renan, e ela fica da altura que o desenho der (a ficha dela e a
+        # dele tem a mesma altura, entao os dois saem iguais).
+        folhas_renan = carregar(PESSOAS["renan"]["folhas"])
+        do_renan = aro_de_perfil(folhas_renan, reguas(folhas_renan))
+        dela = aro_de_perfil(folhas, escala)
+        k = do_renan / dela
+        escala = {n: v * k for n, v in escala.items()}
+        print(f"regua entre pessoas: aro {dela:.1f} -> {do_renan:.1f} px (x{k:.3f})")
 
     # ── pedalada ──
     medidos = []
@@ -328,6 +408,11 @@ def main() -> None:
                 graus.append(90.0 if vai == "fundo" else 270.0)
                 continue
             graus.append(rumo_pelas_rodas(aros(p), vai, lado))
+        antes = list(graus)
+        graus = em_ordem(graus, vai)
+        fora = [k + 1 for k in range(8) if antes[k] is not None and graus[k] is None]
+        if fora:
+            print(f"{nome}: celula(s) {fora} medida(s) fora de ordem — repartida(s) entre os vizinhos")
         # os que so mostram um aro: repartidos por igual no chao ate o primeiro medido
         primeiro = next((k for k, g in enumerate(graus) if k > 0 and g is not None), None)
         if primeiro is None:
@@ -335,10 +420,18 @@ def main() -> None:
         t1 = chao_da_tela(graus[primeiro], vai)  # type: ignore[arg-type]
         for k in range(1, primeiro):
             graus[k] = tela_do_chao(t1 * k / primeiro, vai, lado)
-        # depois do primeiro medido, um que falhe fica entre os vizinhos
+        # depois do primeiro medido, um que falhe fica entre os vizinhos: no
+        # meio do caminho entre o anterior e o proximo medido (no chao); se nao
+        # houver proximo, igual ao anterior
         for k in range(primeiro + 1, 8):
             if graus[k] is None:
-                graus[k] = graus[k - 1]
+                prox = next((j for j in range(k + 1, 8) if graus[j] is not None), None)
+                if prox is None:
+                    graus[k] = graus[k - 1]
+                else:
+                    a = chao_da_tela(graus[k - 1], vai)  # type: ignore[arg-type]
+                    b = chao_da_tela(graus[prox], vai)  # type: ignore[arg-type]
+                    graus[k] = tela_do_chao(a + (b - a) / (prox - k + 1), vai, lado)
         for k, p in enumerate(pecas):
             if (nome, k) in REPETIDOS:
                 continue
@@ -382,7 +475,7 @@ def main() -> None:
             fx, fy, tx, ty = cx, cy, cx, cy
             uma_roda = True
         nome = hora(m["graus"])
-        moldura.save(DESTINO / f"XB_Entregador_pedalando1_{nome}.webp", "WEBP",
+        moldura.save(destino / f"{prefixo}_pedalando1_{nome}.webp", "WEBP",
                      quality=90, method=6)
         molde = {"nome": nome, "graus": round(m["graus"], 1),
                  "frenteX": pct(fx), "frenteY": pct(fy),
@@ -398,9 +491,9 @@ def main() -> None:
     vaos = sorted(((ordem[(i + 1) % len(ordem)] - g) % 360, g) for i, g in enumerate(ordem))[::-1]
     print("\nmaiores vaos: " + ", ".join(f"{v:.0f}° depois de {g:.0f}°" for v, g in vaos[:4]))
 
-    MOLDES.write_text(json.dumps({
+    moldes_em.write_text(json.dumps({
         "nota": ("Gerado por scripts/entregador/grades.py a partir das cinco "
-                 "grades em assets-source/entregador/grades. O nome e a posicao "
+                 f"grades em {cfg['folhas'].relative_to(RAIZ).as_posix()}. O nome e a posicao "
                  "do relogio com minutos (12h00 = ir para o fundo, 03h00 = "
                  "atravessar para a direita). 'graus' e a direcao na tela, medida "
                  "pela reta entre os dois eixos das rodas; frenteX/Y e trasX/Y "
@@ -440,7 +533,7 @@ def main() -> None:
         outra = roda["cx"] + (1 if eh_a_de_tras else -1) * sentido * ENTRE_EIXOS * roda["w"]
         ox, _ = levar(outra, 0)
         tx, fx = (rx, ox) if eh_a_de_tras else (ox, rx)
-        moldura.save(DESTINO / f"XB_Entregador_{pose[papel]}_{lado}_{tempo}.webp",
+        moldura.save(destino / f"{prefixo}_{pose[papel]}_{lado}_{tempo}.webp",
                      "WEBP", quality=90, method=6)
         # O corte do chao fica no pe DELE, e nao no pneu: ele esta na frente da
         # bicicleta, mais perto da camera, e o tenis desce mais que a roda.
@@ -463,7 +556,7 @@ def main() -> None:
     cenas = []
     for (papel, lado), quadros in por_cena.items():
         cenas.append({"papel": papel, "lado": lado, **quadros[0], "quadros": quadros})
-    CENAS.write_text(json.dumps({
+    cenas_em.write_text(json.dumps({
         "nota": ("Gerado por scripts/entregador/grades.py. Cenas com o menino fora "
                  "da bicicleta, na porta do lugar, em DOIS TEMPOS: na coleta ele "
                  "pega a caixa (1) e guarda na mochila (2); na entrega ele estende "
@@ -475,8 +568,16 @@ def main() -> None:
                  "geometria de cada tempo."),
         "cenas": cenas,
     }, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"\nlistas: {MOLDES.relative_to(RAIZ)} · {CENAS.relative_to(RAIZ)}")
+    print(f"\nlistas: {moldes_em} · {cenas_em}")
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    ap = argparse.ArgumentParser(description="folhas do entregador -> desenhos do jogo")
+    ap.add_argument("pessoa", nargs="?", default="renan", choices=sorted(PESSOAS))
+    ap.add_argument("--destino", type=Path, help="pasta dos desenhos (padrao: client/public/assets)")
+    ap.add_argument("--prefixo", help="prefixo dos arquivos (padrao: o da pessoa)")
+    ap.add_argument("--moldes", type=Path, help="onde escrever a lista de rumos")
+    ap.add_argument("--cenas", type=Path, help="onde escrever a lista de cenas")
+    a = ap.parse_args()
+    main(a.pessoa, a.destino, a.prefixo, a.moldes, a.cenas)

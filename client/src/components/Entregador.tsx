@@ -62,7 +62,9 @@ import {
   type TempoDaCena,
 } from "@/game/asCenasParadas";
 import {
-  RUMOS,
+  COSTURA_GRAUS,
+  ESPERA_MS,
+  FOLGA_GRAUS,
   diferencaDeAngulo,
   confirmarTroca,
   escolherRumo,
@@ -73,11 +75,15 @@ import {
   pontoEm,
   rumoSuavizado,
   virarPara,
-  GEOMETRIA,
   rumoDaFatia,
   type EscolhaDeRumo,
   type TrocaPendente,
 } from "@/game/rumoDoEntregador";
+import {
+  DESENHOS_DE,
+  type OsDesenhosDe,
+  type QuemPedala,
+} from "@/game/osQuePedalam";
 
 /**
  * Se o desenho do meio de um giro nao aparecer (imagem que falhou), o giro
@@ -126,6 +132,12 @@ const TAMANHO_APROVADO = 2.536;
 const AUMENTO_PARA_OLHAR = 1.6;
 
 const TAMANHO = TAMANHO_APROVADO * AUMENTO_PARA_OLHAR;
+
+/**
+ * Quanto quem chega depois se afasta, quando dois param na mesma porta: em %
+ * do proprio desenho, para a direita e um pouco para a frente (ver aoLado).
+ */
+const AO_LADO = ["70%", "6%"] as const;
 
 /** Quanto tempo ele fica parado na porta antes de recomecar a volta. */
 const PAUSA_NA_PORTA = 1600;
@@ -227,7 +239,12 @@ const VERSAO_DO_DESENHO = 12;
  * QUEM ESCOLHE A FATIA E QUANDO ELA PODE TROCAR mora em game/rumoDoEntregador.
  * Aqui so se pinta o que ja foi decidido.
  */
-function desenhoDoRumo(fatia: number, pose: PoseDoEntregador): string {
+function desenhoDoRumo(
+  fatia: number,
+  pose: PoseDoEntregador,
+  d: OsDesenhosDe = DESENHOS_DE.renan
+): string {
+  const RUMOS = d.moldes.rumos;
   const quantos = RUMOS.length;
   const qual = ((fatia % quantos) + quantos) % quantos;
   /*
@@ -239,7 +256,7 @@ function desenhoDoRumo(fatia: number, pose: PoseDoEntregador): string {
    * como imagem nova. O que separa os dois e o balanco, que some quando ele para.
    */
   void pose;
-  return `/assets/XB_Entregador_pedalando1_${RUMOS[qual] ?? RUMOS[0]}.webp?d=${VERSAO_DO_DESENHO}`;
+  return `/assets/${d.prefixo}_pedalando1_${RUMOS[qual] ?? RUMOS[0]}.webp?d=${VERSAO_DO_DESENHO}`;
 }
 
 /**
@@ -252,9 +269,10 @@ function desenhoDoRumo(fatia: number, pose: PoseDoEntregador): string {
 function desenhoDaCena(
   papel: PapelDaCena,
   lado: LadoDaCena,
-  tempo: TempoDaCena = 1
+  tempo: TempoDaCena = 1,
+  d: OsDesenhosDe = DESENHOS_DE.renan
 ): string {
-  return `/assets/XB_Entregador_${POSE_DO_PAPEL[papel]}_${lado}_${tempo}.webp?d=${VERSAO_DO_DESENHO}`;
+  return `/assets/${d.prefixo}_${POSE_DO_PAPEL[papel]}_${lado}_${tempo}.webp?d=${VERSAO_DO_DESENHO}`;
 }
 
 /**
@@ -267,17 +285,20 @@ function desenhoDaCena(
 const desenhosProntos = new Set<string>();
 const desenhosGuardados: HTMLImageElement[] = [];
 
-function guardarOsDesenhos(aoFicarPronto: () => void): void {
+function guardarOsDesenhos(
+  aoFicarPronto: () => void,
+  d: OsDesenhosDe = DESENHOS_DE.renan
+): void {
   if (typeof Image === "undefined") return;
   const todos: string[] = [];
-  for (let f = 0; f < RUMOS.length; f += 1)
-    todos.push(desenhoDoRumo(f, "pedalando1"));
+  for (let f = 0; f < d.moldes.rumos.length; f += 1)
+    todos.push(desenhoDoRumo(f, "pedalando1", d));
   // As cenas paradas entram junto: a troca acontece no instante em que ele
   // encosta no meio-fio, e buscar a imagem nessa hora e o menino sumir.
   for (const papel of ["coleta", "entrega"] as const)
     for (const lado of ["esquerda", "direita"] as const)
       for (const tempo of [1, 2] as const)
-        todos.push(desenhoDaCena(papel, lado, tempo));
+        todos.push(desenhoDaCena(papel, lado, tempo, d));
   for (const endereco of todos) {
     if (desenhosProntos.has(endereco)) continue;
     const img = new Image();
@@ -308,8 +329,11 @@ function guardarOsDesenhos(aoFicarPronto: () => void): void {
  * mesma coluna — que e o caso da folha vista de frente — a reta vira horizontal,
  * senao a inclinacao explodiria.
  */
-function variaveisDoRumo(fatia: number): React.CSSProperties {
-  const g = GEOMETRIA[rumoDaFatia(fatia)];
+function variaveisDoRumo(
+  fatia: number,
+  d: OsDesenhosDe = DESENHOS_DE.renan
+): React.CSSProperties {
+  const g = d.moldes.geometria[rumoDaFatia(fatia, d.moldes)]!;
   const meioX = (g.frenteX + g.trasX) / 2;
   const meioY = (g.frenteY + g.trasY) / 2;
   const vao = g.frenteX - g.trasX;
@@ -341,9 +365,10 @@ function variaveisDoRumo(fatia: number): React.CSSProperties {
 function variaveisDaCena(
   papel: PapelDaCena,
   lado: LadoDaCena,
-  tempo: TempoDaCena = 1
+  tempo: TempoDaCena = 1,
+  d: OsDesenhosDe = DESENHOS_DE.renan
 ): React.CSSProperties {
-  const g = geometriaDaCena(papel, lado, tempo);
+  const g = geometriaDaCena(papel, lado, tempo, d.cenas);
   const linha = (g.chaoY - ENTERRAR).toFixed(1);
   /*
    * O POUSO E O MEIO DAS RODAS DA BICICLETA PARADA, quando a cena sabe onde
@@ -410,8 +435,28 @@ export default function Entregador({
   andando = true,
   comando,
   aoLevantarPoeira,
+  quem = "renan",
+  aoLado = false,
 }: {
   caminho: readonly PontoNoMapa[];
+  /**
+   * QUEM ESTA PEDALANDO — e com isso, que desenhos e que medidas valem.
+   *
+   * Ordem dele, 11/09/2026: "devemos ter os dois na tela coletando e
+   * entregando". Cada um tem as suas folhas; a regra de rumo e de cena e a
+   * mesma para os dois. Quem chama da uma chave por pessoa, entao o "quem" de
+   * um desenho montado nunca muda.
+   */
+  quem?: QuemPedala;
+  /**
+   * DOIS NA MESMA PORTA: este fica ao lado do outro, e nao em cima dele.
+   *
+   * Medido na bancada em 11/09/2026: o Renan e a Lorena coletaram na mesma
+   * loja ao mesmo tempo e ficaram a 16 pixels um do outro — na tela, um so.
+   * O deslocamento e em % do proprio desenho (vale em qualquer zoom) e desliza
+   * no CSS, nao pula.
+   */
+  aoLado?: boolean;
   /** Quando vem, o balcao manda: sem relogio proprio e sem volta. */
   comando?: ComandoDoEntregador;
   /**
@@ -434,6 +479,9 @@ export default function Entregador({
   /** O caminho com a conta de quanto se andou em cada ponto, feita uma vez. */
   const passos = useMemo(() => montarPassos(caminho), [caminho]);
   const distanciaTotal = passos[passos.length - 1]?.ate ?? 0;
+  /** Os desenhos e as medidas de quem pedala (ver osQuePedalam). */
+  const d = DESENHOS_DE[quem];
+  const moldes = d.moldes;
 
   const caixa = useRef<HTMLDivElement | null>(null);
 
@@ -540,8 +588,8 @@ export default function Entregador({
    */
   const naCena = naPorta && cena !== null;
   const desenhoPedido = naCena
-    ? desenhoDaCena(cena.papel, cena.lado, cena.tempo)
-    : desenhoDoRumo(fatia, naPorta ? "parado" : "pedalando1");
+    ? desenhoDaCena(cena.papel, cena.lado, cena.tempo, d)
+    : desenhoDoRumo(fatia, naPorta ? "parado" : "pedalando1", d);
   /*
    * DUAS IMAGENS: A DA FRENTE, QUE ESTA NA TELA, E A DE TRAS, QUE RECEBE O
    * DESENHO NOVO.
@@ -556,8 +604,8 @@ export default function Entregador({
    */
   const [, setDesenhosProntos] = useState(0);
   const variaveisPedidas = naCena
-    ? variaveisDaCena(cena.papel, cena.lado, cena.tempo)
-    : variaveisDoRumo(fatia);
+    ? variaveisDaCena(cena.papel, cena.lado, cena.tempo, d)
+    : variaveisDoRumo(fatia, d);
   const pedido = useRef({
     desenho: desenhoPedido,
     variaveis: variaveisPedidas,
@@ -665,11 +713,11 @@ export default function Entregador({
     let vivo = true;
     guardarOsDesenhos(() => {
       if (vivo) setDesenhosProntos(n => n + 1);
-    });
+    }, d);
     return () => {
       vivo = false;
     };
-  }, []);
+  }, [d]);
 
   useEffect(() => {
     if (distanciaTotal <= 0 || passos.length < 2) return;
@@ -763,7 +811,15 @@ export default function Entregador({
           );
           if (saida !== null) {
             rumo.current = saida;
-            const nova = escolherRumo(null, saida, ms);
+            const nova = escolherRumo(
+              null,
+              saida,
+              ms,
+              FOLGA_GRAUS,
+              ESPERA_MS,
+              COSTURA_GRAUS,
+              moldes
+            );
             escolha.current = nova;
             pendente.current = null;
             mostrada.current = nova.fatia;
@@ -785,7 +841,15 @@ export default function Entregador({
             const alvo = rumoSuavizado(passos, andado.current);
             if (alvo !== null) {
               rumo.current = alvo;
-              const nova = escolherRumo(null, alvo, ms);
+              const nova = escolherRumo(
+                null,
+                alvo,
+                ms,
+                FOLGA_GRAUS,
+                ESPERA_MS,
+                COSTURA_GRAUS,
+                moldes
+              );
               escolha.current = nova;
               mostrada.current = nova.fatia;
               mostradaEm.current = agora;
@@ -955,7 +1019,10 @@ export default function Entregador({
           if (levantaPoeira(giroSuave.current) && agora >= poeiraAte.current) {
             poeiraAte.current = agora + ESPERA_DA_POEIRA_MS;
             const onde = pontoEm(passos, andado.current);
-            const g = GEOMETRIA[rumoDaFatia(escolha.current?.fatia ?? 0)];
+            const g =
+              moldes.geometria[
+                rumoDaFatia(escolha.current?.fatia ?? 0, moldes)
+              ];
             if (onde && g && poeirar.current) {
               /*
                * Onde o pneu de tras esta, em ponto do MAPA.
@@ -979,7 +1046,15 @@ export default function Entregador({
           }
         }
 
-        const proposta = escolherRumo(escolha.current, rumo.current, ms);
+        const proposta = escolherRumo(
+          escolha.current,
+          rumo.current,
+          ms,
+          FOLGA_GRAUS,
+          ESPERA_MS,
+          COSTURA_GRAUS,
+          moldes
+        );
         const decidido = escolha.current
           ? confirmarTroca(escolha.current, proposta, pendente.current, ms)
           : { escolha: proposta, pendente: null };
@@ -995,11 +1070,12 @@ export default function Entregador({
           mostrar = quer;
         } else if (tela !== quer) {
           const visto = naTela.current;
-          const apareceu = visto.desenho === desenhoDoRumo(tela, "pedalando1");
+          const apareceu =
+            visto.desenho === desenhoDoRumo(tela, "pedalando1", d);
           const ficouOTempo = apareceu
             ? agora - visto.desde >= PASSO_DO_GIRO_MS
             : agora - mostradaEm.current >= ESPERA_MAXIMA_DO_GIRO_MS;
-          if (ficouOTempo) mostrar = proximoNoGiro(tela, quer);
+          if (ficouOTempo) mostrar = proximoNoGiro(tela, quer, moldes);
         }
         if (mostrar !== tela && mostrar !== null) {
           mostrada.current = mostrar;
@@ -1028,6 +1104,7 @@ export default function Entregador({
     <div
       ref={caixa}
       className="entregador"
+      data-quem={quem}
       /*
        * CADA RUMO TRAZ A SUA PROPRIA GEOMETRIA.
        *
@@ -1045,6 +1122,8 @@ export default function Entregador({
          */
         ["--tamanho-de-mundo" as string]: `${TAMANHO}%`,
         ["--cruzamento" as string]: `${CRUZAMENTO_MS}ms`,
+        ["--ao-lado-x" as string]: aoLado ? AO_LADO[0] : "0%",
+        ["--ao-lado-y" as string]: aoLado ? AO_LADO[1] : "0%",
         ...telas.variaveis,
       }}
       aria-hidden="true"

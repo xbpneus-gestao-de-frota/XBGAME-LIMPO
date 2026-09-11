@@ -33,6 +33,7 @@
  * e real e se explica sozinha — nao precisei inventar desconto nenhum.
  */
 import type { VehicleId } from "./types";
+import { GAME_ASSETS } from "./assets";
 
 export interface Candidato {
   id: string;
@@ -66,12 +67,18 @@ export const CANDIDATOS: readonly Candidato[] = [
     veiculo: "bike",
     sobre: "Bicicleta velha, conhece cada atalho do bairro",
   },
+  /*
+   * A LORENA (11/09/2026). Ordem dele: "a Lorena entre no lugar da menina de
+   * rabo de cavalo" — a segunda da lista, que se chamava Marlene (e ainda
+   * dividia o nome com a Dona Marlene da casa 6). Bailarina; veio com a
+   * bicicleta dela. Tem desenho proprio no mapa (ver osQuePedalam).
+   */
   {
-    id: "cand-marlene",
-    nome: "Marlene",
+    id: "cand-lorena",
+    nome: "Lorena",
     veiculoProprio: true,
     veiculo: "bike",
-    sobre: "Entrega desde menina, nunca perdeu um prazo",
+    sobre: "Bailarina. Veio com a bicicleta dela",
   },
   {
     id: "cand-du",
@@ -142,6 +149,8 @@ export function candidatosLivres(
  */
 export function retratoDoCandidato(id: string | undefined): string | undefined {
   if (!id) return undefined;
+  // Quem tem retrato proprio nao usa o desenho da posicao.
+  if (id === "cand-lorena") return GAME_ASSETS.lorenaRetrato;
   const posicao = CANDIDATOS.findIndex(c => c.id === id);
   if (posicao < 0) return undefined;
   return `/assets/XB_Entregador_${(posicao % 8) + 1}.webp`;

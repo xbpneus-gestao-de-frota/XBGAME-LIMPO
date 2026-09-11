@@ -49,6 +49,8 @@ export const GAME_ASSETS = {
    * enfeite.
    */
   renanEquipado: "/assets/XB_Renan_equipado.webp",
+  /** A Lorena na lista da equipe (recorte da imagem dela com a bicicleta, 11/09/2026). */
+  lorenaRetrato: "/assets/XB_Lorena_retrato.webp",
   /** Os rabiscos do fundo da conversa, recortados do desenho dele. */
   conversaFundo: "/assets/XB_conversa_fundo.webp",
   /*

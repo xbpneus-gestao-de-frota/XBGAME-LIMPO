@@ -507,6 +507,18 @@ export class GameWorld {
     this.publish();
   }
 
+  /*
+   * Quem entra junto com o Renan, sem preco (ver GameState.chegarNaEquipe).
+   * Como a primeira bicicleta, nao avisa quando falha: a unica falha e ja ter
+   * acontecido.
+   */
+  chegarNaEquipe(candidatoId: string): void {
+    const result = this.store.chegarNaEquipe(candidatoId);
+    if (!result.ok) return;
+    this.notice = result.message;
+    this.publish();
+  }
+
   /** Contrata um operador para dirigir uma classe. */
   hireOperator(veiculo: VehicleId): void {
     const result = this.store.hireOperator(veiculo);

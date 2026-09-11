@@ -51,6 +51,7 @@ import { MAPA, METROS_POR_PIXEL } from "./streets";
 import type { PontoNoMapa } from "./streets";
 
 import moldesDoArquivo from "./data/moldes-entregador.json";
+import moldesDaLorena from "./data/moldes-lorena.json";
 
 /**
  * OS MOLDES — um desenho por posicao do relogio, em ordem de angulo.
@@ -95,18 +96,20 @@ export interface Molde {
 /** As duas metades das folhas: de costas para a camera, ou de frente. */
 export type LadoDoMenino = "costas" | "frente";
 
-export const MOLDES: readonly Molde[] = (
-  moldesDoArquivo.moldes as ReadonlyArray<{
-    nome: string;
-    graus: number;
-    frenteX: number;
-    frenteY: number;
-    trasX: number;
-    trasY: number;
-    umaRoda?: boolean;
-    folha?: string;
-  }>
-).map(m => ({
+/** Uma linha da lista que o script das folhas escreve. */
+interface MoldeDoArquivo {
+  nome: string;
+  graus: number;
+  frenteX: number;
+  frenteY: number;
+  trasX: number;
+  trasY: number;
+  umaRoda?: boolean;
+  folha?: string;
+}
+
+const lerMoldes = (lista: ReadonlyArray<MoldeDoArquivo>): Molde[] =>
+  lista.map(m => ({
   nome: m.nome,
   graus: m.graus,
   geometria: {
@@ -123,10 +126,63 @@ export const MOLDES: readonly Molde[] = (
       : undefined,
 }));
 
+/** Os moldes do Renan — os de sempre. */
+export const MOLDES: readonly Molde[] = lerMoldes(moldesDoArquivo.moldes);
+
 /** Os nomes, na mesma ordem — e o que vira nome de arquivo do desenho. */
 export const RUMOS: readonly string[] = MOLDES.map(m => m.nome);
 
 export type Rumo = string;
+
+/*
+ * ── CADA ENTREGADOR TEM O SEU JOGO DE MOLDES (11/09/2026) ─────────────────
+ *
+ * Ordem dele: "esta sera nossa segunda integrante da equipe Lorena" e "devemos
+ * ter os dois na tela coletando e entregando". A Lorena chegou com as mesmas
+ * cinco folhas do Renan, mas o gerador desenha cada folha do seu jeito: ela tem
+ * 25 rumos e ele 26, em angulos um pouco diferentes. Emprestar a lista de um
+ * para o outro seria o remendo que ja deu errado aqui (ver O ESPELHO E O
+ * EMPRESTIMO, mais abaixo): o desenho apontaria para um lado e a rua para outro.
+ *
+ * Entao a lista vira um CONJUNTO por pessoa, e toda conta de rumo recebe o
+ * conjunto de quem esta pedalando. Quem nao passa conjunto nenhum recebe o do
+ * Renan — tudo o que existia continua igual.
+ */
+export interface ConjuntoDeMoldes {
+  moldes: readonly Molde[];
+  /** Os nomes na ordem dos moldes — o fim do nome de cada arquivo. */
+  rumos: readonly string[];
+  geometria: Readonly<Record<Rumo, GeometriaDoRumo>>;
+  /** Os moldes em volta do relogio, do menor angulo ao maior. */
+  noRelogio: readonly number[];
+  /** Para cada molde, a sua posicao no relogio. */
+  posicaoNoRelogio: readonly number[];
+}
+
+export function montarConjunto(moldes: readonly Molde[]): ConjuntoDeMoldes {
+  const noRelogio = moldes
+    .map((_, i) => i)
+    .sort((a, b) => moldes[a]!.graus - moldes[b]!.graus);
+  const posicaoNoRelogio: number[] = [];
+  noRelogio.forEach((fatia, pos) => {
+    posicaoNoRelogio[fatia] = pos;
+  });
+  return {
+    moldes,
+    rumos: moldes.map(m => m.nome),
+    geometria: Object.fromEntries(moldes.map(m => [m.nome, m.geometria])),
+    noRelogio,
+    posicaoNoRelogio,
+  };
+}
+
+/** Os moldes do Renan, em conjunto. E o padrao de toda conta de rumo. */
+export const DO_RENAN: ConjuntoDeMoldes = montarConjunto(MOLDES);
+
+/** Os moldes da Lorena — as cinco folhas dela, de 11/09/2026. */
+export const DA_LORENA: ConjuntoDeMoldes = montarConjunto(
+  lerMoldes(moldesDaLorena.moldes)
+);
 
 /*
  * ── OS TRES NUMEROS AFROUXARAM EM 06/09/2026, E POR UM BOM MOTIVO ─────────
@@ -369,12 +425,17 @@ export function diferencaDeAngulo(a: number, b: number): number {
  * e forcar uma grade sobre eles jogaria fora a diferenca entre um desenho a
  * tres graus e outro a vinte.
  */
-export function fatiaDoAngulo(graus: number, lado?: LadoDoMenino): number {
+export function fatiaDoAngulo(
+  graus: number,
+  lado?: LadoDoMenino,
+  c: ConjuntoDeMoldes = DO_RENAN
+): number {
+  const moldes = c.moldes;
   let melhor = 0;
   let perto = Infinity;
-  for (let i = 0; i < MOLDES.length; i += 1) {
-    if (lado && MOLDES[i]!.lado !== lado) continue;
-    const d = Math.abs(diferencaDeAngulo(MOLDES[i]!.graus, graus));
+  for (let i = 0; i < moldes.length; i += 1) {
+    if (lado && moldes[i]!.lado !== lado) continue;
+    const d = Math.abs(diferencaDeAngulo(moldes[i]!.graus, graus));
     if (d < perto) {
       perto = d;
       melhor = i;
@@ -384,8 +445,12 @@ export function fatiaDoAngulo(graus: number, lado?: LadoDoMenino): number {
 }
 
 /** Para onde o desenho de uma fatia aponta. */
-export function centroDaFatia(fatia: number): number {
-  return MOLDES[((fatia % MOLDES.length) + MOLDES.length) % MOLDES.length]!.graus;
+export function centroDaFatia(
+  fatia: number,
+  c: ConjuntoDeMoldes = DO_RENAN
+): number {
+  const n = c.moldes.length;
+  return c.moldes[((fatia % n) + n) % n]!.graus;
 }
 
 /*
@@ -418,14 +483,15 @@ export function ficarDoMesmoLado(
   atual: number,
   proposta: number,
   graus: number,
-  costura = COSTURA_GRAUS
+  costura = COSTURA_GRAUS,
+  c: ConjuntoDeMoldes = DO_RENAN
 ): number {
-  const ladoAtual = MOLDES[atual]?.lado;
-  const ladoNovo = MOLDES[proposta]?.lado;
+  const ladoAtual = c.moldes[atual]?.lado;
+  const ladoNovo = c.moldes[proposta]?.lado;
   if (!ladoAtual || !ladoNovo || ladoAtual === ladoNovo) return proposta;
-  const mesmoLado = fatiaDoAngulo(graus, ladoAtual);
-  const fica = Math.abs(diferencaDeAngulo(centroDaFatia(mesmoLado), graus));
-  const vai = Math.abs(diferencaDeAngulo(centroDaFatia(proposta), graus));
+  const mesmoLado = fatiaDoAngulo(graus, ladoAtual, c);
+  const fica = Math.abs(diferencaDeAngulo(centroDaFatia(mesmoLado, c), graus));
+  const vai = Math.abs(diferencaDeAngulo(centroDaFatia(proposta, c), graus));
   return fica - vai > costura ? proposta : mesmoLado;
 }
 
@@ -447,37 +513,34 @@ export function ficarDoMesmoLado(
 /** Quanto cada desenho do meio fica na tela durante um giro, em ms. */
 export const PASSO_DO_GIRO_MS = 60;
 
-/** Os moldes em volta do relogio, do menor angulo ao maior. */
-const NO_RELOGIO: readonly number[] = MOLDES.map((_, i) => i).sort(
-  (a, b) => MOLDES[a]!.graus - MOLDES[b]!.graus
-);
-const POSICAO_NO_RELOGIO: readonly number[] = (() => {
-  const p: number[] = [];
-  NO_RELOGIO.forEach((fatia, pos) => {
-    p[fatia] = pos;
-  });
-  return p;
-})();
-
 /**
  * Quantos desenhos ha entre dois, pelo lado mais curto do relogio. Positivo e
- * no sentido do angulo crescente.
+ * no sentido do angulo crescente. (A ordem em volta do relogio mora no
+ * conjunto de cada entregador: ver montarConjunto.)
  */
-export function desenhosAte(de: number, para: number): number {
-  const n = NO_RELOGIO.length;
-  let d = (POSICAO_NO_RELOGIO[para]! - POSICAO_NO_RELOGIO[de]!) % n;
+export function desenhosAte(
+  de: number,
+  para: number,
+  c: ConjuntoDeMoldes = DO_RENAN
+): number {
+  const n = c.noRelogio.length;
+  let d = (c.posicaoNoRelogio[para]! - c.posicaoNoRelogio[de]!) % n;
   if (d > n / 2) d -= n;
   if (d < -n / 2) d += n;
   return d;
 }
 
 /** O proximo desenho da tela a caminho do escolhido. */
-export function proximoNoGiro(mostrada: number, alvo: number): number {
-  const falta = desenhosAte(mostrada, alvo);
+export function proximoNoGiro(
+  mostrada: number,
+  alvo: number,
+  c: ConjuntoDeMoldes = DO_RENAN
+): number {
+  const falta = desenhosAte(mostrada, alvo, c);
   if (Math.abs(falta) <= 1) return alvo;
-  const n = NO_RELOGIO.length;
-  const pos = (POSICAO_NO_RELOGIO[mostrada]! + Math.sign(falta) + n) % n;
-  return NO_RELOGIO[pos]!;
+  const n = c.noRelogio.length;
+  const pos = (c.posicaoNoRelogio[mostrada]! + Math.sign(falta) + n) % n;
+  return c.noRelogio[pos]!;
 }
 
 export interface EscolhaDeRumo {
@@ -510,18 +573,27 @@ export function escolherRumo(
   agoraMs: number,
   folga = FOLGA_GRAUS,
   espera = ESPERA_MS,
-  costura = COSTURA_GRAUS
+  costura = COSTURA_GRAUS,
+  c: ConjuntoDeMoldes = DO_RENAN
 ): EscolhaDeRumo {
   if (!anterior) {
-    return { fatia: fatiaDoAngulo(graus), trocadoEmMs: agoraMs };
+    return { fatia: fatiaDoAngulo(graus, undefined, c), trocadoEmMs: agoraMs };
   }
   if (agoraMs - anterior.trocadoEmMs < espera) return anterior;
 
-  const nova = ficarDoMesmoLado(anterior.fatia, fatiaDoAngulo(graus), graus, costura);
+  const nova = ficarDoMesmoLado(
+    anterior.fatia,
+    fatiaDoAngulo(graus, undefined, c),
+    graus,
+    costura,
+    c
+  );
   if (nova === anterior.fatia) return anterior;
 
-  const agora = Math.abs(diferencaDeAngulo(centroDaFatia(anterior.fatia), graus));
-  const candidato = Math.abs(diferencaDeAngulo(centroDaFatia(nova), graus));
+  const agora = Math.abs(
+    diferencaDeAngulo(centroDaFatia(anterior.fatia, c), graus)
+  );
+  const candidato = Math.abs(diferencaDeAngulo(centroDaFatia(nova, c), graus));
   if (agora - candidato <= folga) return anterior;
 
   if (
@@ -576,8 +648,9 @@ export interface GeometriaDoRumo {
   trasY: number;
 }
 
+/** A geometria do Renan (a de cada pessoa mora no conjunto dela). */
 export const GEOMETRIA: Readonly<Record<Rumo, GeometriaDoRumo>> =
-  Object.fromEntries(MOLDES.map(m => [m.nome, m.geometria]));
+  DO_RENAN.geometria;
 
 /*
  * ── O ESPELHO E O EMPRESTIMO ACABARAM EM 06/09/2026 ───────────────────────
@@ -603,6 +676,10 @@ export const GEOMETRIA: Readonly<Record<Rumo, GeometriaDoRumo>> =
  */
 
 /** O nome do rumo de uma fatia. */
-export function rumoDaFatia(fatia: number): Rumo {
-  return RUMOS[((fatia % RUMOS.length) + RUMOS.length) % RUMOS.length]!;
+export function rumoDaFatia(
+  fatia: number,
+  c: ConjuntoDeMoldes = DO_RENAN
+): Rumo {
+  const n = c.rumos.length;
+  return c.rumos[((fatia % n) + n) % n]!;
 }

@@ -127,7 +127,7 @@ describe("o entregador no mapa", () => {
      */
     // a tela passa pelos desenhos do meio, um de cada vez, e so depois que o
     // de agora apareceu de fato
-    expect(COMPONENTE).toContain("proximoNoGiro(tela, quer)");
+    expect(COMPONENTE).toContain("proximoNoGiro(tela, quer, moldes)");
     expect(COMPONENTE).toContain(
       "naTela.current = { desenho: desenhoAgora, desde: performance.now() }"
     );

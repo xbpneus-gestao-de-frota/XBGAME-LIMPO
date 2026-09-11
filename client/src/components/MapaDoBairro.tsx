@@ -36,6 +36,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GAME_ASSETS } from "@/game/assets";
 import type { EstagioDaBolinha } from "@/game/corrida";
 import type { ComandoDoEntregador } from "@/components/Entregador";
+import type { QuemPedala } from "@/game/osQuePedalam";
 import IconeDoMapa from "./iconesDoMapa";
 import Entregador from "./Entregador";
 import type { ParadaDaEntrega } from "@/game/aParada";
@@ -256,6 +257,16 @@ export interface ParadaNoMapa {
   em: readonly [number, number];
 }
 
+/** Mais alguem pedalando no bairro, alem do Renan (ver outrosEntregadores). */
+export interface OutroEntregadorNoMapa {
+  quem: QuemPedala;
+  caminho: readonly (readonly [number, number])[];
+  paradas: readonly ParadaDaEntrega[];
+  comando: ComandoDoEntregador;
+  /** Parado na mesma porta que outro: fica ao lado (ver Entregador). */
+  aoLado?: boolean;
+}
+
 export default function MapaDoBairro({
   nomeDoJogador,
   paradas,
@@ -266,6 +277,7 @@ export default function MapaDoBairro({
   entregaDoDrone = false,
   entregadorEm,
   comandoDoEntregador,
+  outrosEntregadores = [],
   aoAbrirAMala,
   pracaLimpa = false,
   aoSair,
@@ -300,6 +312,16 @@ export default function MapaDoBairro({
    * ele fica onde o balcao diz, e desce da bicicleta na coleta e na entrega.
    */
   comandoDoEntregador?: ComandoDoEntregador;
+  /**
+   * OS OUTROS QUE PEDALAM — cada um com o seu caminho, as suas paradas e o seu
+   * comando.
+   *
+   * Ordem dele, 11/09/2026: "devemos ter os dois na tela coletando e
+   * entregando". O Renan continua nas props de sempre (caminho,
+   * paradasDaEntrega, comandoDoEntregador); aqui entra quem mais estiver na
+   * rua, cada um com os desenhos dele.
+   */
+  outrosEntregadores?: readonly OutroEntregadorNoMapa[];
   /*
    * A MALA ABRIU — o instante em que a encomenda deixa de ser uma caixa
    * fechada no chao e vira o que veio dentro.
@@ -798,12 +820,28 @@ export default function MapaDoBairro({
           */}
           {ENTREGADOR_NO_MAPA && caminho.length > 1 && (
             <Entregador
+              key="renan"
+              quem="renan"
               caminho={caminho}
               paradas={paradasDaEntrega}
               comando={comandoDoEntregador}
               aoLevantarPoeira={aoLevantarPoeira}
             />
           )}
+          {ENTREGADOR_NO_MAPA &&
+            outrosEntregadores.map((o) =>
+              o.caminho.length > 1 ? (
+                <Entregador
+                  key={o.quem}
+                  quem={o.quem}
+                  caminho={o.caminho}
+                  paradas={o.paradas}
+                  comando={o.comando}
+                  aoLado={o.aoLado}
+                  aoLevantarPoeira={aoLevantarPoeira}
+                />
+              ) : null,
+            )}
 
           {/*
             A poeira vem DEPOIS do entregador na ordem, mas ela nasce atras dele

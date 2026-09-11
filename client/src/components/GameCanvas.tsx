@@ -118,6 +118,12 @@ import {
 } from "@/game/oPercursoNoMapa";
 import type { ComandoDoEntregador } from "@/components/Entregador";
 import { retratoDoCandidato } from "@/game/candidatos";
+import type { EmRota } from "@/game/xbwapp/aRota";
+import {
+  LORENA,
+  LORENA_JA_NA_EQUIPE,
+  quemPedalaPeloNome,
+} from "@/game/osQuePedalam";
 
 /*
  * O QUE O AVISO MOSTRA.
@@ -1300,6 +1306,85 @@ function CompleteScreen({
   );
 }
 
+/*
+ * ── UM ENTREGADOR NO MAPA: a rota dele vira caminho, pinos e comando ────────
+ *
+ * Era tudo escrito uma vez so, para o Renan. Com a Lorena na rua ("devemos ter
+ * os dois na tela coletando e entregando", 11/09/2026), a mesma conta roda uma
+ * vez por pessoa — por isso mora aqui, numa funcao so, e nao repetida.
+ *
+ * O DESENHO DA ROTA SO E REFEITO QUANDO A ROTA MUDA DE VERDADE — outro lugar de
+ * partida, outra fila de paradas, outro veiculo. O relogio do balcao troca o
+ * estado a cada segundo; se o tracado fosse refeito junto, o entregador voltaria
+ * ao comeco do caminho uma vez por segundo.
+ *
+ * UM CAMINHO SO PARA A CORRIDA INTEIRA (ver planoPara, em oPercursoNoMapa):
+ * passar por uma porta nao refaz o caminho — so a corrida mudar de verdade, com
+ * pedido novo na fila. Refazer a cada porta parava o jogo um quarto de segundo
+ * e deixava o entregador sumido nesse tempo.
+ *
+ * VAGA: onde a pessoa espera, sem pedido, em relacao a porta. Os dois comecam o
+ * dia na pizzaria; sem vaga, um ficaria desenhado em cima do outro.
+ */
+function useEntregadorNoMapa(
+  rota: EmRota,
+  rodando: boolean,
+  vaga: readonly [number, number] = [0, 0]
+) {
+  const chaveDoTracado = [
+    rota.em,
+    rota.veiculo,
+    ...rota.paradas.map(p => `${p.pedido}:${p.o}:${p.lugar}`),
+  ].join("|");
+  const rotaDoTracado = useRef(rota);
+  rotaDoTracado.current = rota;
+  const planoAnterior = useRef<PlanoDoPercurso | null>(null);
+  const plano = useMemo(() => {
+    const novo = planoPara(rotaDoTracado.current, planoAnterior.current);
+    planoAnterior.current = novo;
+    return novo;
+  }, [chaveDoTracado]);
+  const [vagaX, vagaY] = vaga;
+  const espera = useMemo(() => {
+    if (plano) return null;
+    const aqui = esperaNoMapa(rotaDoTracado.current);
+    if (vagaX === 0 && vagaY === 0) return aqui;
+    return {
+      ...aqui,
+      caminho: aqui.caminho.map(
+        ([x, y]) => [x + vagaX, y + vagaY] as const
+      ),
+    };
+  }, [plano, chaveDoTracado, vagaX, vagaY]);
+  const tracado: TracadoDoPercurso = plano ?? espera!;
+  const progresso = useMemo(
+    () => (plano ? progressoNoPlano(rota, plano) : null),
+    [rota, plano]
+  );
+  const percurso =
+    rota.paradas.length > 0
+      ? { paradas: pinosDaRota(rota), onde: progresso?.onde }
+      : null;
+  const comando = useMemo<ComandoDoEntregador>(
+    () => ({
+      metros: progresso?.metros ?? 0,
+      ate: progresso?.ate ?? 0,
+      // Com o balcao parado (historia, filme, chamada), o desenho para junto.
+      metrosPorSegundo: rodando ? (progresso?.metrosPorSegundo ?? 0) : 0,
+      naPorta: progresso?.naPorta ?? null,
+      parado: !progresso || progresso.parado,
+    }),
+    [progresso, rodando]
+  );
+  return { tracado, percurso, comando };
+}
+
+/**
+ * ONDE A LORENA ESPERA, sem pedido: um pouco ao lado da porta, em % do mapa.
+ * So o lugar de espera muda — na rua ela anda pelo caminho de verdade.
+ */
+const VAGA_DA_LORENA = [1.6, 0.5] as const;
+
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const startedRef = useRef(false);
@@ -1715,60 +1800,85 @@ export default function GameCanvas() {
   const rotaNoMapa = useMemo(() => {
     const doRenan = rotaDe(estadoDoApp, QUEM_LIGA.nome);
     if (doRenan.paradas.length > 0) return doRenan;
+    /*
+     * Sem pedido do Renan, o desenho dele segue quem estiver rodando — mas so
+     * quem NAO tem desenho proprio. A Lorena tem o dela (logo abaixo); se o
+     * Renan seguisse a rota dela, seriam dois desenhos na mesma rua.
+     */
     return (
-      Object.values(estadoDoApp.rotas).find(r => r.paradas.length > 0) ??
-      doRenan
+      Object.values(estadoDoApp.rotas).find(
+        r => r.paradas.length > 0 && quemPedalaPeloNome(r.nome) === null
+      ) ?? doRenan
     );
   }, [estadoDoApp.rotas]);
+  const doRenanNoMapa = useEntregadorNoMapa(rotaNoMapa, bairroRodando);
+  const { tracado, percurso } = doRenanNoMapa;
+  const comandoDoEntregador = doRenanNoMapa.comando;
+
   /*
-   * O DESENHO DA ROTA SO E REFEITO QUANDO A ROTA MUDA DE VERDADE — outro
-   * lugar de partida, outra fila de paradas, outro veiculo. O relogio do
-   * balcao troca o estado a cada segundo; se o tracado fosse refeito junto, o
-   * menino voltaria ao comeco do caminho uma vez por segundo.
+   * ── A LORENA NA RUA, AO LADO DO RENAN ──────────────────────────────────
+   *
+   * Ordem dele, 11/09/2026: "por enquanto gere mesmo formato de renan, devemos
+   * ter os dois na tela coletando e entregando". A rota dela e a do balcao,
+   * pelo nome dela — a mesma conta que fecha os pedidos dela.
    */
-  const chaveDoTracado = [
-    rotaNoMapa.em,
-    rotaNoMapa.veiculo,
-    ...rotaNoMapa.paradas.map(p => `${p.pedido}:${p.o}:${p.lugar}`),
-  ].join("|");
-  const rotaDoTracado = useRef(rotaNoMapa);
-  rotaDoTracado.current = rotaNoMapa;
+  const rotaDaLorena = useMemo(
+    () => rotaDe(estadoDoApp, LORENA.nome),
+    [estadoDoApp.rotas]
+  );
+  const daLorenaNoMapa = useEntregadorNoMapa(
+    rotaDaLorena,
+    bairroRodando,
+    VAGA_DA_LORENA
+  );
+
   /*
-   * UM CAMINHO SO PARA A CORRIDA INTEIRA (ver planoPara, em oPercursoNoMapa):
-   * passar por uma porta nao refaz o caminho — so a corrida mudar de verdade,
-   * com pedido novo na fila. Refazer a cada porta parava o jogo um quarto de
-   * segundo e deixava o Renan sumido nesse tempo.
+   * ── POR ENQUANTO ELA ENTRA JUNTO COM O RENAN ─────────────────────────────
+   *
+   * No mesmo instante em que o Renan vira o primeiro entregador (a caixa do
+   * drone), ela chega com a bicicleta dela — ou logo que o jogo abrir, para
+   * quem ja tinha passado da abertura. Sem preco, como ele (ver
+   * GameState.chegarNaEquipe). O interruptor fica em osQuePedalam.
    */
-  const planoAnterior = useRef<PlanoDoPercurso | null>(null);
-  const plano = useMemo(() => {
-    const novo = planoPara(rotaDoTracado.current, planoAnterior.current);
-    planoAnterior.current = novo;
-    return novo;
-  }, [chaveDoTracado]);
-  const espera = useMemo(
-    () => (plano ? null : esperaNoMapa(rotaDoTracado.current)),
-    [plano, chaveDoTracado]
+  const renanNaEquipe = Boolean(
+    snapshot?.campaign.hiredCouriers.some(c => c.candidatoId === QUEM_LIGA.id)
   );
-  const tracado: TracadoDoPercurso = plano ?? espera!;
-  const progresso = useMemo(
-    () => (plano ? progressoNoPlano(rotaNoMapa, plano) : null),
-    [rotaNoMapa, plano]
+  const lorenaNaEquipe = Boolean(
+    snapshot?.campaign.hiredCouriers.some(c => c.candidatoId === LORENA.id)
   );
-  const percurso =
-    rotaNoMapa.paradas.length > 0
-      ? { paradas: pinosDaRota(rotaNoMapa), onde: progresso?.onde }
-      : null;
-  const comandoDoEntregador = useMemo<ComandoDoEntregador>(
-    () => ({
-      metros: progresso?.metros ?? 0,
-      ate: progresso?.ate ?? 0,
-      // Com o balcao parado (historia, filme, chamada), o desenho para junto.
-      metrosPorSegundo: bairroRodando ? (progresso?.metrosPorSegundo ?? 0) : 0,
-      naPorta: progresso?.naPorta ?? null,
-      parado: !progresso || progresso.parado,
-    }),
-    [progresso, bairroRodando]
+  useEffect(() => {
+    if (!LORENA_JA_NA_EQUIPE || !renanNaEquipe || lorenaNaEquipe) return;
+    handleRef.current?.chegarNaEquipe(LORENA.id);
+  }, [renanNaEquipe, lorenaNaEquipe]);
+
+  /*
+   * Os dois na MESMA porta ao mesmo tempo: ela fica ao lado dele. Medido na
+   * bancada: coletando na mesma loja, os dois desenhos ficavam a 16 pixels um
+   * do outro — na tela, um so.
+   */
+  const lorenaAoLado = Boolean(
+    daLorenaNoMapa.comando.naPorta &&
+      comandoDoEntregador.naPorta &&
+      daLorenaNoMapa.comando.naPorta.nome === comandoDoEntregador.naPorta.nome
   );
+
+  /*
+   * Os pinos dos dois na mesma lista. Loja ou casa que os dois vao visitar
+   * aparece uma vez so — o pino e o lugar, nao a pessoa.
+   */
+  const pinosNoMapa = useMemo(() => {
+    const todos = [
+      ...(percurso?.paradas ?? []),
+      ...(lorenaNaEquipe ? (daLorenaNoMapa.percurso?.paradas ?? []) : []),
+    ];
+    const vistos = new Set<string>();
+    return todos.filter(p => {
+      const chave = p.papel + p.nome;
+      if (vistos.has(chave)) return false;
+      vistos.add(chave);
+      return true;
+    });
+  }, [percurso, daLorenaNoMapa.percurso, lorenaNaEquipe]);
 
   /*
    * ── A MAO QUE MOSTRA ONDE TOCAR, E O AVISO QUE ABRE SOZINHO ─────────────
@@ -2573,7 +2683,7 @@ export default function GameCanvas() {
                * A corrida de abertura continua calculada (o filme e o drone
                * usam o tracado dela); o que sai e o desenho dos pinos.
                */
-              paradas={percurso ? percurso.paradas : []}
+              paradas={pinosNoMapa}
               /*
                * O RENAN SO APARECE NA RUA DEPOIS DA HISTORIA.
                *
@@ -2591,6 +2701,19 @@ export default function GameCanvas() {
               entregadorEm={percurso?.onde}
               paradasDaEntrega={pracaLimpa ? tracado.paradasDaEntrega : []}
               comandoDoEntregador={comandoDoEntregador}
+              outrosEntregadores={
+                pracaLimpa && lorenaNaEquipe
+                  ? [
+                      {
+                        quem: "lorena",
+                        caminho: daLorenaNoMapa.tracado.caminho,
+                        paradas: daLorenaNoMapa.tracado.paradasDaEntrega,
+                        comando: daLorenaNoMapa.comando,
+                        aoLado: lorenaAoLado,
+                      },
+                    ]
+                  : []
+              }
               metros={primeiraCorrida.metros}
               pagamento={primeiraCorrida.pagamento}
               entregaDoDrone={droneEntregando}

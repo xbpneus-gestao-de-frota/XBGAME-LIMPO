@@ -31,6 +31,7 @@
  * mesmo ponto que o entregador ja usa quando esta andando.
  */
 import cenasDoArquivo from "./data/cenas-paradas.json";
+import cenasDaLorena from "./data/cenas-lorena.json";
 import type { ParadaDaEntrega } from "./aParada";
 
 export type LadoDaCena = "esquerda" | "direita";
@@ -72,13 +73,13 @@ export interface GeometriaDaCena {
  */
 export type TempoDaCena = 1 | 2;
 
-const lidas = cenasDoArquivo.cenas as ReadonlyArray<
-  {
-    papel: PapelDaCena;
-    lado: LadoDaCena;
-    quadros?: GeometriaDaCena[];
-  } & GeometriaDaCena
->;
+type CenaDoArquivo = {
+  papel: PapelDaCena;
+  lado: LadoDaCena;
+  quadros?: GeometriaDaCena[];
+} & GeometriaDaCena;
+
+const lidas = cenasDoArquivo.cenas as ReadonlyArray<CenaDoArquivo>;
 
 /** A chave de uma cena: o que ele faz, e para que lado. */
 export function chaveDaCena(papel: PapelDaCena, lado: LadoDaCena): string {
@@ -111,13 +112,57 @@ const QUADROS: Readonly<Record<string, readonly GeometriaDaCena[]>> =
   );
 
 /** A geometria de um tempo da cena; sem o tempo medido, vale a da cena. */
+/*
+ * ── CADA ENTREGADOR TEM AS SUAS CENAS (11/09/2026) ─────────────────────────
+ *
+ * A Lorena desce da bicicleta dela, com o corpo dela: a folha das cenas dela
+ * tem outras medidas (onde a bicicleta parada fica, onde o pe encosta). As
+ * listas de cima continuam sendo as do Renan; a de cada pessoa mora aqui.
+ */
+export interface ConjuntoDeCenas {
+  cenas: Readonly<Record<string, GeometriaDaCena>>;
+  quadros: Readonly<Record<string, readonly GeometriaDaCena[]>>;
+}
+
+function montarCenas(lista: ReadonlyArray<CenaDoArquivo>): ConjuntoDeCenas {
+  return {
+    cenas: Object.fromEntries(
+      lista.map(c => [
+        chaveDaCena(c.papel, c.lado),
+        {
+          frenteX: c.frenteX,
+          frenteY: c.frenteY,
+          trasX: c.trasX,
+          trasY: c.trasY,
+          chaoY: c.chaoY,
+        },
+      ])
+    ),
+    quadros: Object.fromEntries(
+      lista.map(c => [chaveDaCena(c.papel, c.lado), c.quadros ?? []])
+    ),
+  };
+}
+
+/** As cenas do Renan — o padrao de quem nao diz de quem e. */
+export const CENAS_DO_RENAN: ConjuntoDeCenas = {
+  cenas: CENAS,
+  quadros: QUADROS,
+};
+
+/** As cenas da Lorena — a folha "paradas" dela, de 11/09/2026. */
+export const CENAS_DA_LORENA: ConjuntoDeCenas = montarCenas(
+  cenasDaLorena.cenas as ReadonlyArray<CenaDoArquivo>
+);
+
 export function geometriaDaCena(
   papel: PapelDaCena,
   lado: LadoDaCena,
-  tempo: TempoDaCena = 1
+  tempo: TempoDaCena = 1,
+  de: ConjuntoDeCenas = CENAS_DO_RENAN
 ): GeometriaDaCena {
   const chave = chaveDaCena(papel, lado);
-  return QUADROS[chave]?.[tempo - 1] ?? CENAS[chave]!;
+  return de.quadros[chave]?.[tempo - 1] ?? de.cenas[chave]!;
 }
 
 /** Uma diferenca menor que isto, em % do mapa, nao decide lado nenhum. */

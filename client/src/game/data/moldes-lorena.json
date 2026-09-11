@@ -1,0 +1,233 @@
+{
+ "nota": "Gerado por scripts/entregador/grades.py a partir das cinco grades em assets-source/entregador/lorena. O nome e a posicao do relogio com minutos (12h00 = ir para o fundo, 03h00 = atravessar para a direita). 'graus' e a direcao na tela, medida pela reta entre os dois eixos das rodas; frenteX/Y e trasX/Y sao onde cada pneu encosta, em porcentagem da moldura. 'folha' diz de qual desenho da grade saiu.",
+ "moldes": [
+  {
+   "nome": "02h50",
+   "graus": 5.1,
+   "frenteX": 72.0,
+   "frenteY": 90.9,
+   "trasX": 24.4,
+   "trasY": 95.8,
+   "folha": "costas_direita#8"
+  },
+  {
+   "nome": "02h16",
+   "graus": 22.0,
+   "frenteX": 64.3,
+   "frenteY": 80.8,
+   "trasX": 30.5,
+   "trasY": 95.8,
+   "folha": "costas_direita#7"
+  },
+  {
+   "nome": "02h02",
+   "graus": 29.1,
+   "frenteX": 61.9,
+   "frenteY": 77.8,
+   "trasX": 32.0,
+   "trasY": 95.6,
+   "folha": "costas_direita#6"
+  },
+  {
+   "nome": "01h39",
+   "graus": 40.4,
+   "frenteX": 52.5,
+   "frenteY": 79.3,
+   "trasX": 33.5,
+   "trasY": 95.6,
+   "folha": "costas_direita#4"
+  },
+  {
+   "nome": "12h52",
+   "graus": 63.9,
+   "frenteX": 39.8,
+   "frenteY": 95.8,
+   "trasX": 39.8,
+   "trasY": 95.8,
+   "folha": "costas_direita#2",
+   "umaRoda": true
+  },
+  {
+   "nome": "12h00",
+   "graus": 90.0,
+   "frenteX": 49.8,
+   "frenteY": 95.9,
+   "trasX": 49.8,
+   "trasY": 95.9,
+   "folha": "costas_esquerda#1",
+   "umaRoda": true
+  },
+  {
+   "nome": "11h09",
+   "graus": 115.3,
+   "frenteX": 44.6,
+   "frenteY": 79.0,
+   "trasX": 57.5,
+   "trasY": 95.3,
+   "folha": "costas_esquerda#2"
+  },
+  {
+   "nome": "10h30",
+   "graus": 135.2,
+   "frenteX": 44.2,
+   "frenteY": 78.5,
+   "trasX": 61.2,
+   "trasY": 95.7,
+   "folha": "costas_esquerda#3"
+  },
+  {
+   "nome": "10h03",
+   "graus": 148.3,
+   "frenteX": 39.6,
+   "frenteY": 79.5,
+   "trasX": 66.1,
+   "trasY": 95.9,
+   "folha": "costas_esquerda#5"
+  },
+  {
+   "nome": "09h46",
+   "graus": 157.1,
+   "frenteX": 37.6,
+   "frenteY": 82.0,
+   "trasX": 67.2,
+   "trasY": 95.9,
+   "folha": "costas_esquerda#6"
+  },
+  {
+   "nome": "09h35",
+   "graus": 162.7,
+   "frenteX": 34.4,
+   "frenteY": 84.1,
+   "trasX": 68.8,
+   "trasY": 95.9,
+   "folha": "costas_esquerda#7"
+  },
+  {
+   "nome": "09h08",
+   "graus": 176.1,
+   "frenteX": 29.3,
+   "frenteY": 92.7,
+   "trasX": 72.0,
+   "trasY": 95.9,
+   "folha": "costas_esquerda#8"
+  },
+  {
+   "nome": "08h40",
+   "graus": 190.0,
+   "frenteX": 28.1,
+   "frenteY": 95.8,
+   "trasX": 70.8,
+   "trasY": 87.3,
+   "folha": "frente_esquerda#8"
+  },
+  {
+   "nome": "08h31",
+   "graus": 194.4,
+   "frenteX": 28.9,
+   "frenteY": 95.8,
+   "trasX": 68.4,
+   "trasY": 85.2,
+   "folha": "frente_esquerda#7"
+  },
+  {
+   "nome": "08h19",
+   "graus": 200.3,
+   "frenteX": 32.4,
+   "frenteY": 95.8,
+   "trasX": 64.1,
+   "trasY": 83.7,
+   "folha": "frente_esquerda#5"
+  },
+  {
+   "nome": "08h01",
+   "graus": 209.5,
+   "frenteX": 35.4,
+   "frenteY": 95.6,
+   "trasX": 63.2,
+   "trasY": 78.9,
+   "folha": "frente_esquerda#4"
+  },
+  {
+   "nome": "07h46",
+   "graus": 217.0,
+   "frenteX": 38.7,
+   "frenteY": 95.6,
+   "trasX": 61.4,
+   "trasY": 78.7,
+   "folha": "frente_esquerda#3"
+  },
+  {
+   "nome": "07h15",
+   "graus": 232.6,
+   "frenteX": 47.6,
+   "frenteY": 95.4,
+   "trasX": 64.5,
+   "trasY": 78.3,
+   "folha": "frente_esquerda#2"
+  },
+  {
+   "nome": "06h00",
+   "graus": 270.0,
+   "frenteX": 49.6,
+   "frenteY": 95.8,
+   "trasX": 49.6,
+   "trasY": 95.8,
+   "folha": "frente_direita#1",
+   "umaRoda": true
+  },
+  {
+   "nome": "04h28",
+   "graus": 316.1,
+   "frenteX": 59.3,
+   "frenteY": 95.8,
+   "trasX": 36.0,
+   "trasY": 73.7,
+   "folha": "frente_direita#2"
+  },
+  {
+   "nome": "04h14",
+   "graus": 322.8,
+   "frenteX": 62.3,
+   "frenteY": 95.8,
+   "trasX": 36.6,
+   "trasY": 77.7,
+   "folha": "frente_direita#3"
+  },
+  {
+   "nome": "03h55",
+   "graus": 332.3,
+   "frenteX": 67.1,
+   "frenteY": 95.8,
+   "trasX": 32.8,
+   "trasY": 77.2,
+   "folha": "frente_direita#4"
+  },
+  {
+   "nome": "03h37",
+   "graus": 341.7,
+   "frenteX": 70.9,
+   "frenteY": 95.6,
+   "trasX": 30.0,
+   "trasY": 81.4,
+   "folha": "frente_direita#5"
+  },
+  {
+   "nome": "03h26",
+   "graus": 347.2,
+   "frenteX": 73.4,
+   "frenteY": 95.6,
+   "trasX": 27.8,
+   "trasY": 85.1,
+   "folha": "frente_direita#7"
+  },
+  {
+   "nome": "03h12",
+   "graus": 354.1,
+   "frenteX": 74.6,
+   "frenteY": 95.8,
+   "trasX": 27.7,
+   "trasY": 91.9,
+   "folha": "frente_direita#8"
+  }
+ ]
+}

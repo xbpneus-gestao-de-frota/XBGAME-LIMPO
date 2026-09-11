@@ -111,7 +111,7 @@ describe("as cenas paradas", () => {
      * pacote para ninguem.
      */
     expect(COMPONENTE).toContain("setCena(null);");
-    expect(COMPONENTE).toContain('desenhoDoRumo(fatia, naPorta ? "parado" : "pedalando1")');
+    expect(COMPONENTE).toContain('desenhoDoRumo(fatia, naPorta ? "parado" : "pedalando1", d)');
   });
 
   it("as duas manchas do chao ficam espalhadas, e no chao", () => {

@@ -801,6 +801,51 @@ export class CampaignStore {
     };
   }
 
+  /**
+   * ── QUEM ENTRA JUNTO, SEM PRECO (11/09/2026) ─────────────────────────────
+   *
+   * Ordem dele: "por enquanto gere mesmo formato de renan, devemos ter os
+   * dois na tela coletando e entregando". A Lorena entra como o Renan entrou:
+   * numa cena, e nao num formulario — sem preco e sem vaga na garagem.
+   *
+   * Ela TRAZ a bicicleta dela (e a regra da vaga que ela tomou na lista), entao
+   * entra como AGREGADA: leva a parte do condutor e a unidade nao sai da
+   * garagem da XB. Quem nao traz veiculo nao passa por aqui — cai nas regras
+   * de contratacao de sempre.
+   *
+   * Acontece uma vez so, como a primeira bicicleta.
+   */
+  chegarNaEquipe(candidatoId: string, now = Date.now()): StoreActionResult {
+    const quem = candidato(candidatoId);
+    if (!quem) {
+      return { ok: false, message: "Esse entregador não está no bairro." };
+    }
+    if (this.state.hiredCouriers.some(c => c.candidatoId === quem.id)) {
+      return { ok: false, message: `${quem.nome} já trabalha com você.` };
+    }
+    if (!quem.veiculoProprio) return this.hireOperator(quem.veiculo, now, quem.id);
+    this.atualizarCapacidadeOperacional();
+    const courier: HiredCourier = {
+      id: `courier-${this.state.hiredCouriers.length + 1}` as CourierId,
+      name: quem.nome,
+      hiredAt: Math.max(0, Math.floor(now)),
+      vehicleId: quem.veiculo,
+      vehicleUnitId: `proprio-${quem.id}`,
+      operationalPoints: PONTOS_DO_OPERADOR[quem.veiculo],
+      wageRate: REPASSE.condutor,
+      veiculoProprio: true,
+      candidatoId: quem.id,
+    };
+    this.state.hiredCouriers.push(courier);
+    this.save();
+    return {
+      ok: true,
+      message: `${quem.nome} chegou com a bicicleta dela.`,
+      courierId: courier.id,
+      operationalPointsAvailable: this.operations.available,
+    };
+  }
+
   /** O caso bicicleta, que as telas antigas ja chamavam pelo nome. */
   hireCourier(now = Date.now()): StoreActionResult {
     if (this.companyLevel < FIRST_COURIER_UNLOCK_LEVEL) {

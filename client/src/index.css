@@ -9690,6 +9690,13 @@ body {
   --afundar: 0%;
   transform: translate(var(--pouso-x), calc(var(--pouso-y) + var(--enterrar)))
     translateY(var(--afundar));
+  /*
+   * AO LADO (11/09/2026): dois entregadores na MESMA porta — quem chegou depois
+   * fica ao lado, e nao em cima. O numero vem do componente (AO_LADO); aqui so
+   * o deslizar, para ele nao pular de lugar.
+   */
+  translate: var(--ao-lado-x, 0%) var(--ao-lado-y, 0%);
+  transition: translate 0.45s ease-out;
   pointer-events: none;
   will-change: transform;
   /*
