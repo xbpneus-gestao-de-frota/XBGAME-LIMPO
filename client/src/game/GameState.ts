@@ -375,6 +375,19 @@ interface PersistedCampaignV3 {
   state: CampaignState;
 }
 
+/**
+ * DE QUE PESSOA DO BAIRRO VEIO ESTE OPERADOR, quando o save diz.
+ *
+ * O Renan nao esta na lista de candidatos (ele chega pela cena da caixa), e
+ * mesmo assim o jogo precisa reconhecer o nome dele no save para nao
+ * reencenar a entrega da bicicleta. Entao o que se guarda e uma marca curta e
+ * limpa, nunca um texto qualquer vindo do arquivo salvo.
+ */
+const nomeDeQuemVeio = (valor: unknown): string | undefined =>
+  typeof valor === "string" && /^[a-z0-9-]{1,32}$/.test(valor)
+    ? valor
+    : undefined;
+
 export class CampaignStore {
   private state: CampaignState;
   private pilotedPlan: RouteRunPlan | null = null;
@@ -521,6 +534,31 @@ export class CampaignStore {
 
   private unidadesDe(veiculo: VehicleId): number {
     return Math.max(0, Math.floor(this.state.vehicleFleet[veiculo] ?? 0));
+  }
+
+  /**
+   * A UNIDADE DE QUEM CHEGA POR UMA CENA.
+   *
+   * Quem entra por cena — o Renan com a caixa do drone, a Lorena logo depois —
+   * nao passa pela garagem nem pelo preco: a empresa poe uma bicicleta na mao
+   * dele. Mas bicicleta nao pode nascer a cada vez, e a cena e reencenada toda
+   * vez que o jogo recarrega (a conversa da abertura comeca de novo).
+   *
+   * Entao a regra e uma so: se ja ha unidade livre na garagem, e dela que ele
+   * sai; a empresa so ganha mais uma quando nao ha nenhuma sobrando.
+   */
+  private unidadeParaQuemChega(veiculo: VehicleId): string {
+    const ocupadas = new Set(
+      this.state.hiredCouriers.map(operador => operador.vehicleUnitId)
+    );
+    const total = this.unidadesDe(veiculo);
+    for (let numero = 1; numero <= total; numero += 1) {
+      const unidade = `${veiculo}-${numero}`;
+      if (!ocupadas.has(unidade)) return unidade;
+    }
+    this.state.vehicleFleet[veiculo] = total + 1;
+    this.sincronizarFrota();
+    return `${veiculo}-${total + 1}`;
   }
 
   private operadoresDe(veiculo: VehicleId): HiredCourier[] {
@@ -776,16 +814,15 @@ export class CampaignStore {
     if (this.state.hiredCouriers.some(c => c.candidatoId === candidatoId)) {
       return { ok: false, message: `${nome} já está com a bicicleta.` };
     }
-    this.state.vehicleFleet.bike = Math.max(1, this.unidadesDe("bike") + 1);
-    this.sincronizarFrota();
     this.atualizarCapacidadeOperacional();
+    const vehicleUnitId = this.unidadeParaQuemChega("bike");
 
     const courier: HiredCourier = {
       id: `courier-${this.state.hiredCouriers.length + 1}` as CourierId,
       name: nome,
       hiredAt: Math.max(0, Math.floor(now)),
       vehicleId: "bike",
-      vehicleUnitId: "bike-1",
+      vehicleUnitId,
       operationalPoints: PONTOS_DO_OPERADOR.bike,
       wageRate: REPASSE.transportadora,
       veiculoProprio: false,
@@ -808,10 +845,13 @@ export class CampaignStore {
    * dois na tela coletando e entregando". A Lorena entra como o Renan entrou:
    * numa cena, e nao num formulario — sem preco e sem vaga na garagem.
    *
-   * Ela TRAZ a bicicleta dela (e a regra da vaga que ela tomou na lista), entao
-   * entra como AGREGADA: leva a parte do condutor e a unidade nao sai da
-   * garagem da XB. Quem nao traz veiculo nao passa por aqui — cai nas regras
-   * de contratacao de sempre.
+   * ── E A BICICLETA E DO JOGADOR ───────────────────────────────────────────
+   *
+   * Ordem dele, 11/09/2026: "bicicleta e minha ainda, todos entregadores
+   * entraram com veiculos meus no inicio". Entao quem chega por cena recebe
+   * uma bicicleta DA EMPRESA e entra FROTISTA: leva a fatia de quem dirige
+   * veiculo da XB, e a XB paga a rodagem. So quem realmente traz o proprio
+   * veiculo entra como agregado — e hoje ninguem chega assim pela cena.
    *
    * Acontece uma vez so, como a primeira bicicleta.
    */
@@ -823,24 +863,28 @@ export class CampaignStore {
     if (this.state.hiredCouriers.some(c => c.candidatoId === quem.id)) {
       return { ok: false, message: `${quem.nome} já trabalha com você.` };
     }
-    if (!quem.veiculoProprio) return this.hireOperator(quem.veiculo, now, quem.id);
     this.atualizarCapacidadeOperacional();
+    const traz = quem.veiculoProprio;
     const courier: HiredCourier = {
       id: `courier-${this.state.hiredCouriers.length + 1}` as CourierId,
       name: quem.nome,
       hiredAt: Math.max(0, Math.floor(now)),
       vehicleId: quem.veiculo,
-      vehicleUnitId: `proprio-${quem.id}`,
+      vehicleUnitId: traz
+        ? `proprio-${quem.id}`
+        : this.unidadeParaQuemChega(quem.veiculo),
       operationalPoints: PONTOS_DO_OPERADOR[quem.veiculo],
-      wageRate: REPASSE.condutor,
-      veiculoProprio: true,
+      wageRate: traz ? REPASSE.condutor : REPASSE.transportadora,
+      veiculoProprio: traz,
       candidatoId: quem.id,
     };
     this.state.hiredCouriers.push(courier);
     this.save();
     return {
       ok: true,
-      message: `${quem.nome} chegou com a bicicleta dela.`,
+      message: traz
+        ? `${quem.nome} chegou com a bicicleta dela.`
+        : `${quem.nome} ficou com uma bicicleta da XB.`,
       courierId: courier.id,
       operationalPointsAvailable: this.operations.available,
     };
@@ -1318,7 +1362,8 @@ export class CampaignStore {
     const costBreakdown = {
       ...basePlan.costBreakdown,
       labor: salary,
-      total: basePlan.costBreakdown.total - basePlan.costBreakdown.labor + salary,
+      total:
+        basePlan.costBreakdown.total - basePlan.costBreakdown.labor + salary,
     };
     const plan: RouteRunPlan = {
       ...basePlan,
@@ -2056,7 +2101,12 @@ export class CampaignStore {
             )
           : frotaSalva[vehicle.id];
       vehicleFleet[vehicle.id] = Math.round(
-        clamp(salvo, vehicle.id === "bike" ? 1 : 0, teto, vehicle.id === "bike" ? 1 : 0)
+        clamp(
+          salvo,
+          vehicle.id === "bike" ? 1 : 0,
+          teto,
+          vehicle.id === "bike" ? 1 : 0
+        )
       );
     });
     const bikeFleetSize = vehicleFleet.bike;
@@ -2482,16 +2532,36 @@ export class CampaignStore {
         ? (raw.vehicleId as VehicleId)
         : "bike";
       /*
-       * A unidade tem de ser da classe do operador e tem de existir na
-       * garagem. A unidade 1 nunca e de operador: ela e a que o jogador
-       * pilota.
+       * ── A UNIDADE TEM DE EXISTIR, E A NUMERO 1 TAMBEM CONTA ─────────────
+       *
+       * Ate 08/09 a unidade 1 era do jogador, e nenhum operador podia estar
+       * nela. Desde a cena da caixa quem joga NAO pilota: a primeira
+       * bicicleta e do Renan, e ela e a unidade 1.
+       *
+       * Enquanto esta linha exigia unidade 2 ou maior, TODA a equipe sumia do
+       * save ao recarregar o jogo — o Renan junto — e a bicicleta dele ficava
+       * orfa na garagem. Medido na bancada: depois de um F5, o balcao nao
+       * tinha ninguem para mandar.
+       *
+       * O agregado e o outro caso: a unidade dele nao e da garagem e leva o
+       * nome dele. So vale se quem esta na lista do bairro traz mesmo veiculo
+       * proprio — assim um save velho nao segura um agregado que deixou de
+       * existir.
        */
-      const casa = new RegExp(`^${classe}-([2-9]\\d*)$`).exec(unidadeCrua);
+      const donoDaVaga =
+        typeof raw.candidatoId === "string"
+          ? candidato(raw.candidatoId)
+          : undefined;
+      const agregado =
+        Boolean(donoDaVaga?.veiculoProprio) &&
+        unidadeCrua === `proprio-${donoDaVaga!.id}`;
+      const casa = new RegExp(`^${classe}-([1-9]\\d*)$`).exec(unidadeCrua);
       const numeroDaUnidade = casa ? Number(casa[1]) : Number.NaN;
+      if (units.has(unidadeCrua)) continue;
       if (
-        !Number.isInteger(numeroDaUnidade) ||
-        numeroDaUnidade > Math.floor(frota[classe] ?? 0) ||
-        units.has(unidadeCrua)
+        !agregado &&
+        (!Number.isInteger(numeroDaUnidade) ||
+          numeroDaUnidade > Math.floor(frota[classe] ?? 0))
       ) {
         continue;
       }
@@ -2500,8 +2570,9 @@ export class CampaignStore {
       );
       if (pointsUsed + operationalPoints > operationalPointsCapacity) continue;
       const jaDaClasse = porClasse.get(classe) ?? 0;
-      // Nunca mais operadores de uma classe do que unidades livres dela.
-      if (jaDaClasse >= Math.max(0, Math.floor(frota[classe] ?? 0) - 1)) {
+      // Nunca mais operadores da XB numa classe do que unidades dela na
+      // garagem. O agregado nao entra nesta conta: o veiculo e dele.
+      if (!agregado && jaDaClasse >= Math.floor(frota[classe] ?? 0)) {
         continue;
       }
       const fallbackName = `Operador XB ${String(couriers.length + 1).padStart(2, "0")}`;
@@ -2515,11 +2586,25 @@ export class CampaignStore {
         vehicleId: classe,
         vehicleUnitId: unidadeCrua,
         operationalPoints,
-        wageRate: clamp(raw.wageRate, 0.05, 0.5, REPASSE.transportadora),
+        /*
+         * O TETO DA FATIA MUDA COM O DONO DO VEICULO. Enquanto era 0,5 para
+         * todo mundo, o agregado voltava do save levando metade do frete em
+         * vez dos 80% que a conta do freight.ts da a quem banca a rodagem.
+         */
+        wageRate: agregado
+          ? clamp(raw.wageRate, 0.5, REPASSE.condutor, REPASSE.condutor)
+          : clamp(raw.wageRate, 0.05, 0.5, REPASSE.transportadora),
+        /*
+         * DE QUEM E O VEICULO E DE ONDE A PESSOA VEIO tambem voltam do save.
+         * Sem os dois, o jogo recarregado nao sabia quem ja estava na equipe
+         * e reencenava a chegada de todo mundo.
+         */
+        veiculoProprio: agregado,
+        candidatoId: donoDaVaga?.id ?? nomeDeQuemVeio(raw.candidatoId),
       });
       ids.add(raw.id);
       units.add(unidadeCrua);
-      porClasse.set(classe, jaDaClasse + 1);
+      porClasse.set(classe, jaDaClasse + (agregado ? 0 : 1));
       pointsUsed += operationalPoints;
     }
     return couriers;

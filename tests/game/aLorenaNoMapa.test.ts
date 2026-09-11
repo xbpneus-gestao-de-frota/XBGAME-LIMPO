@@ -161,15 +161,19 @@ describe("a regra do giro vale para ela tambem", () => {
 });
 
 describe("ela esta na equipe, no lugar da menina de rabo de cavalo", () => {
-  it("e a segunda da lista do bairro, com a bicicleta dela e o retrato dela", () => {
+  it("e a segunda da lista do bairro, sem veiculo proprio, com o retrato dela", () => {
     expect(CANDIDATOS[1]!.id).toBe(LORENA.id);
     expect(CANDIDATOS[1]!.nome).toBe("Lorena");
-    expect(CANDIDATOS[1]!.veiculoProprio).toBe(true);
+    /*
+     * Ordem dele, 11/09/2026: "bicicleta e minha ainda, todos entregadores
+     * entraram com veiculos meus no inicio". Ela nao traz bicicleta nenhuma.
+     */
+    expect(CANDIDATOS[1]!.veiculoProprio).toBe(false);
     expect(CANDIDATOS.some(c => c.nome === "Marlene")).toBe(false);
     expect(retratoDoCandidato(LORENA.id)).toBe(GAME_ASSETS.lorenaRetrato);
   });
 
-  it("entra sem preco, como agregada, e uma vez so", () => {
+  it("entra sem preco, com uma bicicleta da XB, e uma vez so", () => {
     const store = new CampaignStore();
     store.entregarAPrimeiraBike("Renan", "renan");
     const antes = store.value.credits;
@@ -178,10 +182,15 @@ describe("ela esta na equipe, no lugar da menina de rabo de cavalo", () => {
     expect(store.value.credits).toBe(antes);
     const ela = store.value.hiredCouriers.find(c => c.candidatoId === LORENA.id);
     expect(ela?.name).toBe("Lorena");
-    expect(ela?.veiculoProprio).toBe(true);
-    expect(ela?.wageRate).toBe(REPASSE.condutor);
-    // a bicicleta dela nao entra na garagem da XB
-    expect(store.value.vehicleFleet.bike).toBe(1);
+    /*
+     * FROTISTA como o Renan: a bicicleta e da empresa, entao ela leva a fatia
+     * de quem dirige veiculo da XB e a XB paga a rodagem.
+     */
+    expect(ela?.veiculoProprio).toBe(false);
+    expect(ela?.wageRate).toBe(REPASSE.transportadora);
+    // a bicicleta dela E da garagem da XB: a empresa passa a ter duas
+    expect(store.value.vehicleFleet.bike).toBe(2);
+    expect(ela?.vehicleUnitId).toBe("bike-2");
     expect(store.chegarNaEquipe(LORENA.id).ok).toBe(false);
     expect(store.value.hiredCouriers).toHaveLength(2);
   });

@@ -70,15 +70,20 @@ export const CANDIDATOS: readonly Candidato[] = [
   /*
    * A LORENA (11/09/2026). Ordem dele: "a Lorena entre no lugar da menina de
    * rabo de cavalo" — a segunda da lista, que se chamava Marlene (e ainda
-   * dividia o nome com a Dona Marlene da casa 6). Bailarina; veio com a
-   * bicicleta dela. Tem desenho proprio no mapa (ver osQuePedalam).
+   * dividia o nome com a Dona Marlene da casa 6). Bailarina. Tem desenho
+   * proprio no mapa (ver osQuePedalam).
+   *
+   * A BICICLETA DELA E DA XB. Ordem dele, 11/09/2026: "bicicleta e minha
+   * ainda, todos entregadores entraram com veiculos meus no inicio". Ela
+   * chegou sem veiculo e recebeu uma bicicleta da empresa, como o Renan —
+   * por isso e FROTISTA, e nao agregada.
    */
   {
     id: "cand-lorena",
     nome: "Lorena",
-    veiculoProprio: true,
+    veiculoProprio: false,
     veiculo: "bike",
-    sobre: "Bailarina. Veio com a bicicleta dela",
+    sobre: "Sem veículo. Bailarina",
   },
   {
     id: "cand-du",
