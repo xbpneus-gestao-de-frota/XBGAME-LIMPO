@@ -38,6 +38,15 @@ import {
   type RouteConfig,
 } from "./progression";
 import {
+  ACESSORIOS,
+  ACESSORIOS_ZERADOS,
+  MAX_NIVEL_DO_ACESSORIO,
+  acessorio as configDoAcessorio,
+  custoDoAcessorio,
+  type IdDoAcessorio,
+  type NiveisDosAcessorios,
+} from "./osAcessorios";
+import {
   TIRE_COMPOUNDS,
   conditionDurationMultiplier,
   conditionRevenueMultiplier,
@@ -228,6 +237,8 @@ export const createDefaultCampaignState = (): CampaignState => ({
   dailyMissionDay: dayKey(),
   dailyMissions: [],
   bikePartLevels: emptyBikePartLevels(),
+  /* Ninguem comeca com garrafa, protetor nem cinto: sao a primeira compra. */
+  acessorioLevels: { ...ACESSORIOS_ZERADOS },
   /*
    * ── A EMPRESA NASCE SEM BICICLETA ────────────────────────────────────────
    *
@@ -316,6 +327,11 @@ const createDemoState = (): CampaignState => ({
     chain: MAX_BIKE_PART_LEVEL,
     brake: MAX_BIKE_PART_LEVEL,
     wheels: MAX_BIKE_PART_LEVEL,
+  },
+  acessorioLevels: {
+    agua: MAX_NIVEL_DO_ACESSORIO,
+    sol: MAX_NIVEL_DO_ACESSORIO,
+    carga: MAX_NIVEL_DO_ACESSORIO,
   },
   vehicleFleet: {
     bike: MAX_MVP_BIKE_FLEET,
@@ -471,6 +487,50 @@ export class CampaignStore {
       this.pilotedPlan?.vehicleId === id ||
       this.state.activeDeliveries.some(delivery => delivery.vehicleId === id)
     );
+  }
+
+  /**
+   * COMPRAR UM DEGRAU DE ACESSORIO.
+   *
+   * Ordem dele, 13/09/2026: "acessorios podem entrar como garrafa de agua
+   * maior, protetor solar, etc, isso sendo melhorado".
+   *
+   * E a mesma porta da peca de bicicleta, de proposito — confere nivel da
+   * empresa, confere teto, confere caixa, desconta e sobe um. A diferenca e
+   * que acessorio nao depende da frota estar parada: uma garrafa se compra com
+   * o entregador na rua, e ele bebe dela no mesmo dia.
+   */
+  upgradeAcessorio(id: IdDoAcessorio): StoreActionResult {
+    const item = ACESSORIOS.find(a => a.id === id);
+    if (!item) return { ok: false, message: "Acessório não encontrado." };
+    if (this.companyLevel < item.unlockLevel) {
+      return {
+        ok: false,
+        message: `${item.shortName} libera no nível ${item.unlockLevel}.`,
+      };
+    }
+    const atual = this.state.acessorioLevels[id] ?? 0;
+    const custo = custoDoAcessorio(id, atual);
+    if (custo === null) {
+      return {
+        ok: false,
+        message: `${item.shortName} já está no nível máximo.`,
+      };
+    }
+    if (this.state.credits < custo) {
+      return {
+        ok: false,
+        message: `Faltam XB$ ${custo - this.state.credits} para ${item.shortName}.`,
+      };
+    }
+    this.state.credits -= custo;
+    this.state.acessorioLevels[id] = atual + 1;
+    this.recordMission("upgrade", 1);
+    this.save();
+    return {
+      ok: true,
+      message: `${configDoAcessorio(id).tiers[atual]?.name ?? item.name} comprado.`,
+    };
   }
 
   upgradeBikePart(partId: BikePartId): StoreActionResult {
@@ -2067,6 +2127,23 @@ export class CampaignStore {
       );
     });
     /*
+     * Save antigo nao tem acessorio nenhum, e tudo bem: quem salvou antes de
+     * 13/09 volta sem garrafa e sem protetor, que e exatamente a operacao que
+     * aquele save descrevia.
+     */
+    const acessorioLevels: NiveisDosAcessorios = { ...ACESSORIOS_ZERADOS };
+    ACESSORIOS.forEach(item => {
+      acessorioLevels[item.id] = Math.round(
+        clamp(
+          (parsed.acessorioLevels as Partial<NiveisDosAcessorios> | undefined)
+            ?.[item.id],
+          0,
+          MAX_NIVEL_DO_ACESSORIO,
+          0
+        )
+      );
+    });
+    /*
      * A frota agora e por classe. Save antigo so tinha `bikeFleetSize`, entao
      * ele vira a contagem de bicicletas e o resto comeca em zero — que e
      * exatamente a operacao que aquele save descrevia.
@@ -2207,6 +2284,7 @@ export class CampaignStore {
           : dayKey(),
       dailyMissions: this.sanitizeMissions(parsed.dailyMissions),
       bikePartLevels,
+      acessorioLevels,
       vehicleFleet,
       bikeFleetSize,
       operationalPointsCapacity,
@@ -2807,6 +2885,18 @@ export class CampaignStore {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * SALVAR AGORA, sem esperar a proxima jogada.
+   *
+   * Todo movimento do jogo ja salva sozinho, entao isto nao e a rede de
+   * seguranca do dia a dia: e para o momento em que o jogo VAI PARAR por
+   * decisao de fora — o descanso do celular — e ninguem pode ficar com a
+   * duvida de ter perdido a ultima entrega.
+   */
+  salvarAgora(): void {
+    this.save();
   }
 
   private save(): void {

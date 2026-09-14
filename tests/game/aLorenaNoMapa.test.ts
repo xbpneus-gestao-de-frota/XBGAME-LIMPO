@@ -34,7 +34,10 @@ import {
   LORENA_JA_NA_EQUIPE,
   quemPedalaPeloNome,
 } from "../../client/src/game/osQuePedalam";
-import { CANDIDATOS, retratoDoCandidato } from "../../client/src/game/candidatos";
+import {
+  CANDIDATOS,
+  retratoDoCandidato,
+} from "../../client/src/game/candidatos";
 import { GAME_ASSETS } from "../../client/src/game/assets";
 import { CampaignStore } from "../../client/src/game/GameState";
 import { REPASSE } from "../../client/src/game/freight";
@@ -56,7 +59,8 @@ const DT = 1 / 60;
 
 function todasAsRotas(): PontoNoMapa[][] {
   const saida: PontoNoMapa[][] = [];
-  for (const destino of [...COMERCIOS, ...CASAS]) saida.push(rota(BASE.em, destino.em));
+  for (const destino of [...COMERCIOS, ...CASAS])
+    saida.push(rota(BASE.em, destino.em));
   for (let i = 0; i < COMERCIOS.length; i += 1)
     for (let j = 0; j < CASAS.length; j += 7)
       saida.push(rota(COMERCIOS[i]!.em, CASAS[j]!.em));
@@ -67,14 +71,18 @@ describe("a Lorena tem os desenhos dela", () => {
   it("cada rumo dela tem o arquivo dela, com o nome dela", () => {
     expect(DA_LORENA.moldes.length).toBeGreaterThanOrEqual(20);
     for (const nome of DA_LORENA.rumos)
-      expect(existsSync(`${ASSETS}/XB_Lorena_pedalando1_${nome}.webp`)).toBe(true);
+      expect(existsSync(`${ASSETS}/XB_Lorena_pedalando1_${nome}.webp`)).toBe(
+        true
+      );
   });
 
   it("as oito cenas na porta sao dela, e o retrato tambem", () => {
     for (const pose of ["coletando", "entregando"])
       for (const lado of ["esquerda", "direita"])
         for (const tempo of [1, 2])
-          expect(existsSync(`${ASSETS}/XB_Lorena_${pose}_${lado}_${tempo}.webp`)).toBe(true);
+          expect(
+            existsSync(`${ASSETS}/XB_Lorena_${pose}_${lado}_${tempo}.webp`)
+          ).toBe(true);
     expect(existsSync(`client/public${GAME_ASSETS.lorenaRetrato}`)).toBe(true);
   });
 
@@ -102,62 +110,61 @@ describe("o Renan nao mudou nada", () => {
 });
 
 describe("a regra do giro vale para ela tambem", () => {
-  it(
-    "na velocidade do balcao, a tela dela nunca pula mais de um desenho",
-    () => {
-      const c = DA_LORENA;
-      const rapido = 50;
-      let pulos = 0;
-      let passosDeGiro = 0;
-      for (const caminho of todasAsRotas()) {
-        const passos = montarPassos(caminho);
-        const fim = passos[passos.length - 1]?.ate ?? 0;
-        let andado = 0;
-        let q = 0;
-        let escolha: EscolhaDeRumo | null = null;
-        let pendente: TrocaPendente | null = null;
-        let rumo: number | null = null;
-        let tela: number | null = null;
-        let telaEm = 0;
-        while (andado < fim) {
-          const ms = q * DT * 1000;
-          const alvo = rumoSuavizado(passos, andado, olhadaPara(rapido));
-          if (alvo !== null) {
-            rumo = virarPara(rumo, alvo, DT);
-            const proposta = escolherRumo(
-              escolha,
-              rumo,
-              ms,
-              FOLGA_GRAUS,
-              ESPERA_MS,
-              COSTURA_GRAUS,
-              c
-            );
-            if (escolha) {
-              const d = confirmarTroca(escolha, proposta, pendente, ms);
-              pendente = d.pendente;
-              escolha = d.escolha;
-            } else escolha = proposta;
-            if (tela === null) {
-              tela = escolha.fatia;
-              telaEm = ms;
-            } else if (tela !== escolha.fatia && ms - telaEm >= PASSO_DO_GIRO_MS) {
-              const prox = proximoNoGiro(tela, escolha.fatia, c);
-              if (Math.abs(desenhosAte(tela, prox, c)) > 1) pulos += 1;
-              if (prox !== escolha.fatia) passosDeGiro += 1;
-              tela = prox;
-              telaEm = ms;
-            }
+  it("na velocidade do balcao, a tela dela nunca pula mais de um desenho", () => {
+    const c = DA_LORENA;
+    const rapido = 50;
+    let pulos = 0;
+    let passosDeGiro = 0;
+    for (const caminho of todasAsRotas()) {
+      const passos = montarPassos(caminho);
+      const fim = passos[passos.length - 1]?.ate ?? 0;
+      let andado = 0;
+      let q = 0;
+      let escolha: EscolhaDeRumo | null = null;
+      let pendente: TrocaPendente | null = null;
+      let rumo: number | null = null;
+      let tela: number | null = null;
+      let telaEm = 0;
+      while (andado < fim) {
+        const ms = q * DT * 1000;
+        const alvo = rumoSuavizado(passos, andado, olhadaPara(rapido));
+        if (alvo !== null) {
+          rumo = virarPara(rumo, alvo, DT);
+          const proposta = escolherRumo(
+            escolha,
+            rumo,
+            ms,
+            FOLGA_GRAUS,
+            ESPERA_MS,
+            COSTURA_GRAUS,
+            c
+          );
+          if (escolha) {
+            const d = confirmarTroca(escolha, proposta, pendente, ms);
+            pendente = d.pendente;
+            escolha = d.escolha;
+          } else escolha = proposta;
+          if (tela === null) {
+            tela = escolha.fatia;
+            telaEm = ms;
+          } else if (
+            tela !== escolha.fatia &&
+            ms - telaEm >= PASSO_DO_GIRO_MS
+          ) {
+            const prox = proximoNoGiro(tela, escolha.fatia, c);
+            if (Math.abs(desenhosAte(tela, prox, c)) > 1) pulos += 1;
+            if (prox !== escolha.fatia) passosDeGiro += 1;
+            tela = prox;
+            telaEm = ms;
           }
-          andado += rapido * DT;
-          q += 1;
         }
+        andado += rapido * DT;
+        q += 1;
       }
-      expect(pulos).toBe(0);
-      expect(passosDeGiro).toBeGreaterThan(100);
-    },
-    60_000
-  );
+    }
+    expect(pulos).toBe(0);
+    expect(passosDeGiro).toBeGreaterThan(100);
+  }, 60_000);
 });
 
 describe("ela esta na equipe, no lugar da menina de rabo de cavalo", () => {
@@ -180,7 +187,9 @@ describe("ela esta na equipe, no lugar da menina de rabo de cavalo", () => {
     const r = store.chegarNaEquipe(LORENA.id);
     expect(r.ok).toBe(true);
     expect(store.value.credits).toBe(antes);
-    const ela = store.value.hiredCouriers.find(c => c.candidatoId === LORENA.id);
+    const ela = store.value.hiredCouriers.find(
+      c => c.candidatoId === LORENA.id
+    );
     expect(ela?.name).toBe("Lorena");
     /*
      * FROTISTA como o Renan: a bicicleta e da empresa, entao ela leva a fatia
@@ -195,9 +204,18 @@ describe("ela esta na equipe, no lugar da menina de rabo de cavalo", () => {
     expect(store.value.hiredCouriers).toHaveLength(2);
   });
 
-  it("por enquanto ela ja comeca na equipe, e isso e um interruptor", () => {
-    expect(LORENA_JA_NA_EQUIPE).toBe(true);
+  /*
+   * ORDEM DELE, 13/09/2026: "ainda nao entramos na fase dos pedidos, Lorena
+   * ainda nao deve aparecer na equipe". O interruptor desligou.
+   *
+   * O teste continua exigindo que a LIGACAO exista no jogo — desligar nao pode
+   * virar apagar. No dia em que ela for contratada pela historia, e virar o
+   * interruptor e esta linha de volta.
+   */
+  it("por enquanto ela NAO comeca na equipe, e isso e um interruptor", () => {
+    expect(LORENA_JA_NA_EQUIPE).toBe(false);
     expect(JOGO).toContain("handleRef.current?.chegarNaEquipe(LORENA.id)");
+    expect(JOGO).toContain("if (!LORENA_JA_NA_EQUIPE");
   });
 });
 
@@ -226,7 +244,9 @@ describe("os dois na tela, coletando e entregando", () => {
     expect(JOGO).toContain("aoLado: lorenaAoLado");
     expect(MAPA).toContain("aoLado={o.aoLado}");
     const CSS = readFileSync("client/src/index.css", "utf8");
-    expect(CSS).toContain("translate: var(--ao-lado-x, 0%) var(--ao-lado-y, 0%);");
+    expect(CSS).toContain(
+      "translate: var(--ao-lado-x, 0%) var(--ao-lado-y, 0%);"
+    );
     expect(CSS).toContain("transition: translate 0.45s ease-out;");
   });
 });

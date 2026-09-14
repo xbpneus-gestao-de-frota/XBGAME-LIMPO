@@ -28,6 +28,7 @@ import { CANAIS, PUBLICACOES } from "./canais";
  * pedidos tem de achar tudo num arquivo so.
  */
 import { PRIMEIRO_NUMERO, PRIMEIRO_PEDIDO_EM_S } from "./entregaRapida";
+import { minutoDoDia } from "../oRelogioDoBairro";
 import type { EmRota } from "./aRota";
 import type { ChamadaChegando } from "./chamadas";
 import type {
@@ -61,6 +62,14 @@ import type {
 export interface EstadoDoApp {
   /** O relogio do jogo, em minutos do dia. */
   minuto: number;
+  /**
+   * O FOLEGO DE CADA ENTREGADOR, pelo nome — a mesma chave das rotas.
+   *
+   * Quem nao esta aqui esta inteiro: ninguem precisa ser cadastrado para
+   * comecar a trabalhar, e um entregador novo nao nasce cansado. Ver
+   * `oFolego`.
+   */
+  folego: Record<string, number>;
   mensagens: readonly Mensagem[];
   /** Onde o roteiro de cada conversa parou. */
   passo: Readonly<Record<IdContato, string>>;
@@ -216,12 +225,22 @@ export function hora(minuto: number): string {
  * nasce com a primeira fala de cada conversa ja esperando, nao lida — que e
  * como um telefone de verdade esta quando a pessoa acorda.
  */
-export function estadoInicial(minuto = 9 * 60): EstadoDoApp {
+/*
+ * A HORA DE PARTIDA SAI DO RELOGIO, e nao de um numero escrito aqui.
+ *
+ * Era nove da manha, escolhido a mao. Como o relogio do balcao comeca em zero e
+ * zero e o amanhecer, o aplicativo abria as nove enquanto o bairro estava
+ * amanhecendo — duas horas do dia em desacordo logo na primeira tela.
+ *
+ * Ordem dele, 12/09/2026: "primeiro atualize relogio um apenas".
+ */
+export function estadoInicial(minuto = minutoDoDia(0)): EstadoDoApp {
   const reputacao: Record<IdContato, number> = {};
   for (const c of CONTATOS) reputacao[c.id] = REPUTACAO_INICIAL;
 
   return {
     minuto,
+    folego: {},
     mensagens: [],
     passo: {},
     entregues: {},

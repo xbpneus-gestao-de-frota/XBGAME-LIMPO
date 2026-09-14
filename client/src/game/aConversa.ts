@@ -97,3 +97,38 @@ export const ULTIMA_FALA_DA_ABERTURA =
  * perdeu alguma coisa que ainda estava sendo dita.
  */
 export const ESPERA_PARA_FECHAR_SOZINHO_MS = 2600;
+
+/**
+ * ── A SEGUNDA CHAMADA: a da pizza ─────────────────────────────────────────
+ *
+ * Ordem dele, 13/09/2026: "vamos para uma nova chamada de video de Renan, apos
+ * ele dizer 'comi todas as pizzas', manda a imagem, dai dizemos 'tudo bem
+ * quando estiver melhor me avisa por favor'".
+ *
+ * O passo onde essa conversa cai. Mesma porta da primeira: o telefone toca, a
+ * cena roda, a linha morre e o aplicativo abre JA neste passo.
+ */
+export const PASSO_DA_PIZZA = "apizza-comida";
+
+/**
+ * QUANTO O BAIRRO FICA QUIETO antes de o telefone tocar de novo.
+ *
+ * Mais que os sete segundos da primeira, de proposito. A primeira ligacao
+ * chega num bairro que a pessoa nunca viu, e sete segundos ja sao muito tempo
+ * parado. Esta chega depois que a praca esvaziou — e o silencio da praca
+ * vazia e justamente o que faz o telefone tocando significar alguma coisa.
+ *
+ * Tambem e o tempo de ele ter ido, comido e voltado: ligar rapido demais
+ * contaria que ele comeu quatro pizzas em dez segundos.
+ */
+export const ESPERA_DA_SEGUNDA_CHAMADA_MS = 14000;
+
+/**
+ * A ULTIMA FRASE DESTE PEDACO — a que fecha o aplicativo de novo.
+ *
+ * Mesma regra da abertura: o jogo reconhece o FIM pela frase que a pessoa
+ * acabou de ler, e nao por um contador. Se ela mudar no roteiro, muda aqui
+ * junto.
+ */
+export const ULTIMA_FALA_DA_PIZZA =
+  "Tudo bem. Quando estiver melhor me avisa, por favor";

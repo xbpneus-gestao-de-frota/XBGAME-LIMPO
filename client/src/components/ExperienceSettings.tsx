@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Film,
   Gauge,
+  KeyRound,
   Settings2,
   UserRoundCog,
   Vibrate,
@@ -12,6 +13,13 @@ import type { FeedbackPreferences } from "@/game/feedback";
 import type { QualityPreference, ResolvedQualityPreset } from "@/game/quality";
 import { useFocusTrap } from "./useFocusTrap";
 import { esquecerAbertura } from "@/game/openingScene";
+import {
+  chaveDeTeste,
+  esquecerChaveDeTeste,
+  fimDaChave,
+  guardarChaveDeTeste,
+} from "@/game/xbwapp/aChaveDeTeste";
+import { esquecerSeIaEstaAcoplada } from "@/game/xbwapp/atendimento";
 
 const qualityOptions: ReadonlyArray<{
   id: QualityPreference;
@@ -72,6 +80,25 @@ export default function ExperienceSettings({
   const wasOpenRef = useRef(open);
   const [aberturaLiberada, setAberturaLiberada] = useState(false);
   const [apresentacaoLiberada, setApresentacaoLiberada] = useState(false);
+
+  /*
+   * O CAMPO DA CHAVE — enquanto o jogo está em teste (ordem dele, 13/09/2026).
+   *
+   * `digitada` é o que está no campo agora; `ligada` é o fim da chave que já
+   * ficou guardada. São coisas diferentes de propósito: depois de guardar, o
+   * campo esvazia e a chave NUNCA mais aparece inteira na tela.
+   */
+  const [digitada, setDigitada] = useState("");
+  const [ligada, setLigada] = useState("");
+  const [recadoDaChave, setRecadoDaChave] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setLigada(fimDaChave());
+      setDigitada("");
+      setRecadoDaChave("");
+    }
+  }, [open]);
 
   useEffect(() => {
     let focusFrame: number | null = null;
@@ -235,6 +262,128 @@ export default function ExperienceSettings({
             />
             <i aria-hidden="true" />
           </label>
+        </div>
+
+        {/*
+          A CHAVE DA INTELIGÊNCIA — só enquanto o jogo está em teste.
+
+          Ordem dele, 13/09/2026. A janela preta já pergunta a chave uma vez,
+          antes de o jogo subir; o que faltava era poder ligar, desligar e
+          trocar NO MEIO DA PARTIDA, para comparar a fala do bairro com a fala
+          da inteligência na mesma conversa sem fechar nada.
+
+          O estilo vai aqui dentro, e não na folha de estilo: a outra equipe
+          está mexendo nela agora, e este bloco sai inteiro quando o teste
+          acabar. Duas mãos no mesmo arquivo é conflito na certa.
+        */}
+        <div className="experience-settings-section">
+          <div className="experience-settings-heading">
+            <KeyRound aria-hidden="true" />
+            <span>
+              <strong>INTELIGÊNCIA DOS MORADORES</strong>
+              <small>
+                {ligada
+                  ? `LIGADA · ${ligada}`
+                  : "DESLIGADA · SÓ AS FALAS DO BAIRRO"}
+              </small>
+            </span>
+          </div>
+
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            <input
+              type="password"
+              value={digitada}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder={ligada ? "Colar outra chave" : "Colar a chave aqui"}
+              aria-label="Chave da inteligência"
+              onChange={event => {
+                setDigitada(event.currentTarget.value);
+                setRecadoDaChave("");
+              }}
+              onKeyDown={event => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  event.currentTarget.blur();
+                }
+              }}
+              style={{
+                flex: "1 1 12rem",
+                minWidth: 0,
+                padding: "0.7rem 0.85rem",
+                borderRadius: "0.6rem",
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: "rgba(0,0,0,0.28)",
+                color: "inherit",
+                font: "inherit",
+                letterSpacing: "0.08em",
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                if (guardarChaveDeTeste(digitada)) {
+                  /*
+                   * O jogo desiste da inteligência na primeira recusa por
+                   * falta de chave, para não bater no servidor a cada frase.
+                   * Guardar a chave tem de apagar essa desistência, senão ela
+                   * só valeria na próxima partida.
+                   */
+                  esquecerSeIaEstaAcoplada();
+                  setLigada(fimDaChave());
+                  setDigitada("");
+                  setRecadoDaChave("Pronto. Os moradores já podem usar.");
+                } else {
+                  setRecadoDaChave(
+                    "Isso não parece uma chave. Ela começa com gsk_ e não tem espaços."
+                  );
+                }
+              }}
+              disabled={digitada.trim() === ""}
+              style={{
+                padding: "0.7rem 1.1rem",
+                borderRadius: "0.6rem",
+                border: "1px solid rgba(255,255,255,0.18)",
+                background: digitada.trim()
+                  ? "rgba(56,189,248,0.22)"
+                  : "rgba(255,255,255,0.06)",
+                color: "inherit",
+                font: "inherit",
+                fontWeight: 600,
+                cursor: digitada.trim() ? "pointer" : "default",
+              }}
+            >
+              Guardar
+            </button>
+            {ligada && (
+              <button
+                type="button"
+                onClick={() => {
+                  esquecerChaveDeTeste();
+                  esquecerSeIaEstaAcoplada();
+                  setLigada("");
+                  setDigitada("");
+                  setRecadoDaChave("Tirei a chave. O bairro continua falando.");
+                }}
+                style={{
+                  padding: "0.7rem 1.1rem",
+                  borderRadius: "0.6rem",
+                  border: "1px solid rgba(255,255,255,0.18)",
+                  background: "rgba(255,255,255,0.06)",
+                  color: "inherit",
+                  font: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                Tirar
+              </button>
+            )}
+          </div>
+
+          <p className="quality-choice-note">
+            {recadoDaChave ||
+              "A chave fica só neste computador, neste navegador. Não vai para arquivo nenhum nem para o repositório. O jogo funciona inteiro sem ela — a chave só acrescenta a fala em quatro momentos."}
+          </p>
         </div>
 
         <div className="experience-settings-section">

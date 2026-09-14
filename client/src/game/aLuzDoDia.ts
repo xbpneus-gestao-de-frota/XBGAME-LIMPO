@@ -25,15 +25,23 @@
  * fracao nos dois arquivos e como ela envelhece torta.
  */
 
+import { SEGUNDOS_DO_DIA } from "./oRelogioDoBairro";
+
 /**
- * QUANTO DURA UM DIA DO BAIRRO.
+ * QUANTO DURA UM DIA DO BAIRRO — agora vem do relogio do bairro.
  *
- * Quatro minutos. Uma corrida inteira leva de trinta segundos a um minuto de
- * tela, entao ela atravessa perto de um quarto do dia: da para ver a luz virar
- * sem que ela vire NA CARA de ninguem. Mais curto vira efeito e chama atencao;
- * mais longo e a pessoa nunca ve o entardecer.
+ * Ate 12/09/2026 este numero era quatro minutos, escrito aqui, e a luz rodava
+ * numa animacao solta com esse tempo. Ficava bonito e era mentira: enquanto o
+ * balcao vivia um dia de dez minutos, o sol nascia duas vezes e meia.
+ *
+ * Ordem dele, 12/09/2026: "primeiro atualize relogio um apenas". Agora quem
+ * diz quanto dura um dia e `oRelogioDoBairro`, que le a medida do balcao. A luz
+ * deixou de ter um dia proprio.
+ *
+ * O numero continua exportado daqui porque e daqui que o mapa sempre o leu —
+ * quem chama nao precisa saber que ele mudou de casa.
  */
-export const DIA_EM_MS = 4 * 60 * 1000;
+export const DIA_EM_MS = SEGUNDOS_DO_DIA * 1000;
 
 /** Um marco do ciclo: em que ponto do dia ele acontece, e como se chama. */
 export interface MarcoDoDia {
@@ -55,9 +63,22 @@ export const MARCOS: readonly MarcoDoDia[] = [
   { em: 0.88, nome: "entardecer" },
 ];
 
-/** Em que parte do dia o bairro esta, para uma fracao de 0 a 1. */
+/**
+ * Em que parte do dia o bairro esta, para uma fracao de 0 a 1.
+ *
+ * ── POR QUE A VOLTA PARA DENTRO DE 0..1 E FEITA ASSIM ─────────────────────
+ *
+ * Parece igual escrever `((f % 1) + 1) % 1`, e nao e: somar 1 e tirar o resto
+ * de novo ESTRAGA o numero que ja estava certo. Com 0.45 a conta devolve
+ * 0.4499999999999999, e a fracao do meio-dia — que e 0.45 cravado — caia na
+ * manha. O marco do meio-dia nunca acontecia na hora do meio-dia.
+ *
+ * Achado em 12/09/2026, ao ligar a luz no relogio do bairro. So o numero
+ * negativo precisa da volta; o que ja esta dentro fica como esta.
+ */
 export function marcoEm(fracao: number): MarcoDoDia["nome"] {
-  const f = ((fracao % 1) + 1) % 1;
+  const resto = fracao % 1;
+  const f = resto < 0 ? resto + 1 : resto;
   let atual = MARCOS[MARCOS.length - 1]!;
   for (const m of MARCOS) if (f >= m.em) atual = m;
   return atual.nome;

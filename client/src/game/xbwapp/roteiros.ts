@@ -24,6 +24,7 @@
  * um pouco de tempo escrevendo e ganha paciencia do cliente; quem promete o
  * que nao cumpre perde reputacao dobrada. E assim na rua, e e assim aqui.
  */
+import { PASSO_DA_PIZZA, ULTIMA_FALA_DA_PIZZA } from "../aConversa";
 import type { Roteiro } from "./tipos";
 
 /**
@@ -209,8 +210,69 @@ export const ROTEIRO_RENAN: Roteiro = {
            * SEM PARA ONDE IR: aqui a cena acaba. A conversa fica parada neste
            * passo, sem oferecer mais nada, e e assim que ela termina — a
            * ultima palavra e de quem joga, e nao e sobre trabalho.
+           *
+           * O que vem depois nao sai daqui: e ELE que liga de novo, mais
+           * tarde, e a chamada abre a conversa no passo seguinte.
            */
           efeito: { reputacao: 2 },
+        },
+      ],
+    },
+
+    /*
+     * ── ELE COMEU AS PIZZAS (13/09/2026) ──────────────────────────────────
+     *
+     * Ordem dele, palavra por palavra:
+     *
+     *   Renan: "comi todas as pizzas"
+     *   Renan: a imagem
+     *   Voce:  "tudo bem quando estiver melhor me avisa por favor"
+     *
+     * ── POR QUE ISTO E UMA CENA, E NAO UMA PIADA SOLTA ────────────────────
+     *
+     * A abertura terminou com quem joga mandando ele ir comer a pizza dele.
+     * Ele foi. Comeu todas. Este passo e o mundo respondendo a ultima coisa
+     * que a pessoa falou — do mesmo jeito que o drone respondeu ao "vamos
+     * resolver isso".
+     *
+     * E ele EXPLICA a espera. O jogo ainda nao abriu o balcao para quem joga:
+     * o entregador recem-contratado esta passando mal de tanta pizza, entao
+     * nao ha ninguem na rua agora. A pessoa nao fica esperando sem motivo —
+     * ela fica esperando por uma razao que ela mesma ouviu e aceitou.
+     *
+     * ── A FOTO VEM DEPOIS DA FRASE, COMO NAS OUTRAS ───────────────────────
+     *
+     * Dois segundos entre a frase e a imagem: o tempo de levantar o braco e
+     * bater a foto. E o mesmo compasso da selfie de traje novo — ninguem
+     * escreve e manda foto no mesmo instante.
+     *
+     * ── E A ULTIMA PALAVRA E DELA DE NOVO ─────────────────────────────────
+     *
+     * "Quando estiver melhor me avisa" nao e so gentileza: e quem joga
+     * DECIDINDO esperar, e marcando quem avisa quando a espera acaba. Se a
+     * frase fosse dele ("eu te aviso"), a pessoa ficaria de fora da propria
+     * historia outra vez.
+     */
+    [PASSO_DA_PIZZA]: {
+      falas: [
+        { texto: "Comi todas as pizzas" },
+        {
+          tipo: "foto",
+          texto: "Todas mesmo 🍕🤢",
+          imagem: "/assets/xbwapp/XBW_foto-renan-pizza.webp",
+          esperaMs: 2000,
+        },
+      ],
+      respostas: [
+        {
+          texto: ULTIMA_FALA_DA_PIZZA,
+          /*
+           * SEM PARA ONDE IR, de novo: a conversa descansa aqui ate a
+           * historia ter o proximo pedaco. Reputacao porque avisar que pode
+           * esperar e o que este jogo paga — e porque quem cuida de quem
+           * trabalha com ele fica com gente melhor do lado.
+           */
+          efeito: { reputacao: 3 },
         },
       ],
     },

@@ -31,7 +31,8 @@ export type Ferramenta =
   | "respostas"
   | "etiquetas"
   | "estatisticas"
-  | "ajustes";
+  | "ajustes"
+  | "pais";
 
 export default function TelaFerramentas({
   estado,
@@ -139,6 +140,17 @@ export default function TelaFerramentas({
             titulo="Configurações"
             abaixo={`Relógio do bairro: ${hora(estado.minuto)}`}
             aoTocar={() => aoAbrir("ajustes")}
+          />
+          {/*
+           * PARA OS PAIS fica aqui, e nao escondida: quem precisa dela e um
+           * adulto que acabou de ver o jogo parar e quer saber por que. Se
+           * estivesse num canto secreto, a resposta dele seria desinstalar.
+           */}
+          <Linha
+            icone="abaCadeado"
+            titulo="Para os pais"
+            abaixo="Tempo de jogo, descanso e senha"
+            aoTocar={() => aoAbrir("pais")}
           />
         </ul>
       </div>

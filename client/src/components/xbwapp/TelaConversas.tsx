@@ -20,6 +20,23 @@ import type { EstadoDoApp } from "@/game/xbwapp/estado";
 import type { IdContato } from "@/game/xbwapp/tipos";
 import { Contador, Icone, Retrato, Tique } from "./pecas";
 
+/*
+ * AS DUAS CHAVES DA PRIMEIRA TELA — ordem dele, 12/09/2026:
+ * "REMOVA TAMBEM CAMPO DO APP PESQUISAR, TODOS OS CONTATOS, AMPLIE TELA CINZA".
+ *
+ * Nada foi apagado. A pesquisa e a porta dos contatos continuam escritas
+ * logo abaixo; sem elas a placa clara das conversas cresce de 60% para 76%
+ * da tela. Para trazer qualquer uma de volta, e trocar false por true aqui —
+ * uma palavra, e nada mais.
+ *
+ * O que se perde sem "Todos os contatos": nao ha mais como abrir conversa
+ * com quem ainda nao escreveu. Quem ja escreveu esta na lista.
+ *
+ * A pesquisa DENTRO da conversa e a do Guia de negocios sao outras, e ficam.
+ */
+export const MOSTRAR_PESQUISA = false;
+export const MOSTRAR_TODOS_OS_CONTATOS = false;
+
 export default function TelaConversas({
   estado,
   mudar,
@@ -61,36 +78,43 @@ export default function TelaConversas({
 
   return (
     <section className="xbw-lista" aria-label="Conversas">
-      <header className="xbw-topo xbw-topo--marca">
-        {vendoArquivadas ? (
-          <>
-            <button
-              type="button"
-              className="xbw-botao"
-              onClick={() => setVendoArquivadas(false)}
-              aria-label="Voltar"
-            >
-              <Icone nome="voltar" />
-            </button>
-            <strong className="xbw-marca">Arquivadas</strong>
-          </>
-        ) : (
-          <strong className="xbw-marca">
-            XBW<em>APP</em>
-          </strong>
-        )}
-      </header>
+      {/*
+       * O CABECALHO SO EXISTE DENTRO DAS ARQUIVADAS.
+       *
+       * Ordem dele, 13/09/2026: "suba no canto superior XBWAPP, e suba mais
+       * tela cinza". O nome do aplicativo foi para a faixa de cima, junto da
+       * saida e do selo; sem ele, esta barra ficava vazia e so empurrava a
+       * placa clara para baixo.
+       *
+       * Nas arquivadas ela continua, porque ali ela nao e titulo: e a porta de
+       * volta. Tirar a porta prenderia a pessoa dentro das arquivadas.
+       */}
+      {vendoArquivadas && (
+        <header className="xbw-topo xbw-topo--marca">
+          <button
+            type="button"
+            className="xbw-botao"
+            onClick={() => setVendoArquivadas(false)}
+            aria-label="Voltar"
+          >
+            <Icone nome="voltar" />
+          </button>
+          <strong className="xbw-marca">Arquivadas</strong>
+        </header>
+      )}
 
-      <label className="xbw-procura">
-        <Icone nome="busca" />
-        <input
-          type="search"
-          value={procura}
-          onChange={e => setProcura(e.target.value)}
-          placeholder="Pesquisar"
-          aria-label="Pesquisar conversas"
-        />
-      </label>
+      {MOSTRAR_PESQUISA && (
+        <label className="xbw-procura">
+          <Icone nome="busca" />
+          <input
+            type="search"
+            value={procura}
+            onChange={e => setProcura(e.target.value)}
+            placeholder="Pesquisar"
+            aria-label="Pesquisar conversas"
+          />
+        </label>
+      )}
 
       {!vendoArquivadas && arquivadas > 0 && (
         <button
@@ -189,7 +213,7 @@ export default function TelaConversas({
         </p>
       )}
 
-      {!vendoArquivadas && (
+      {MOSTRAR_TODOS_OS_CONTATOS && !vendoArquivadas && (
         <Contatos aoAbrir={aoAbrir} aoVoltarAoJogo={aoVoltarAoJogo} />
       )}
     </section>

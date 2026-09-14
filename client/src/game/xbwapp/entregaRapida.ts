@@ -56,6 +56,8 @@ import {
   quantosNaRota,
   type EmRota,
 } from "./aRota";
+import { SEGUNDOS_DO_DIA } from "../oRelogioDoBairro";
+import { folegoDe, umSegundoDeFolego } from "./oFolego";
 import type { EstadoDoApp } from "./estado";
 import type {
   IdContato,
@@ -237,8 +239,12 @@ export function castigoPara(bloqueiosAnteriores: number): number {
  * Dez minutos. E a medida que faz os trinta dias dele caberem numa temporada
  * jogavel — cinco horas — e que deixa a suspensao de quarenta minutos valendo
  * quatro dias, que e o peso certo para ela.
+ *
+ * O numero em si mudou de casa em 12/09/2026: ele agora mora no relogio do
+ * bairro, que e a fundacao do tempo e nao depende de ninguem. O nome continua
+ * aqui porque meio balcao ja o usava — ver `oRelogioDoBairro`.
  */
-export const SEGUNDOS_POR_DIA = 10 * 60;
+export const SEGUNDOS_POR_DIA = SEGUNDOS_DO_DIA;
 
 /** Quantos dias de historico contam para a reputacao. Ordem dele: trinta. */
 export const DIAS_DE_MEMORIA = 30;
@@ -264,9 +270,25 @@ export const PESO_DA_NOTA: Readonly<Record<number, number>> = {
 
 /* ── A ESCADA DAS BOLINHAS, EM PORCENTAGEM DE ATRASO ──────────────────────*/
 
+/*
+ * O NOME DE CADA DEGRAU, ESCRITO UMA VEZ.
+ *
+ * Virou um tipo fechado em 12/09/2026, quando a bolinha do pino do mapa passou
+ * a usar esta mesma escada: a folha de estilo tem uma regra por degrau, e uma
+ * chave nova escrita aqui sem regra la sairia como bolinha sem cor. Fechado
+ * assim, o computador avisa antes.
+ */
+export type ChaveDaFaixa =
+  | "adiantado"
+  | "verde"
+  | "amarela"
+  | "laranja"
+  | "muito-atrasado"
+  | "perdeu";
+
 /** Um degrau da escada: o que o cliente sente naquele atraso. */
 export interface FaixaDoRelogio {
-  chave: string;
+  chave: ChaveDaFaixa;
   /** A palavra que a tela mostra. */
   nome: string;
   /** Ate quantos POR CENTO de atraso este degrau vale. */
@@ -520,6 +542,27 @@ export function faixaDaOferta(
   o: OfertaDeEntrega
 ): FaixaDoRelogio {
   return faixaDe(atrasoPorCento(estado, o));
+}
+
+/**
+ * O DEGRAU DE UM PEDIDO PELO NUMERO — para o mapa, que so tem o numero.
+ *
+ * Ordem dele, 12/09/2026: "precisamos colocar bolinhas de pinos para mudarem de
+ * cor conforme atraso de entrega". A escada ja existia e ja funcionava no
+ * cartao do pedido; no mapa ela nunca tinha sido ligada, e todo pino nascia e
+ * morria com a bolinha de "no prazo".
+ *
+ * Devolve nada em dois casos, e nos dois a bolinha fica neutra: pedido que nao
+ * esta mais na lista (ja fechou) e pedido recusado — a XB fechou a porta, e
+ * porta fechada nao tem relogio correndo.
+ */
+export function faixaDoPedido(
+  estado: EstadoDoApp,
+  pedido: string
+): ChaveDaFaixa | undefined {
+  const o = estado.ofertas.find(x => x.id === pedido);
+  if (!o || o.situacao === "recusada") return undefined;
+  return faixaDaOferta(estado, o).chave;
 }
 
 /** A cor do pino deste pedido, agora. */
@@ -966,7 +1009,35 @@ export function varrerOfertas(estado: EstadoDoApp): EstadoDoApp {
   const rotas: Record<string, EmRota> = { ...atual.rotas };
   const entreguesAgora = new Set<string>();
   const coletadosAgora = new Set<string>();
+  /*
+   * ── E O FOLEGO ANDA JUNTO ────────────────────────────────────────────────
+   *
+   * Ordem dele, 12/09/2026: "cada corrida quanto desgasta". O folego cai no
+   * MESMO segundo em que a perna anda, e nao num relogio proprio: quem esta na
+   * rua gasta, quem esta parado recupera um fio. Duas contas separadas para a
+   * mesma pedalada e o jeito de elas desandarem uma da outra.
+   *
+   * Quem esta parado tambem entra — e por isso o laco passa por todo mundo, e
+   * nao so por quem tem parada.
+   */
+  const folego: Record<string, number> = { ...atual.folego };
   for (const [nome, rota] of Object.entries(atual.rotas)) {
+    const antes = folegoDe(atual.folego, nome);
+    const depois = umSegundoDeFolego(
+      antes,
+      rota,
+      atual.relogioDoBalcao,
+      /*
+       * Os acessorios sao lidos do jogo a cada segundo, e nao guardados numa
+       * copia: quem compra um protetor solar no meio da manha sente a
+       * diferenca no proximo segundo, e nao no proximo dia.
+       */
+      ponte().acessorios()
+    );
+    if (depois !== antes) {
+      folego[nome] = depois;
+      mudou = true;
+    }
     if (rota.paradas.length === 0) continue;
     const passo = andarUmSegundo(rota);
     rotas[nome] = passo.quem;
@@ -975,7 +1046,7 @@ export function varrerOfertas(estado: EstadoDoApp): EstadoDoApp {
     if (passo.entregues.length > 0 || passo.coletados.length > 0) mudou = true;
     if (passo.quem !== rota) mudou = true;
   }
-  if (mudou) atual = { ...atual, rotas };
+  if (mudou) atual = { ...atual, rotas, folego };
 
   const ofertas: OfertaDeEntrega[] = [];
   for (const o of atual.ofertas) {

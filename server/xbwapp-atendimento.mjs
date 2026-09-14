@@ -151,6 +151,11 @@ export function arrumarPedido(corpo) {
         : undefined,
       pedido: texto(s.pedido),
       reputacao: texto(s.reputacao),
+      // A lembranca e maior que os outros campos de proposito: sao ate tres
+      // frases curtas do que a pessoa guarda do entregador.
+      lembranca:
+        typeof s.lembranca === "string" ? s.lembranca.slice(0, 280) : undefined,
+      momento: texto(s.momento),
     },
     historico,
   };

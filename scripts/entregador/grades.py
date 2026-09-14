@@ -118,6 +118,8 @@ BASE = 0.97           # onde fica o ponto mais baixo do desenho
 CAMERA = math.radians(31.0)
 JUNTOS_DEMAIS = 3.5   # dois rumos mais perto que isto: fica um so
 ENTRE_EIXOS = 2.07    # distancia entre os eixos da bicicleta, em larguras de aro
+VAO_GRANDE = 38.0     # buraco maior que isto no relogio: vale fechar com um espelho
+LONGE_DA_BORDA = 8.0  # o espelho tem que cair no meio do buraco, nao colado na beira
 
 # Cada folha de pedalada: para que lado vira, e se vai para o fundo ou vem.
 PEDALADA = {
@@ -376,6 +378,66 @@ def em_ordem(graus: list[float | None], vai: str) -> list[float | None]:
     return [g if (k == 0 or k in fica) else None for k, g in enumerate(graus)]
 
 
+# ── espelho: fechar o buraco da frente com um desenho que ja existe ─────────
+
+def espelhar_os_vaos(moldes: list[dict], molduras: dict, destino: Path,
+                     prefixo: str) -> None:
+    """Preenche os maiores buracos do relogio virando um desenho para o outro lado.
+
+    A bicicleta e simetrica: quem vai para as 07h00, visto no espelho, e
+    exatamente quem vai para as 05h00. As folhas nao trazem esses rumos (o
+    menino sairia de frente para a camera, com a cara escondida atras do
+    guidao), e o buraco que sobra na frente e o tranco que se ve quando ele
+    cruza a tela por baixo. O espelho fecha isso sem desenho novo: os mesmos
+    pixels, ao contrario.
+
+    No espelho a direcao vira 180 - graus, e as pegadas trocam de lado
+    (x -> 100 - x); a altura fica igual, porque o chao continua onde estava.
+    """
+    for _ in range(len(moldes)):
+        ordem = sorted(moldes, key=lambda m: m["graus"])
+        vao, de = max(((ordem[(i + 1) % len(ordem)]["graus"] - m["graus"]) % 360, m["graus"])
+                      for i, m in enumerate(ordem))
+        if vao < VAO_GRANDE:
+            return
+        meio = (de + vao / 2) % 360
+        escolha = None
+        for m in moldes:
+            if m.get("espelho"):
+                continue
+            g = (180.0 - m["graus"]) % 360.0
+            dentro = (g - de) % 360.0
+            if dentro < LONGE_DA_BORDA or dentro > vao - LONGE_DA_BORDA:
+                continue
+            perto = diferenca(g, meio)
+            if escolha is None or perto < escolha[0]:
+                escolha = (perto, m, g)
+        if escolha is None:
+            return
+        _, base, g = escolha
+        # TRAVA: o espelho nunca pode trocar costas por frente. Foi assim que o
+        # espelho antigo estragou — o noroeste pintava o espelho de uma folha de
+        # frente, e o menino subia a tela mostrando o rosto. Com 180 - graus a
+        # altura do rumo nao muda, entao quem vai para o fundo continua indo
+        # para o fundo; se um dia isso deixar de valer, o script para aqui.
+        if (math.sin(math.radians(g)) >= 0) != (math.sin(math.radians(base["graus"])) >= 0):
+            raise SystemExit(f"espelho de {base['nome']} trocaria costas por frente")
+        nome = hora(g)
+        virado = molduras[base["nome"]].transpose(Image.FLIP_LEFT_RIGHT)
+        molduras[nome] = virado
+        virado.save(destino / f"{prefixo}_pedalando1_{nome}.webp", "WEBP",
+                    quality=90, method=6)
+        novo = {"nome": nome, "graus": round(g, 1),
+                "frenteX": round(100.0 - base["frenteX"], 1), "frenteY": base["frenteY"],
+                "trasX": round(100.0 - base["trasX"], 1), "trasY": base["trasY"],
+                "folha": base["folha"], "espelho": base["nome"]}
+        if base.get("umaRoda"):
+            novo["umaRoda"] = True
+        moldes.append(novo)
+        print(f"{nome:>6} {g:6.1f}  espelho de {base['nome']:<6} "
+              f"(fecha {vao:.1f} graus de buraco depois de {de:.1f})")
+
+
 def main(pessoa: str = "renan", destino: Path | None = None, prefixo: str | None = None,
          moldes_em: Path | None = None, cenas_em: Path | None = None) -> None:
     cfg = PESSOAS[pessoa]
@@ -449,6 +511,7 @@ def main(pessoa: str = "renan", destino: Path | None = None, prefixo: str | None
         fica.pop()
 
     moldes = []
+    molduras: dict = {}
     print(f"{len(fica)} rumos (de {len(medidos)}) · moldura {LADO}x{LADO}\n")
     print(f"{'nome':>6} {'graus':>6}  folha              frenteX frenteY  trasX  trasY")
     for m in fica:
@@ -475,6 +538,7 @@ def main(pessoa: str = "renan", destino: Path | None = None, prefixo: str | None
             fx, fy, tx, ty = cx, cy, cx, cy
             uma_roda = True
         nome = hora(m["graus"])
+        molduras[nome] = moldura
         moldura.save(destino / f"{prefixo}_pedalando1_{nome}.webp", "WEBP",
                      quality=90, method=6)
         molde = {"nome": nome, "graus": round(m["graus"], 1),
@@ -487,6 +551,9 @@ def main(pessoa: str = "renan", destino: Path | None = None, prefixo: str | None
         print(f"{nome:>6} {m['graus']:6.1f}  {m['folha']:<17}#{m['k'] + 1} "
               f"{pct(fx):6.1f}  {pct(fy):6.1f} {pct(tx):6.1f} {pct(ty):6.1f}")
 
+    espelhar_os_vaos(moldes, molduras, destino, prefixo)
+    moldes.sort(key=lambda x: x["graus"])
+
     ordem = sorted(x["graus"] for x in moldes)
     vaos = sorted(((ordem[(i + 1) % len(ordem)] - g) % 360, g) for i, g in enumerate(ordem))[::-1]
     print("\nmaiores vaos: " + ", ".join(f"{v:.0f}° depois de {g:.0f}°" for v, g in vaos[:4]))
@@ -498,7 +565,9 @@ def main(pessoa: str = "renan", destino: Path | None = None, prefixo: str | None
                  "atravessar para a direita). 'graus' e a direcao na tela, medida "
                  "pela reta entre os dois eixos das rodas; frenteX/Y e trasX/Y "
                  "sao onde cada pneu encosta, em porcentagem da moldura. 'folha' "
-                 "diz de qual desenho da grade saiu."),
+                 "diz de qual desenho da grade saiu; com 'espelho', o desenho e o "
+                 "do rumo citado virado para o outro lado, para fechar um "
+                 "buraco grande do relogio."),
         "moldes": moldes,
     }, ensure_ascii=False, indent=1), encoding="utf-8")
 

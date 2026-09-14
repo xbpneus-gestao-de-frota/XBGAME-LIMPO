@@ -19,6 +19,15 @@
 const P = "/assets/xbwapp/XBW_";
 
 export const XBW_ICONES = {
+  /*
+   * AS DUAS CAIXAS DA BICICLETA — desenhadas por ele, 14/09/2026.
+   *
+   * O nome e as duas linhas de cada uma estao pintados dentro do desenho; a
+   * tela nao escreve nada por cima. Quem monta: scripts/equipe/as_caixas_da_bicicleta.py
+   */
+  portariaLoja: `${P}portaria_loja.webp`,
+  portariaOficina: `${P}portaria_oficina.webp`,
+
   // O alto da conversa
   voltar: `${P}voltar.webp`,
   video: `${P}video.webp`,

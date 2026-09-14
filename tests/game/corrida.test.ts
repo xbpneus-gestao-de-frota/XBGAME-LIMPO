@@ -13,8 +13,6 @@ import {
   type Encomenda,
 } from "../../client/src/game/corrida";
 
-const CSS = readFileSync("client/src/index.css", "utf8");
-
 const encomenda = (
   metros: number,
   extra: Partial<Encomenda> = {}
@@ -143,31 +141,27 @@ describe("as regras da corrida", () => {
   });
 
   /* A cor nao pode existir na regra sem existir na tela. */
-  it("todo estagio da bolinha tem a sua cor no jogo", () => {
-    for (const e of [
-      "no-prazo",
-      "folga-acabando",
-      "atrasando",
-      "no-limite",
-      "estourou",
-    ]) {
-      expect(CSS).toContain(`.mapa__pino[data-bolinha="${e}"]`);
-    }
-  });
-
   /*
-   * PULSO NOS DOIS ESTAGIOS QUENTES. A cor sozinha falha em dois casos reais:
-   * a bolinha laranja em cima da loja laranja, e o jogador que nao distingue
-   * as cores. O movimento salva os dois.
+   * A COR DA BOLINHA SAIU DAQUI EM 12/09/2026.
+   *
+   * Ate esta data a bolinha do pino era pintada pelos CINCO estagios desta
+   * corrida. Ordem dele no mesmo dia — "precisamos colocar bolinhas de pinos
+   * para mudarem de cor conforme atraso de entrega" — e ao ligar descobriu-se
+   * que havia DUAS escadas para a mesma pergunta: esta, de tempo que sobra, e a
+   * do balcao de Entrega Rapida, de porcentagem de atraso, que e a dele e e a
+   * que paga estrela e caixinha.
+   *
+   * Duas escadas ensinariam a pessoa duas vezes, e errado. Ficou a do balcao.
+   * Quem guarda as cores agora e tests/game/aBolinhaDoPino.test.ts.
+   *
+   * Os cinco estagios daqui continuam existindo e continuam testados acima: sao
+   * o relogio da CORRIDA, e nao a cor da bolinha. Se um dia a corrida voltar a
+   * pintar alguma coisa, e so ligar de novo — nada foi apagado.
    */
-  it("os estagios quentes pulsam, e o pulso final e o mais rapido", () => {
-    const periodo = (estagio: string) => {
-      const bloco =
-        CSS.split(`[data-bolinha="${estagio}"] .mapa__bolinha`)[1] ?? "";
-      return Number((bloco.match(/mapa-pulso\s+([\d.]+)s/) ?? [])[1]);
-    };
-    expect(periodo("atrasando")).toBeGreaterThan(0);
-    expect(periodo("no-limite")).toBeGreaterThan(0);
-    expect(periodo("no-limite")).toBeLessThan(periodo("atrasando"));
+  it("os cinco estagios continuam sendo a regua da corrida", () => {
+    const ordem = [1, 0.8, 0.5, 0.3, 0.1, 0].map(estagioDaBolinha);
+    expect(new Set(ordem).size).toBeGreaterThan(1);
+    expect(ordem[0]).toBe("no-prazo");
+    expect(ordem[ordem.length - 1]).toBe("estourou");
   });
 });

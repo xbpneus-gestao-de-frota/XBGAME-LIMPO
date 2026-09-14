@@ -339,10 +339,39 @@ describe("o rumo do entregador, medido no bairro inteiro", () => {
    */
   it("o giro passa pelos desenhos do meio, pelo lado mais curto", () => {
     const i = (nome: string) => MOLDES.findIndex(m => m.nome === nome);
-    expect(desenhosAte(i("04h14"), i("06h00"))).toBe(-2);
+    /*
+     * QUANTOS DESENHOS HA NO CAMINHO — tirado da lista, nao escrito a mao.
+     * Este numero era 2 ate 12/09/2026, quando o espelho de 05h00 entrou
+     * justamente no meio deste trecho. Um desenho novo nao pode quebrar um
+     * teste que fala de girar pelos do meio: o que importa e que o giro conte
+     * os desenhos que existem, sejam quantos forem.
+     */
+    const entre = (de: string, ate: string) => {
+      const volta = (MOLDES[i(de)]!.graus - MOLDES[i(ate)]!.graus + 360) % 360;
+      return MOLDES.filter(m => {
+        const d = (MOLDES[i(de)]!.graus - m.graus + 360) % 360;
+        return d > 0 && d < volta;
+      }).length;
+    };
+    expect(desenhosAte(i("04h14"), i("06h00"))).toBe(-(entre("04h14", "06h00") + 1));
     expect(MOLDES[proximoNoGiro(i("04h14"), i("06h00"))]!.nome).toBe("04h34");
-    // vizinho com vizinho troca na hora
-    expect(proximoNoGiro(i("04h34"), i("06h00"))).toBe(i("06h00"));
+    // vizinho com vizinho troca na hora — quem e o vizinho sai do relogio, e
+    // nao de um nome escrito a mao (antes de 12/09/2026 era o 04h34; com o
+    // espelho de 05h00 no meio, o vizinho de 06h00 passou a ser ele)
+    const vizinhoAcima = (nome: string) => {
+      const g = MOLDES[i(nome)]!.graus;
+      let melhor = i(nome);
+      let dist = 360;
+      MOLDES.forEach((m, k) => {
+        const d = (m.graus - g + 360) % 360;
+        if (d > 0 && d < dist) {
+          dist = d;
+          melhor = k;
+        }
+      });
+      return melhor;
+    };
+    expect(proximoNoGiro(vizinhoAcima("06h00"), i("06h00"))).toBe(i("06h00"));
     // atravessando o zero do relogio, vai pelo lado curto
     expect(desenhosAte(i("03h08"), i("02h27"))).toBe(2);
     expect(MOLDES[proximoNoGiro(i("03h08"), i("02h27"))]!.nome).toBe("02h59");

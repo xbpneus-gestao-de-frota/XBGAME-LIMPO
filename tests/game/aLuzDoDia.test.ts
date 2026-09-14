@@ -20,14 +20,22 @@ const MAPA = readFileSync("client/src/components/MapaDoBairro.tsx", "utf8");
 describe("a luz do dia", () => {
   it("o dia inteiro cabe numa corrida sem virar efeito", () => {
     /*
-     * Uma corrida leva de trinta segundos a um minuto de tela. Com o dia em
-     * quatro minutos ela atravessa perto de um quarto do ciclo: da para ver a
-     * luz virar sem que ela vire na cara de ninguem. Um dia de trinta segundos
-     * seria efeito; um de meia hora nunca mostraria o entardecer.
+     * Uma corrida leva de trinta segundos a um minuto de tela, e precisa caber
+     * dentro do dia sem que a luz vire na cara de ninguem. Um dia de trinta
+     * segundos seria efeito; um de meia hora nunca mostraria o entardecer.
+     *
+     * O que mudou em 12/09/2026 nao foi a regra, foi de onde sai o numero: ele
+     * era escrito aqui e agora vem do relogio do bairro, que e o mesmo do
+     * balcao. A faixa continua valendo — e agora vale para os dois juntos.
      */
     expect(DIA_EM_MS).toBeGreaterThanOrEqual(2 * 60 * 1000);
     expect(DIA_EM_MS).toBeLessThanOrEqual(10 * 60 * 1000);
-    expect(MAPA).toContain('"--dia": `${DIA_EM_MS}ms`');
+    /*
+     * O mapa nao recebe mais quanto DURA o dia — recebe que HORA e. Com o tempo
+     * descendo para o CSS, a luz rodava sozinha; com a hora, ela obedece.
+     */
+    expect(MAPA).toContain('"--luz-em"');
+    expect(MAPA).not.toContain('"--dia"');
   });
 
   it("o ciclo fecha, e nao tem noite fechada", () => {

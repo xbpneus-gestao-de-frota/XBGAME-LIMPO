@@ -34,15 +34,17 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GAME_ASSETS } from "@/game/assets";
-import type { EstagioDaBolinha } from "@/game/corrida";
+import type { ChaveDaFaixa } from "@/game/xbwapp/entregaRapida";
 import type { ComandoDoEntregador } from "@/components/Entregador";
 import type { QuemPedala } from "@/game/osQuePedalam";
 import IconeDoMapa from "./iconesDoMapa";
 import Entregador from "./Entregador";
 import type { ParadaDaEntrega } from "@/game/aParada";
 import { DURACAO_DA_POEIRA_MS, type Poeira } from "@/game/aCurva";
-import { DIA_EM_MS } from "@/game/aLuzDoDia";
+import { fracaoDoDia } from "@/game/oRelogioDoBairro";
 import VidaDoMapa from "@/components/VidaDoMapa";
+import CabecaDePrego from "@/components/CabecaDePrego";
+import MoradoresNaPorta from "@/components/MoradoresNaPorta";
 import ODrone, { CaixaNoChao } from "./ODrone";
 import { ESPERA_PARA_ABRIR_MS } from "@/game/oDrone";
 
@@ -183,6 +185,33 @@ const GAROTO_ALTURA = 2.4;
 const GAROTO_ONDE = { x: 48.5, y: 41.4 };
 
 /**
+ * OS MORADORES NA PORTA DE CASA.
+ *
+ * Ordem dele, 13/09/2026: "coloque um morador na frente de sua casa". Cada
+ * morador desenhado fica em pe na porta da propria casa — o mesmo ponto que o
+ * jogo ja usa como destino da entrega, entao o entregador para exatamente onde
+ * a pessoa esta, e nao dois metros ao lado dela.
+ *
+ * Quem e cada um e o tamanho deles moram em client/src/game/osMoradoresNaRua.ts.
+ * Aqui fica so a chave de ligar e desligar, junto das outras chaves do mapa.
+ */
+const MORADORES_NAS_PORTAS = true;
+
+/**
+ * O CABECA DE PREGO NA PRACINHA — o primeiro vilao.
+ *
+ * Ordem dele, 14/09/2026: "bem no ponto amarelo, crie uma animacao do primeiro
+ * vilao que apresentaremos cabeca de prego, deixe a animacao rodando neste
+ * local pintado de amarelo".
+ *
+ * Ele levanta peso na beira do parquinho, para sempre, e nao faz mais nada:
+ * por enquanto e cenario, e nao jogo. O ponto, o tamanho e o compasso moram em
+ * client/src/game/oCabecaDePrego.ts. Aqui fica so a chave de ligar e desligar,
+ * junto das outras chaves do mapa.
+ */
+const O_VILAO_NA_PRACINHA = true;
+
+/**
  * EM QUE PE ESTA A PARADA — e o que decide se o pino aparece vivo ou apagado.
  *
  * Ordem dele: "modos de mudanca de cores, conforme modo de game, cores mais
@@ -235,12 +264,17 @@ export interface ParadaNoMapa {
   /** Sem dizer nada, a parada e a da vez: em partida sao so as tres. */
   situacao?: SituacaoDaParada;
   /**
-   * O RELOGIO DESTA ENTREGA, se ela ja foi coletada.
+   * O DEGRAU DO RELOGIO DESTE PEDIDO — a cor da bolinha.
    *
-   * Sem relogio correndo a bolinha fica "no prazo" — que e o certo: um lugar
-   * que ninguem retirou nada nao esta atrasado.
+   * E a MESMA escada do cartao do pedido dentro do aplicativo: no tempo, ate
+   * 10%, 25%, 50%, 100% e perdeu. Uma cor so pode querer dizer uma coisa so no
+   * jogo inteiro; duas escadas diferentes para a mesma pergunta ensinariam a
+   * pessoa duas vezes, e errado.
+   *
+   * Sem degrau a bolinha fica neutra — que e o certo para um lugar sem relogio
+   * correndo (a base, ou um pedido que ja fechou).
    */
-  bolinha?: EstagioDaBolinha;
+  bolinha?: ChaveDaFaixa;
   /**
    * Onde o PINO pousa: QUASE NA FRENTE do lugar.
    *
@@ -280,6 +314,7 @@ export default function MapaDoBairro({
   outrosEntregadores = [],
   aoAbrirAMala,
   pracaLimpa = false,
+  relogioDoBalcao = 0,
   aoSair,
 }: {
   nomeDoJogador: string;
@@ -290,6 +325,14 @@ export default function MapaDoBairro({
   paradasDaEntrega?: readonly ParadaDaEntrega[];
   metros: number;
   pagamento: number;
+  /*
+   * O RELOGIO DO BAIRRO, de onde sai a hora do dia.
+   *
+   * Entra por fora e nao e calculado aqui: a luz do mapa e o balcao tem de
+   * viver o MESMO dia, e a unica forma de garantir isso e os dois lerem o mesmo
+   * numero. Ver `oRelogioDoBairro`.
+   */
+  relogioDoBalcao?: number;
   /** O drone da XB desce a primeira encomenda: a resposta ao "vamos resolver isso". */
   entregaDoDrone?: boolean;
   /**
@@ -665,10 +708,13 @@ export default function MapaDoBairro({
                */
               "--zoom": zoom.toFixed(3),
               /*
-               * Quanto dura um dia do bairro. O numero mora em game/aLuzDoDia,
-               * junto dos marcos do ciclo; aqui ele so desce para o CSS.
+               * EM QUE PONTO DO DIA O BAIRRO ESTA, de 0 a 1.
+               *
+               * Antes descia daqui quanto DURAVA um dia, e a luz corria sozinha
+               * com esse tempo — o que fazia o sol nascer duas vezes e meia por
+               * dia de balcao. Agora desce a HORA, e a luz so obedece.
                */
-              "--dia": `${DIA_EM_MS}ms`,
+              "--luz-em": fracaoDoDia(relogioDoBalcao).toFixed(4),
             } as React.CSSProperties
           }
         >
@@ -735,6 +781,18 @@ export default function MapaDoBairro({
             <CaixaNoChao aberta={malaAberta} foiEmbora={pracaLimpa} />
           )}
 
+          {/*
+            OS MORADORES — antes da luz, pela mesma razao do garoto: quem esta
+            DENTRO do bairro entardece junto com ele.
+          */}
+          {MORADORES_NAS_PORTAS && <MoradoresNaPorta />}
+
+          {/*
+            O VILAO — antes da luz, pela mesma razao do garoto e dos moradores:
+            quem esta DENTRO do bairro entardece junto com ele.
+          */}
+          {O_VILAO_NA_PRACINHA && <CabecaDePrego />}
+
           <span className="mapa__luz" aria-hidden="true" />
           <span className="mapa__nuvens" aria-hidden="true" />
 
@@ -769,7 +827,7 @@ export default function MapaDoBairro({
                 className="mapa__pino"
                 data-papel={p.papel}
                 data-situacao={p.situacao ?? "agora"}
-                data-bolinha={p.bolinha ?? "no-prazo"}
+                data-bolinha={p.bolinha ?? "sem-relogio"}
                 style={{ left: `${p.em[0]}%`, top: `${p.em[1]}%` }}
                 aria-hidden={PINOS_VISIVEIS ? undefined : true}
               >

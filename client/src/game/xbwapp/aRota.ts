@@ -42,6 +42,10 @@
  * moto mais rapida" dele, e e o unico numero que precisa mudar para a melhoria
  * aparecer no jogo inteiro de uma vez.
  */
+import {
+  numerosDoVeiculo,
+  VEICULO_DE_ENTRADA,
+} from "../aEquacaoMestra";
 import { ponte } from "./ponte";
 import type { IdContato } from "./tipos";
 
@@ -50,7 +54,19 @@ export const BASE_DO_ENTREGADOR: IdContato = "pizzaria";
 
 /** Quantos segundos cada veiculo leva para andar um quilometro. */
 export const SEGUNDOS_POR_KM: Readonly<Record<string, number>> = {
-  bicicleta: 20,
+  /*
+   * A BICICLETA VEM DA EQUACAO MESTRA, e nao de um numero escrito aqui.
+   *
+   * Ordem dele, 13/09/2026: "precisamos de uma equacao mestra". Com trinta
+   * veiculos na loja, um numero solto por arquivo viraria trinta discussoes
+   * sobre qual esta certo. Quem responde "quanto ele demora" e um lugar so.
+   */
+  bicicleta: numerosDoVeiculo(VEICULO_DE_ENTRADA).segundosPorKm,
+  /*
+   * A MOTO AINDA NAO ENTROU NA EQUACAO — ela nao e uma das seis familias da
+   * loja, e inventar um degrau para ela seria decidir no lugar dele. Fica o
+   * numero que sempre valeu, ate ele dizer onde a moto entra.
+   */
   moto: 9,
 };
 

@@ -76,15 +76,21 @@ describe("a vida do mapa", () => {
 
   it("as luzes do entardecer andam no mesmo relogio da luz do dia", () => {
     /*
-     * Elas nao sao sorteadas: dependem da hora. As duas animacoes tem o mesmo
-     * tempo e comecam juntas, entao ficam em fase sem ninguem sincronizar nada.
-     * Se uma delas mudar de tempo, as luzes acendem no meio da manha.
+     * Elas nao sao sorteadas: dependem da hora. Se uma delas ler uma hora
+     * diferente da outra, as luzes acendem no meio da manha.
+     *
+     * Ate 12/09/2026 as duas apenas tinham o mesmo TEMPO de ciclo e comecavam
+     * juntas — ficavam em fase por coincidencia, e qualquer pausa as separava.
+     * Agora as duas leem a MESMA hora, vinda do relogio do bairro, e estao
+     * paradas: nao ha mais como uma andar sem a outra.
      */
     expect(QUE_ACENDEM.length).toBeGreaterThan(0);
     const bloco = CSS.split(".vida__acende {")[1]!.split("}")[0]!;
-    expect(bloco).toContain("var(--dia");
+    expect(bloco).toContain("--luz-em");
+    expect(bloco).toContain("paused");
     const luz = CSS.split(".mapa__luz {")[1]!.split("}")[0]!;
-    expect(luz).toContain("var(--dia");
+    expect(luz).toContain("--luz-em");
+    expect(luz).toContain("paused");
   });
 
   it("o que respira fica ligado sempre, e sem sorteio", () => {

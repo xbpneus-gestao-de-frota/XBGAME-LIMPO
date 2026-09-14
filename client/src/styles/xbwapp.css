@@ -90,6 +90,19 @@
   --xbw-toque: 44px;
   --xbw-tempo: 160ms;
   --xbw-curva: ease-out;
+
+  /*
+   * A FORCA DOS RABISCOS DO PAPEL.
+   *
+   * Ordem dele, 12/09/2026: "os rabiscos devem ficar bem mais sutis, gere uma
+   * transparencia de 50%". O desenho continua o mesmo; o que muda e um veu da
+   * propria cor do papel por cima dele. Meio a meio = metade da forca.
+   *
+   * Para deixar mais forte ou mais fraco depois, mexe so no numero aqui:
+   * .5 = metade (o que ele pediu), .75 = quase sumido, 0 = como era antes.
+   */
+  --xbw-papel: #eef2f6;
+  --xbw-veu: linear-gradient(rgba(238, 242, 246, .5), rgba(238, 242, 246, .5));
 }
 
 /*
@@ -290,7 +303,8 @@
 .xbw-contato,
 .xbw-grupos,
 .xbw-decisao,
-.xbw-equipe {
+.xbw-equipe,
+.xbw-oficina {
   overflow-y: auto;
 }
 
@@ -298,7 +312,8 @@
 .xbw-contato > *,
 .xbw-grupos > *,
 .xbw-decisao > *,
-.xbw-equipe > * {
+.xbw-equipe > *,
+.xbw-oficina > * {
   flex: none;
 }
 
@@ -316,7 +331,8 @@
  * esta rolando: quem nao sabe que pode rolar nunca rola.
  */
 .xbw-decisao,
-.xbw-equipe {
+.xbw-equipe,
+.xbw-oficina {
   scrollbar-width: thin;
   scrollbar-color: rgba(120, 190, 255, 0.55) rgba(255, 255, 255, 0.06);
 }
@@ -1542,7 +1558,27 @@
   cursor: pointer;
 }
 
-/* O aviso do mapa: o aplicativo tem recado esperando. */
+/*
+ * O BALAO EM TRACO, e nao a figura pronta.
+ *
+ * Mora no `:root` e nao dentro de `.xbw` porque este botao vive NO MAPA, fora
+ * do aplicativo — um valor guardado la dentro chega vazio aqui, e o balao
+ * sumiria sem erro nenhum aparecer.
+ */
+:root {
+  --xbw-balao: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect x='2' y='4' width='20' height='13' rx='3.4' fill='%23000'/%3E%3Cpath d='M7.6 15.2h5.4l-6.2 5.4a.62.62 0 0 1-1.03-.47v-3.4z' fill='%23000'/%3E%3C/svg%3E");
+}
+
+/*
+ * A PORTA DO APLICATIVO, no mapa.
+ *
+ * So o LUGAR e o TAMANHO moram aqui. A cor, o aro e a luz vem da regra da
+ * moeda, que ela divide com o botao de sair do aplicativo — ver "A MESMA MOEDA
+ * DOS DOIS LADOS", mais abaixo nesta folha.
+ *
+ * Ela e maior do que a moeda de dentro do aplicativo de proposito: no mapa
+ * inteiro ela e a unica porta, e porta unica se acha de longe.
+ */
 .mapa__xbwapp {
   position: absolute;
   right: 4vw;
@@ -1553,22 +1589,58 @@
   width: clamp(3.4rem, 8vh, 4.4rem);
   aspect-ratio: 1;
   padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #12547a 0%, #0d1b33 100%);
-  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.45);
   pointer-events: auto;
-  cursor: pointer;
 }
 
+/*
+ * O BALAO DE DENTRO, DESENHADO BRANCO — mesma decisao do alfinete na moeda de
+ * sair. A figura pronta do aplicativo foi feita para fundo escuro e carrega uma
+ * borda escura assada dentro dela; em cima do laranja essa borda aparece como
+ * sujeira em volta do balao. Recortado aqui, em traco, ele fica limpo em
+ * qualquer tamanho.
+ */
 .mapa__xbwapp .xbw-i {
-  width: 56%;
+  display: none;
 }
 
+.mapa__xbwapp::before {
+  content: "";
+  /*
+   * 48% e nao meio a meio: o balao e largo e o alfinete da outra moeda e alto.
+   * Medidos lado a lado, e este o tamanho em que os dois pesam igual. E ele
+   * sobe um fio porque o rabinho puxa a massa do desenho para baixo.
+   */
+  width: 48%;
+  aspect-ratio: 1;
+  transform: translateY(-2%);
+  background: #fff;
+  filter: drop-shadow(0 0.1rem 0.15rem rgba(0, 0, 0, 0.55));
+  -webkit-mask: var(--xbw-balao) center / contain no-repeat;
+  mask: var(--xbw-balao) center / contain no-repeat;
+}
+
+/*
+ * O NUMERO DE NAO LIDAS ganhou casa.
+ *
+ * Antes era um numero branco solto em cima do bairro, sem nada atras: em cima
+ * de telhado claro ele sumia. Agora e um selo escuro encostado na borda da
+ * moeda, como o numerinho de aplicativo no telefone de verdade.
+ */
 .mapa__xbwapp .xbw-contador {
   position: absolute;
-  top: -0.4vh;
-  right: -0.4vh;
+  top: -0.2rem;
+  right: -0.2rem;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding-inline: 0.32rem;
+  background: #1c0e04;
+  color: #fff6ea;
+  font:
+    800 0.78rem/1 system-ui,
+    sans-serif;
+  box-shadow:
+    0 0 0 0.12rem rgba(255, 158, 60, 0.85),
+    0 0.15rem 0.4rem rgba(0, 0, 0, 0.5);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -4717,12 +4789,37 @@
 .xbw-vazia__caixa{width:100%;padding:5vh 6vw;border:1px solid rgba(41,168,240,.45);border-radius:2.4vh;background:rgba(8,26,48,.42)}
 .xbw-vazia__f{margin:0 0 1vh!important;font:800 clamp(1.05rem,2.7vh,1.35rem)/1.25 system-ui,sans-serif;color:#eaf6ff}
 .xbw-vazia__a{margin:0!important;font:500 clamp(.8rem,1.9vh,.95rem)/1.4 system-ui,sans-serif;color:rgba(234,246,255,.6)}
-.xbw-abas .xbw-aba:nth-child(1) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-conversas.webp")}
-.xbw-abas .xbw-aba:nth-child(2) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-atualizacoes.webp")}
-.xbw-abas .xbw-aba:nth-child(3) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-chamadas.webp")}
-.xbw-abas .xbw-aba:nth-child(4) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-ferramentas.webp")}
-.xbw-abas .xbw-aba:nth-child(5) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-entrega-rapida.webp")}
-.xbw-abas .xbw-aba:nth-child(6) .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-recibo.webp")}
+/*
+ * O DESENHO SEGUE O NOME DA ABA, e nao a posicao dela na barra.
+ *
+ * Era por posicao ate 13/09/2026, quando ele mandou tirar tres abas do ar.
+ * Tirar a segunda teria empurrado o desenho de chamadas para o lugar de
+ * atualizacoes e assim por diante — a barra inteira com os icones trocados, e
+ * nenhum erro em lugar nenhum. Pelo nome, a ordem pode mudar a vontade.
+ */
+/*
+ * OS CINCO DESENHOS NOVOS — 14/09/2026.
+ *
+ * Ordem dele: "vamos substituir icones inferiores nas telas onde devem
+ * aparecer no game, adicionando icone que liga a tela de pedidos".
+ *
+ * Os cinco vieram como discos de vidro com anel aceso. Eles passam pelo mesmo
+ * recorte (scripts/abas/os_icones_do_rodape.py), que poe todos num quadro
+ * quadrado com o DISCO do mesmo tamanho — o brilho de cada um espalha
+ * diferente, e recortar pelo brilho deixaria os cinco botoes desencontrados.
+ *
+ * As tres abas fora do ar (atualizacoes, ligacoes, recibo) continuam com os
+ * desenhos antigos: elas voltam um dia, e apagar o desenho junto com a aba
+ * transformaria o retorno num trabalho novo.
+ */
+.xbw-abas .xbw-aba[data-aba="conversas"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba3-conversas.webp")}
+.xbw-abas .xbw-aba[data-aba="contatos"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba3-contatos.webp")}
+.xbw-abas .xbw-aba[data-aba="pedidos"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba3-pedidos.webp")}
+.xbw-abas .xbw-aba[data-aba="atualizacoes"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-atualizacoes.webp")}
+.xbw-abas .xbw-aba[data-aba="ligacoes"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-chamadas.webp")}
+.xbw-abas .xbw-aba[data-aba="ferramentas"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba3-ferramentas.webp")}
+.xbw-abas .xbw-aba[data-aba="entregaRapida"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba3-equipe.webp")}
+.xbw-abas .xbw-aba[data-aba="recibo"] .xbw-aba__icone{background-image:url("/assets/xbwapp/XBW_aba2-recibo.webp")}
 
 /* TECLADO — formato certo, colado na barra de escrever */
 .xbw-teclado{background:linear-gradient(180deg,#07182b 0%,#03080f 100%)!important;
@@ -4814,8 +4911,8 @@
 /* PAPEL CLARO — so atras dos contatos, nao na tela toda */
 .xbw-contatos ul,.xbw-conversas{
  background-color:#eef2f6;
- background-image:url("/assets/xbwapp/XBW_papel-claro.webp");
- background-size:200px auto;background-repeat:repeat;background-position:top left;
+ background-image:var(--xbw-veu),url("/assets/xbwapp/XBW_papel-claro.webp");
+ background-size:auto,200px auto;background-repeat:repeat,repeat;background-position:top left,top left;
  border-radius:2.2vh;box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28)}
 .xbw-contatos ul{padding:.6vh 0!important;margin-top:1.2vh}
 .xbw-conversas{padding:.4vh 0}
@@ -4901,8 +4998,8 @@
 /* a conversa ganha a mesma placa clara dos contatos */
 .xbw-fio{
  background-color:#eef2f6!important;
- background-image:url("/assets/xbwapp/XBW_papel-claro.webp")!important;
- background-size:200px auto!important;background-repeat:repeat!important;background-position:top left!important;
+ background-image:var(--xbw-veu),url("/assets/xbwapp/XBW_papel-claro.webp")!important;
+ background-size:auto,200px auto!important;background-repeat:repeat,repeat!important;background-position:top left,top left!important;
  border-radius:2.2vh!important;margin:1vh 2.6vw .3vh!important;
  box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28);padding:2vh 3.4vw!important}
 .xbw-fio .xbw-etiqueta,.xbw-fio .xbw-aviso{background:rgba(11,27,46,.10)!important;color:rgba(11,27,46,.72)!important}
@@ -4928,9 +5025,9 @@
  padding:0 3.4vw!important;min-height:0!important;height:clamp(30px,4vh,36px)!important;gap:2.2vw!important}
 
 /* as duas placas claras no mesmo padrao: mesma margem, mesmo canto */
-.xbw-contatos{padding:1.2vh 4vw 0!important}
+.xbw-contatos{padding:1.2vh 2.6vw 0!important}
 .xbw-contatos ul{margin:0!important}
-.xbw-conversas{margin:1.2vh 4vw 0!important}
+.xbw-conversas{margin:1.2vh 2.6vw 1.2vh!important}
 .xbw-contatos ul,.xbw-conversas{border-radius:2.2vh!important;box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28)!important}
 
 .xbw__tela>section:has(.xbw-contatos) .xbw-procura input{font:500 clamp(.78rem,1.85vh,.92rem)/1 system-ui,sans-serif!important}
@@ -4947,8 +5044,8 @@
 .xbw-chamadas>ul{
  margin:calc(max(1vh,env(safe-area-inset-top)) + clamp(42px,6.2vh,56px) + 1.4vh) 4vw 0!important;
  background-color:#eef2f6;
- background-image:url("/assets/xbwapp/XBW_papel-claro.webp");
- background-size:200px auto;background-repeat:repeat;background-position:top left;
+ background-image:var(--xbw-veu),url("/assets/xbwapp/XBW_papel-claro.webp");
+ background-size:auto,200px auto;background-repeat:repeat,repeat;background-position:top left,top left;
  border-radius:2.2vh;box-shadow:0 .4vh 1.6vh rgba(0,0,0,.28);padding:.4vh 0}
 .xbw-chamadas .xbw-chamada strong{color:#0b1b2e}
 .xbw-chamadas .xbw-chamada small{color:rgba(11,27,46,.62)}
@@ -6294,4 +6391,1987 @@
   font: 500 clamp(0.6rem, 1.45vh, 0.74rem) / 1.25 system-ui, sans-serif;
   color: #8fb6d8;
   text-align: center;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  CONSERTO DE 12/09/2026 — O TITULO VOLTOU, E NINGUEM MAIS FICA PRESO
+ *
+ *  Ordem dele: "AGORA ANALISE APP, ANALISE TODO O APP, TODAS AS TELAS, TUDO"
+ *  e depois "PROSSIGA COM TUDO". A analise abriu tela por tela no jogo dele e
+ *  mediu. Quatro achados tinham a MESMA causa, e a causa e uma linha:
+ *
+ *      .xbw-topo:has(.xbw-marca) { position: absolute; width: 42..56px }
+ *
+ *  Essa regra foi escrita para a TELA INICIAL, onde o alto vira so o selo da
+ *  XB com a busca do lado. So que o seletor pega QUALQUER cabecalho que tenha
+ *  titulo — e todos tem. Entao em Catalogo, Configuracoes, Ferramentas,
+ *  Atualizacoes, Ligacoes e Recados o cabecalho inteiro virava um selo de 42
+ *  pixels no canto direito, levando os botoes junto:
+ *
+ *    · o titulo sumia (a linha `.xbw-marca{display:none}` completava o servico)
+ *    · o botao de VOLTAR ia parar embaixo do selo, invisivel
+ *    · no Catalogo o botao "Pedidos" comecava no x=598 de uma tela de 602 —
+ *      quarenta pixels fora da tela
+ *    · e como tela de ferramenta nao tem a barra de abas, quem entrava no
+ *      Catalogo ou nas Configuracoes NAO TINHA SAIDA VISIVEL
+ *
+ *  O conserto nao desfaz a decisao dele (selo no canto, sem moldura): apenas
+ *  devolve o seletor ao lugar a que ele pertencia — a tela inicial, que e a
+ *  unica que tem a lista de contatos. Todo o resto volta a ter cabecalho de
+ *  gente: voltar a esquerda, titulo no meio, acao a direita.
+ *
+ *  De quebra isto resolve o "cada aba com um cabecalho diferente": os titulos
+ *  ja estavam escritos no codigo de cada tela, so estavam escondidos.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 1. CABECALHO DE VERDADE em toda tela que tem titulo. */
+.xbw-topo:has(.xbw-marca) {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: var(--xbw-toque) !important;
+  margin: max(1.2vh, env(safe-area-inset-top)) 0 0 !important;
+  padding: 1.2vh 4vw !important;
+  background-image: none !important;
+  z-index: auto;
+}
+
+.xbw-marca {
+  display: block !important;
+}
+
+/* 2. A TELA INICIAL continua como ele desenhou: so o selo no canto, sem titulo
+ *    escrito, com a busca do lado. */
+.xbw__tela > section:has(.xbw-contatos) > .xbw-topo:has(.xbw-marca) {
+  position: absolute !important;
+  top: max(1vh, env(safe-area-inset-top)) !important;
+  right: 3.4vw !important;
+  left: auto !important;
+  width: clamp(42px, 6.2vh, 56px) !important;
+  height: clamp(42px, 6.2vh, 56px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-image: url("/assets/xbwapp/XBW_marca-xb.webp") !important;
+  background-size: contain !important;
+  background-position: center center !important;
+  background-repeat: no-repeat !important;
+  z-index: 6;
+}
+
+.xbw__tela > section:has(.xbw-contatos) .xbw-marca {
+  display: none !important;
+}
+
+/* 3. LIGACOES: o cabecalho virou normal, entao a lista nao precisa mais do
+ *    empurrao que existia para desviar do selo solto. */
+.xbw-chamadas > ul {
+  margin: 1.2vh 4vw 0 !important;
+}
+
+.xbw-chamadas > .xbw-vazio {
+  margin-top: 2vh !important;
+}
+
+/* 4. OS NOMES DAS ABAS ESTAVAM EM 5,9 PIXELS.
+ *
+ *  Metade do menor tamanho que o proprio aplicativo define (--xbw-t-mini, 11
+ *  px). Quatro regras disputavam `.xbw-aba small` com !important e vencia a
+ *  menor, por ser a ultima. Fica uma so, legivel, e ela e esta. */
+.xbw-aba small {
+  font:
+    600 clamp(0.68rem, 1.5vh, 0.82rem) / 1.15 system-ui,
+    sans-serif !important;
+  letter-spacing: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* 5. ALVO DE TOQUE: nada abaixo de 44 px. Os filtros do Guia e a busca tinham
+ *    35, e 19 no campo de escrever. */
+.xbw-ficha {
+  min-height: var(--xbw-toque) !important;
+}
+
+.xbw-procura {
+  min-height: var(--xbw-toque) !important;
+}
+
+.xbw__tela > section:has(.xbw-contatos) .xbw-procura {
+  min-height: clamp(30px, 4vh, 36px) !important;
+}
+
+/* 6. ESTATISTICAS encostava o texto nas duas bordas. */
+.xbw-placar {
+  margin: 0 4vw !important;
+}
+
+/* 7. OS ROTULOS DE SECAO ESTAVAM COLADOS NAS DUAS BORDAS.
+ *
+ *  Nao era falta de regra: a regra existe desde sempre (.xbw-secao tem
+ *  margem de 4vw, .xbw-titulo de 5vw). O que acontece e que la em cima
+ *  mora um zerador generico — `.xbw h2, .xbw h3 { margin: 0 }` — e ele
+ *  PESA MAIS que uma classe sozinha. Entao o zerador vencia e o rotulo
+ *  encostava na borda esquerda enquanto as linhas embaixo tinham recuo.
+ *  Aqui a classe vem junto com a etiqueta, e ai ela ganha. */
+.xbw h2.xbw-secao {
+  margin: 1.4vh 4vw 0 !important;
+}
+
+.xbw h3.xbw-titulo {
+  margin: 2.4vh 5vw 0.8vh !important;
+}
+
+.xbw-rolar > h2.xbw-secao:first-child {
+  margin-top: 2vh !important;
+}
+
+/* 8. NA CONVERSA os botoes do alto tinham 19 px (o voltar) e 32 px (ligar e
+ *    chamar em video). Dedo nao acerta isso. */
+.xbw-conversa .xbw-topo .xbw-botao {
+  min-width: var(--xbw-toque) !important;
+  min-height: var(--xbw-toque) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  O CANTO DE CIMA EM TODA TELA — 12/09/2026
+ *
+ *  Ordem dele: "ACHO QUE TODA TELA DO APP, DEVE MANTER LOGO NA PARTE SUPERIOR
+ *  DIREITA E BOTAO DE VOLTAR AO GAME".
+ *
+ *  O selo e a saida saem de dentro das telas e passam a morar no aplicativo,
+ *  flutuando no canto de cima. Assim valem para as vinte e tantas telas de uma
+ *  vez — e nenhuma tela nova pode nascer sem eles.
+ *
+ *  Por isso, tres coisas saem daqui para tras:
+ *    · o selo desenhado no fundo do cabecalho (era so de algumas telas)
+ *    · o cabecalho da tela inicial virando so um selo no canto
+ *    · o segundo botao de voltar ao game, ao lado de "Todos os contatos"
+ *      (a marcacao continua no codigo; se ele quiser os dois, e so apagar a
+ *      regra que esconde)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* O aplicativo ja e `position: fixed; inset: 0` la em cima — ele mesmo serve
+ * de ancora para o canto. NAO mexer na posicao dele aqui: trocar para
+ * `relative` faz a tela encolher ate o tamanho do conteudo, e o mapa aparece
+ * por baixo (aconteceu, e o Recibo virou meia tela). */
+.xbw__canto {
+  position: absolute;
+  /* No MEIO da barra de cima, e nao no alto da tela — ver --xbw-barra-topo. */
+  top: calc(
+    max(1.2vh, env(safe-area-inset-top)) +
+      (var(--xbw-barra-topo) - var(--xbw-moeda)) / 2
+  );
+  /* Cola na COLUNA do aplicativo, e nao na borda da janela: numa tela larga o
+   * conteudo fica no meio, com 46rem de largura, e um selo perdido no canto da
+   * janela parece de outro programa. */
+  right: max(3.4vw, calc((100% - min(100%, 46rem)) / 2 + 2.6vw));
+  /* Acima da faixa de aviso (z 12) e da faixa de toque (z 14): se um aviso
+   * tapa a saida, quem quer voltar ao jogo fica esperando o aviso sumir. */
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  pointer-events: none;
+}
+
+.xbw__canto > * {
+  pointer-events: auto;
+}
+
+/*
+ * A SAIDA: uma peca redonda, do mesmo material dos botoes do game.
+ *
+ * Ordem dele, 12/09/2026: "MELHORE VIZUALMENTE BOTAO VOLTAR AO GAME, PADRAO DE
+ * QUALIDADE DO GAME". Era uma pilula escura e chapada, do tamanho de um aviso.
+ * Agora e uma moeda com luz em cima, aro e brilho em volta — o mesmo acabamento
+ * dos botoes desenhados do jogo — e faz par com o selo XB ao lado.
+ *
+ * A COR E A DO PINO — ordem dele, no mesmo dia: "DEIXE BOTAO DE VOLTAR AO MAPA
+ * COM COR LARANJA, IGUAL AOS PINOS". O laranja saiu medido do proprio desenho
+ * do pino de coleta (XB_Pino_coleta.png): #ff922a na borda acesa, #c96e25 no
+ * corpo, #8a4f1b na sombra. O botao leva de volta ao mapa, e agora ele tem a
+ * cor da coisa que vive la.
+ *
+ * O nome "Voltar ao game" continua no botao para quem le a tela em voz alta; o
+ * que sai e so o texto desenhado, que roubava o alto da conversa.
+ *
+ * Redonda nos dois tamanhos de tela, de proposito: botao que muda de forma
+ * conforme a janela deixa de ser reconhecido como o mesmo botao.
+ */
+.xbw__sair {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: var(--xbw-moeda);
+  height: var(--xbw-moeda);
+  min-width: var(--xbw-toque);
+  min-height: var(--xbw-toque);
+  margin: 0;
+  padding: 0;
+  font: var(--xbw-t-apoio);
+  white-space: nowrap;
+}
+
+/*
+ * ── A MESMA MOEDA DOS DOIS LADOS ──────────────────────────────────────────
+ *
+ * Ordem dele, 12/09/2026: "deixe laranja mesmo formato de botao sair do app".
+ *
+ * Entrar no aplicativo e voltar para o mapa sao a MESMA PORTA, vista de um lado
+ * e do outro. Entao viraram a mesma peca: mesmo laranja, mesmo aro escuro,
+ * mesmo brilho, mesma luz vindo de cima e da esquerda. Muda so o tamanho — no
+ * mapa ela e a unica porta — e o simbolo de dentro: alfinete para ir ao mapa,
+ * balao para entrar na conversa.
+ *
+ * O material mora numa regra SO. Se o laranja mudar um dia, muda nos dois; do
+ * jeito antigo (cada botao com a sua cor escrita a mao) um sempre ficava para
+ * tras e ninguem percebia ate ver os dois lado a lado.
+ *
+ * Nenhuma medida do aplicativo entra aqui: o botao do mapa vive fora dele e
+ * nao enxerga os valores de la.
+ */
+.mapa__xbwapp {
+  border: 0;
+  border-radius: 50%;
+  /* A luz vem de cima e da esquerda, como no resto do jogo. */
+  background:
+    radial-gradient(
+      120% 120% at 32% 20%,
+      rgba(255, 255, 255, 0.52),
+      rgba(255, 255, 255, 0) 46%
+    ),
+    linear-gradient(158deg, #ffa23a 0%, #e07a1c 52%, #8f4a12 100%);
+  /* recorte escuro, aro laranja, brilho em volta, e o volume por dentro */
+  box-shadow:
+    0 0 0 0.13rem rgba(28, 14, 4, 0.9),
+    0 0 0 0.26rem rgba(255, 158, 60, 0.62),
+    0 0 1.15rem rgba(255, 146, 42, 0.5),
+    inset 0 -0.2rem 0.45rem rgba(0, 0, 0, 0.4),
+    inset 0 0.2rem 0.35rem rgba(255, 255, 255, 0.34);
+  color: #fff6ea;
+  cursor: pointer;
+}
+
+.mapa__xbwapp:hover {
+  box-shadow:
+    0 0 0 0.13rem rgba(28, 14, 4, 0.9),
+    0 0 0 0.26rem rgba(255, 186, 110, 0.9),
+    0 0 1.5rem rgba(255, 170, 70, 0.68),
+    inset 0 -0.2rem 0.45rem rgba(0, 0, 0, 0.4),
+    inset 0 0.2rem 0.35rem rgba(255, 255, 255, 0.38);
+}
+
+.mapa__xbwapp:active {
+  box-shadow:
+    0 0 0 0.13rem rgba(28, 14, 4, 0.9),
+    0 0 0 0.26rem rgba(255, 158, 60, 0.62),
+    0 0 0.6rem rgba(255, 146, 42, 0.4),
+    inset 0 0.22rem 0.5rem rgba(0, 0, 0, 0.48);
+}
+
+/*
+ * O ALFINETE DE DENTRO, DESENHADO BRANCO — e nao a figura pronta.
+ *
+ * Continua sendo o ALFINETE, e nao a seta de voltar: a seta ja e o voltar DA
+ * TELA, e duas setas iguais no mesmo alto confundem (decisao de 12/09, mantida).
+ *
+ * O que mudou e de onde ele sai. A figura do aplicativo (XBW_local) nao e um
+ * alfinete solto: e uma MOEDA azul-escura inteira com o alfinete branco dentro.
+ * Em cima do laranja ela vira um disco azul dentro de um disco laranja, e as
+ * duas pecas brigam. Entao o alfinete e recortado aqui, em traco, e pintado de
+ * branco: o mesmo simbolo, sem a moeda azul junto, e nitido em qualquer
+ * tamanho de tela.
+ */
+.xbw__sair .xbw-i {
+  display: none;
+}
+
+/*
+ * ── O BOTAO VIROU O MUNDO, EM 14/09/2026 ──────────────────────────────────
+ *
+ * Ordem dele: "vamos trocar tambem o botao laranja da parte superior por
+ * estes", com o desenho do planeta no aro dourado.
+ *
+ * O PAR SE DESFAZ, e de proposito. Ate hoje este botao e o que abre o
+ * aplicativo la no mapa eram a MESMA moeda laranja, vista dos dois lados da
+ * mesma porta — mudava so o simbolo de dentro. Agora, do lado do aplicativo, o
+ * desenho diz PARA ONDE se volta (o mundo) em vez de so dizer que ha uma
+ * porta; do lado do mapa a moeda laranja fica, porque la o simbolo certo
+ * continua sendo o balao da conversa.
+ *
+ * O desenho ja vem com aro, brilho e volume proprios. Entao some tudo o que a
+ * moeda pintada em CSS punha por baixo: fundo, aro, sombra. Um aro de CSS por
+ * baixo de um aro desenhado vira dois aros, e e o tipo de coisa que ninguem
+ * sabe nomear mas todo mundo ve.
+ */
+.xbw__sair {
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.xbw__sair::before {
+  content: "";
+  width: 100%;
+  height: 100%;
+  background: url("/assets/xbwapp/XBW_botao_mundo.webp") center / contain
+    no-repeat;
+  filter: drop-shadow(0 0.12rem 0.3rem rgba(0, 0, 0, 0.45));
+}
+
+/* O nome fica para quem le a tela em voz alta; desenhado, ele roubava o alto
+ * da conversa. */
+.xbw__sair span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * A moeda e o selo tem o mesmo tamanho: no canto eles leem como um par.
+ *
+ * O piso e 44 pixels, o mesmo do alvo de toque: com 40 o botao ficava 44 de
+ * largo por 40 de alto — um ovo, e nao uma moeda.
+ */
+.xbw {
+  --xbw-moeda: clamp(var(--xbw-toque), 5.6vh, 52px);
+  /*
+   * A ALTURA DA BARRA DE CIMA, DITA UMA VEZ — 12/09/2026.
+   *
+   * Ordem dele: "ENCAIXAR PERFEITAMENTE BOTAO E LOGO NA BARRA". A moeda e o
+   * selo estavam TREZE PONTOS acima do meio da barra: por isso pareciam
+   * colados por cima dela, e nao encaixados nela.
+   *
+   * A conta so fecha se a barra e o canto sairem do MESMO numero. Este e o
+   * numero: a barra tem a altura da moeda mais um respiro, e o canto desce
+   * metade da sobra. Mexer em um sem mexer no outro volta a desalinhar — por
+   * isso os dois leem daqui.
+   *
+   * (Nao confundir com a classe .xbw-barra, que e a barra de ESCREVER, embaixo.)
+   */
+  --xbw-barra-topo: calc(var(--xbw-moeda) + 2.4vh);
+  /* O alfinete em traco: gota com furo no meio, como o do mapa. */
+  --xbw-alfinete: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23000' fill-rule='evenodd' d='M12 1.75c-3.73 0-6.75 3.02-6.75 6.75 0 4.86 5.62 12.06 6.16 12.75.15.19.33.3.59.3s.44-.11.59-.3c.54-.69 6.16-7.89 6.16-12.75 0-3.73-3.02-6.75-6.75-6.75Zm0 9.5a2.75 2.75 0 1 1 0-5.5 2.75 2.75 0 0 1 0 5.5Z'/%3E%3C/svg%3E");
+}
+
+.xbw__selo {
+  width: var(--xbw-moeda);
+  height: auto;
+  display: block;
+}
+
+/* O LUGAR RESERVADO: nenhum cabecalho escreve embaixo do canto. */
+.xbw {
+  /* Quanto do alto fica reservado para o canto. Na tela estreita o canto mora
+   * DENTRO da coluna do aplicativo e precisa deste lugar; na tela larga ele sai
+   * para o lado de fora e isto vira zero (ver o bloco de tela larga, adiante). */
+  --xbw-canto: 7rem;
+}
+
+.xbw-topo,
+.xbw-equipe__topo,
+.xbw-vazia,
+.xbw-decisao__topo {
+  padding-right: calc(var(--xbw-canto) + 4vw) !important;
+}
+
+/* O cabecalho da tela inicial volta a ser cabecalho: o selo agora e do canto. */
+.xbw-topo:has(.xbw-marca),
+.xbw__tela > section:has(.xbw-contatos) > .xbw-topo:has(.xbw-marca) {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: var(--xbw-toque) !important;
+  margin: max(1.2vh, env(safe-area-inset-top)) 0 0 !important;
+  padding: 1.2vh 4vw !important;
+  padding-right: calc(var(--xbw-canto) + 4vw) !important;
+  background-image: none !important;
+}
+
+.xbw-marca,
+.xbw__tela > section:has(.xbw-contatos) .xbw-marca {
+  display: block !important;
+}
+
+/* A busca da tela inicial nao precisa mais desviar do selo. */
+.xbw__tela > section:has(.xbw-contatos) .xbw-procura {
+  margin: 1.2vh 4vw 0.6vh !important;
+  min-height: var(--xbw-toque) !important;
+  height: auto !important;
+  padding: 0 3.4vw !important;
+}
+
+/* Ligacoes: o selo saiu do cabecalho, entao a lista sobe. */
+.xbw-chamadas > .xbw-topo {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  background-image: none !important;
+}
+
+.xbw-chamadas > ul {
+  margin: 1.2vh 4vw 0 !important;
+}
+
+/* O segundo botao de voltar, na linha dos contatos, sai de cena. */
+.xbw-contatos__jogo {
+  display: none !important;
+}
+
+/* A faixa de aviso deixa de atravessar o canto: ela para onde o canto comeca,
+ * em vez de passar por baixo do selo e do botao de voltar. */
+.xbw-faixa {
+  left: 4vw !important;
+  right: calc(var(--xbw-canto) + 4vw) !important;
+  width: auto !important;
+  transform: none !important;
+}
+
+/* A CONVERSA tem cabecalho proprio, com regra mais forte que a de cima: o
+ * lugar do canto precisa ser reservado nela tambem, senao o nome e os botoes
+ * de ligar passam por baixo do selo. */
+.xbw-conversa .xbw-topo {
+  padding-right: calc(var(--xbw-canto) + 4vw) !important;
+}
+
+/* TELA ESTREITA (telefone em pe): o botao de voltar ao game fica so com o
+ * alfinete. O nome sai, o botao continua do tamanho do dedo, e o cabecalho da
+ * conversa recupera o espaco do nome de quem esta falando — com o nome escrito
+ * ele sobrava "P…" numa tela de 600 pontos. */
+/*
+ * O CANTO MUDA DE LUGAR, NAO DE FORMA — 12/09/2026.
+ *
+ * Antes o botao de voltar tinha dois feitios: alfinete na tela estreita,
+ * pilula escrita na tela larga. Com a moeda do game ele e o MESMO nos dois
+ * tamanhos; o que muda e so onde o par (moeda + selo) mora.
+ *
+ * Numa tela estreita o aplicativo ocupa tudo e o par fica dentro da coluna,
+ * com lugar reservado no alto para nenhum cabecalho escrever por baixo.
+ *
+ * Numa tela larga o conteudo para numa coluna de 46rem no meio e sobra margem
+ * dos dois lados: o par sai para essa margem e o lugar reservado vira zero.
+ * O recuo e a largura do par (duas moedas e o vao entre elas) mais um respiro.
+ */
+@media (min-width: 1040px) {
+  .xbw {
+    --xbw-canto: 0rem;
+  }
+
+  .xbw__canto {
+    right: calc(
+      (100% - min(100%, 46rem)) / 2 - (var(--xbw-moeda) * 2 + 0.7rem + 1.4rem)
+    );
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ *  O ALTO DA CONVERSA — 12/09/2026
+ *
+ *  Ordem dele: "ENCAIXAR PERFEITAMENTE BOTAO E LOGO NA BARRA E MELHORAR NOME
+ *  DE USUARIO".
+ *
+ *  Medido antes de mexer, numa tela de 500 pontos, no grupo "Entregadores do
+ *  Bairro":
+ *    · o nome tinha 75 pontos de espaco e saia cortado em "Entre..."
+ *    · o meio da barra estava em 42 e o meio da moeda em 29 — treze fora
+ *    · sobravam 3 pontos entre o fim do nome e a moeda
+ *
+ *  Tres consertos, nesta ordem:
+ *    1. TODA BARRA DE CIMA TEM A MESMA ALTURA. Sem isto, cada tela alinha o
+ *       canto num lugar. Vale para a tela inicial, a conversa e as ligacoes.
+ *    2. O LUGAR RESERVADO SAI DO TAMANHO DO CANTO, e nao de um numero solto:
+ *       duas moedas, o vao entre elas e um respiro. Antes eram 7rem escritos a
+ *       mao, que davam 3 pontos de folga — o nome encostava na moeda.
+ *    3. O NOME MANDA NA LINHA. Ele cresce um pouco, corta com reticencias e
+ *       nunca empurra o resto: quem le a conversa procura o nome primeiro.
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+.xbw-conversa .xbw-topo,
+.xbw-chamadas > .xbw-topo,
+.xbw-topo,
+.xbw-topo:has(.xbw-marca),
+.xbw__tela > section:has(.xbw-contatos) > .xbw-topo:has(.xbw-marca) {
+  min-height: var(--xbw-barra-topo) !important;
+  height: var(--xbw-barra-topo) !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  align-items: center !important;
+}
+
+/* O lugar do canto, medido no proprio canto. */
+.xbw-conversa .xbw-topo,
+.xbw-topo {
+  padding-right: calc(
+    var(--xbw-moeda) * 2 + 0.7rem + 1.2rem + 4vw
+  ) !important;
+}
+
+/* O NOME DE QUEM ESTA FALANDO — o que a pessoa procura primeiro. */
+.xbw-topo__abrir {
+  min-width: 0;
+  flex: 1 1 auto;
+  gap: 0.6rem;
+}
+
+.xbw-topo__quem {
+  min-width: 0;
+}
+
+.xbw-topo .xbw-topo__quem strong {
+  font: 800 clamp(1rem, 2.6vh, 1.22rem) / 1.12 system-ui, sans-serif !important;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+.xbw-topo .xbw-topo__quem small {
+  font: 500 clamp(0.64rem, 1.55vh, 0.8rem) / 1.2 system-ui, sans-serif !important;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.78;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O FOLEGO DO ENTREGADOR — 12/09/2026
+ *
+ * Ordem dele: "cada corrida quanto desgasta". Primeiro pedaco da saude: so o
+ * numero caindo e aparecendo. As paradas (agua, almoco, expediente) vem
+ * depois, penduradas nestas mesmas faixas.
+ *
+ * O porque de cada numero mora em `oFolego`; aqui so as cores.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.xbw-folego {
+  display: grid;
+  justify-items: center;
+  gap: 0.45vh;
+  width: 100%;
+  margin-top: 0.3vh;
+}
+
+/*
+ * A CALHA E A BARRA.
+ *
+ * A calha fica sempre visivel, mesmo com o folego no fim: barra que some
+ * inteira parece defeito, e nao aviso.
+ */
+.xbw-folego i {
+  display: block;
+  width: 82%;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: rgba(8, 20, 38, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.18);
+  overflow: hidden;
+}
+
+.xbw-folego b {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--folego, #57c98a);
+  /*
+   * A barra anda devagar de proposito. O folego cai um fio por segundo; sem
+   * este respiro ela treme o tempo todo e puxa o olho para uma coisa que quase
+   * nao mudou.
+   */
+  transition:
+    width 900ms linear,
+    background 900ms linear;
+}
+
+.xbw-folego em {
+  font:
+    600 clamp(0.56rem, 1.3vh, 0.68rem) / 1 system-ui,
+    sans-serif;
+  font-style: normal;
+  color: var(--folego, #57c98a);
+  letter-spacing: 0.02em;
+}
+
+/*
+ * AS QUATRO FAIXAS.
+ *
+ * Verde, amarelo, laranja, vermelho — a MESMA escada das bolinhas dos pinos,
+ * de proposito: quem ja aprendeu que amarelo e "aperta" no mapa nao precisa
+ * aprender de novo aqui.
+ */
+.xbw-folego[data-faixa="inteiro"] {
+  --folego: #57c98a;
+}
+
+.xbw-folego[data-faixa="cansado"] {
+  --folego: #e8d94a;
+}
+
+.xbw-folego[data-faixa="no-limite"] {
+  --folego: #f2921d;
+}
+
+.xbw-folego[data-faixa="acabado"] {
+  --folego: #e8743b;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xbw-folego b {
+    transition: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O CRACHA DO ENTREGADOR E A OFICINA — 13/09/2026
+ *
+ * Ordem dele: "ao clicar no cartao abre uma tela, onde mostra imagem de
+ * entregador, com caixas que te falei, depois clicando nessas caixas
+ * chegamos ate caixas finais para upar entregador".
+ *
+ * O que cada caixa contem e por que, mora em `aFicha`; aqui so o desenho.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * O CRACHA E UMA COLUNA, como todas as telas: `.xbw__tela > section` ja manda
+ * display flex, e escrever `display: grid` aqui nao venceria esse seletor —
+ * so pareceria funcionar ate alguem olhar a tela. Quem estica e o desenho.
+ *
+ * ── A TELA MUDOU EM 14/09/2026 ────────────────────────────────────────────
+ *
+ * Ordem dele: "ao acessar essa tela icones na parte inferior devem sumir,
+ * renan e informacoes de localizacao tambem devem sair e barra de saude,
+ * entram novas caixas que devem ocupar desde a parte inferior organizadas
+ * junto com renan na tela, caixas novas e renan tambem vira botao".
+ *
+ * Sairam a faixa do nome, o lugar onde ele esta e a barra de folego. Sobraram
+ * duas coisas, e as duas sao botao: ELE e as TRES CAIXAS. E a barra de abas
+ * some — quem a esconde e o aplicativo, avisado por esta tela.
+ *
+ * Por isso o recheio de baixo e ZERO: as caixas encostam na borda da tela, no
+ * lugar onde as abas estavam. Era o que sobrava de espaco e virou o desenho.
+ */
+.xbw-cracha {
+  position: relative;
+  gap: 0;
+  padding: 0 0 1vh;
+}
+
+.xbw-cracha > * {
+  flex: none;
+}
+
+/*
+ * A UNICA SAIDA DA TELA.
+ *
+ * Ela morava na faixa do nome, que saiu; e a barra de abas, que era a outra
+ * saida, some aqui. Sem este botao a pessoa entra na ficha e so sai fechando
+ * o aplicativo inteiro.
+ *
+ * Flutua por cima do desenho em vez de ocupar uma linha propria: uma linha so
+ * para a seta comeria altura do desenho, que e o que ele pediu para crescer.
+ *
+ * E peca PROPRIA, e nao um pedaco do cracha, porque a tela da bicicleta usa a
+ * mesma seta pelo mesmo motivo. Nome de peca diz de quem ela e: chamada de
+ * `cracha__voltar` em duas telas diferentes, ela mentiria sobre o dono.
+ */
+.xbw-volta {
+  position: absolute;
+  top: 1.2vh;
+  left: 3vw;
+  z-index: 2;
+  width: max(34px, 4.4vh);
+  height: max(34px, 4.4vh);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(120, 190, 255, 0.24);
+  border-radius: 50%;
+  background: rgba(8, 24, 46, 0.66);
+  color: #eaf6ff;
+  font:
+    700 clamp(1.1rem, 2.8vh, 1.4rem) / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-volta:active {
+  transform: scale(0.94);
+}
+
+/*
+ * O DESENHO — QUE AGORA E BOTAO.
+ *
+ * Ordem dele, 14/09/2026: "ao tocar em renan abrir nova tela para
+ * configuracao futura". O desenho ja era a maior coisa da tela; agora ele TEM
+ * funcao, e o alvo de toque e do tamanho dele — o contrario do caminho comum,
+ * em que a pessoa procura uma engrenagem de oito pixels num canto.
+ *
+ * `contain` e nao `cover` porque a pessoa foi recortada inteira de proposito —
+ * cortar o pe para preencher a caixa desfaz o unico motivo de ter pedido o
+ * desenho de corpo inteiro. O brilho embaixo e o chao: sem ele a pessoa
+ * parece flutuando no fundo azul.
+ *
+ * `flex: 1 1 0` com `min-height: 0` e o que segura o desenho DENTRO da tela.
+ * Com base automatica a caixa cresce ate o tamanho da imagem e passa por cima
+ * das caixas — foi o que aconteceu na primeira montagem. Com base zero ela
+ * fica com o que sobrou, e a imagem se ajusta ao que sobrou.
+ */
+.xbw-cracha__pessoa {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  flex: 1 1 0;
+  min-height: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.xbw-cracha__pessoa:active {
+  transform: scale(0.99);
+}
+
+.xbw-cracha__pessoa::after {
+  content: "";
+  position: absolute;
+  bottom: 0.4vh;
+  width: min(52vw, 230px);
+  height: 2.2vh;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(80, 190, 255, 0.3),
+    transparent 70%
+  );
+}
+
+/*
+ * `max-height` EM CAIXA FLEXIVEL, e nao em grade.
+ *
+ * Na grade a linha era automatica — ou seja, do tamanho do conteudo — e uma
+ * altura em porcentagem nao tem contra o que medir numa linha assim: ela some
+ * e a imagem volta ao tamanho natural, passando por cima do resto da tela.
+ * Numa caixa flexivel com `flex: 1 1 0` a altura do pai e certa, e a
+ * porcentagem passa a valer.
+ */
+.xbw-cracha__pessoa img {
+  /*
+   * Ordem dele, 13/09/2026: "diminua renan e lorena para caber na tela".
+   * Nao e so caber — e sobrar ar em volta. Por isso o teto e 92% da altura e
+   * 60% da largura: a pessoa fica inteira, com folga dos dois lados.
+   */
+  max-height: 92%;
+  width: auto;
+  max-width: 60%;
+  object-fit: contain;
+  filter: drop-shadow(0 1.2vh 1.6vh rgba(2, 10, 24, 0.55));
+}
+
+/* Quem ainda nao tem desenho de corpo inteiro aparece redondo, e menor. */
+.xbw-cracha__so-rosto {
+  height: auto;
+  width: min(42vw, 180px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top center;
+  border: max(2px, 0.3vh) solid #2fbf71;
+}
+
+.xbw-cracha__pessoa i {
+  font:
+    800 clamp(2.4rem, 9vh, 4rem) / 1 system-ui,
+    sans-serif;
+  font-style: normal;
+  color: #eaf6ff;
+}
+
+.xbw-cracha__caixas {
+  list-style: none;
+  margin: 0;
+  padding: 0 2.2vw;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  align-items: end;
+  gap: 1.6vw;
+}
+
+/*
+ * AS TRES CAIXAS DESENHADAS POR ELE — 14/09/2026.
+ *
+ * O nome e a frase de cada uma estao PINTADOS dentro do desenho. Entao a caixa
+ * nao escreve nenhum dos dois por cima: escrever de novo poria a mesma palavra
+ * duas vezes na mesma caixa.
+ *
+ * O que fica escrito e o que o desenho NAO sabe: quanto falta melhorar. Esse
+ * numero muda a cada peca comprada, e desenho nao muda.
+ *
+ * A caixa nao tem fundo, nem borda, nem cantos: o desenho ja tem os tres, com
+ * o brilho ciano em volta. Uma moldura de CSS por cima brigaria com a moldura
+ * que ele desenhou.
+ */
+.xbw-caixona {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.5vh;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.xbw-caixona:active {
+  transform: scale(0.97);
+}
+
+/* A caixa sem nada dentro fica apagada, mas continua na tela: ela promete. */
+.xbw-caixona[data-vazia="sim"] {
+  opacity: 0.42;
+  cursor: default;
+}
+
+/*
+ * O teto de altura e o que segura as tres numa tela baixa e larga: sem ele a
+ * largura da coluna manda sozinha, o desenho estica para baixo e espreme o
+ * entregador contra o alto da tela.
+ */
+.xbw-caixona img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 40vh;
+  object-fit: contain;
+  -webkit-user-drag: none;
+}
+
+.xbw-caixona i {
+  display: block;
+  width: 74%;
+  height: 0.34rem;
+  border-radius: 999px;
+  background: rgba(8, 20, 38, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.18);
+  overflow: hidden;
+}
+
+.xbw-caixona b {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #4fc3f7;
+}
+
+.xbw-caixona em {
+  font:
+    600 clamp(0.5rem, 1.2vh, 0.62rem) / 1 system-ui,
+    sans-serif;
+  font-style: normal;
+  color: #8fb6d8;
+}
+
+/*
+ * A TELA DA BICICLETA — irma da ficha, com duas caixas no lugar do entregador.
+ *
+ * Ordem dele, 14/09/2026: "ao clicar em bicicleta devemos ter uma tela nesse
+ * formato seguinte, sem renan e duas caixas no lugar como botoes".
+ *
+ * Mesmo jeito da ficha: sem faixa de nome, sem barra de abas, a seta flutuando
+ * e o desenho dele ocupando a tela. Quem chega aqui veio de um toque na caixa
+ * da bicicleta — se a tela mudasse de familia no meio do caminho, a pessoa
+ * sentiria que saiu do aplicativo.
+ */
+.xbw-portaria {
+  position: relative;
+  gap: 0;
+  padding: 0 0 1vh;
+  justify-content: center;
+}
+
+/*
+ * As duas ficam no MEIO da altura, e nao encostadas embaixo como as tres da
+ * ficha. Sao duas escolhas e mais nada na tela: empurradas para o rodape,
+ * deixariam um palmo de azul vazio em cima sem nada para olhar.
+ */
+.xbw-portaria__caixas {
+  list-style: none;
+  margin: 0;
+  padding: 0 3vw;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: 3vw;
+}
+
+/*
+ * Duas caixas tem quase o dobro da largura de uma das tres da ficha, entao o
+ * teto de altura tambem sobe: sem isso, numa tela baixa e larga elas
+ * esticariam para fora da moldura do telefone.
+ */
+.xbw-caixona--dupla img {
+  max-height: 62vh;
+}
+
+.xbw-caixinha {
+  width: 100%;
+  display: grid;
+  justify-items: center;
+  gap: 0.4vh;
+  padding: 1.2vh 1.6vw;
+  border: 1px solid rgba(120, 190, 255, 0.22);
+  border-radius: 1.2vh;
+  background: rgba(12, 34, 60, 0.66);
+  cursor: pointer;
+}
+
+.xbw-caixinha:active {
+  transform: scale(0.98);
+}
+
+/* A caixa sem nada dentro fica apagada, mas continua na tela: ela promete. */
+.xbw-caixinha[data-vazia="sim"] {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.xbw-caixinha strong {
+  font:
+    800 clamp(0.74rem, 1.9vh, 0.92rem) / 1.1 system-ui,
+    sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-caixinha small {
+  font:
+    500 clamp(0.55rem, 1.3vh, 0.66rem) / 1.2 system-ui,
+    sans-serif;
+  color: #8fb6d8;
+  text-align: center;
+}
+
+.xbw-caixinha i {
+  display: block;
+  width: 86%;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(8, 20, 38, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.18);
+  overflow: hidden;
+}
+
+.xbw-caixinha b {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: #4fc3f7;
+}
+
+.xbw-caixinha em {
+  font:
+    600 clamp(0.52rem, 1.2vh, 0.62rem) / 1 system-ui,
+    sans-serif;
+  font-style: normal;
+  color: #8fb6d8;
+}
+
+/*
+ * OS AJUSTES DO ENTREGADOR — a tela que abre ao tocar nele.
+ *
+ * Ela esta vazia e DIZ que esta. Ele pediu o caminho, e nao o conteudo: o
+ * conteudo ainda vai ser decidido. Tres controles de mentira para "nao parecer
+ * vazia" seriam piores de duas maneiras — quem joga mexeria em coisa que nao
+ * faz nada, e o ajuste de verdade, quando chegasse, teria de brigar com o
+ * lugar ja ocupado por um enfeite.
+ */
+.xbw-ajustes-do-entregador {
+  gap: 2vh;
+  padding: 2vh 0 0;
+}
+
+.xbw-ajustes-do-entregador .xbw-vazia {
+  padding: 0 6vw;
+}
+
+/* O caminho do trabalho: grande, sozinho, e no alcance do polegar. */
+.xbw-cracha__pegar {
+  width: 100%;
+  padding: 1.6vh 0;
+  border: 0;
+  border-radius: 1.2vh;
+  background: linear-gradient(180deg, #2fbf71, #1d8f53);
+  color: #f7fffb;
+  font:
+    800 clamp(0.9rem, 2.2vh, 1.1rem) / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-cracha__pegar:active {
+  transform: scale(0.99);
+}
+
+/* ── A CAIXA ABERTA, COM AS PECAS ─────────────────────────────────────── */
+
+.xbw-oficina {
+  gap: 1.2vh;
+  padding: 2vh 4vw 3vh;
+}
+
+.xbw-oficina__topo {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2vw;
+}
+
+.xbw-oficina__titulo {
+  display: grid;
+  gap: 0.2vh;
+}
+
+.xbw-oficina__titulo strong {
+  font:
+    800 clamp(1rem, 2.6vh, 1.3rem) / 1.1 system-ui,
+    sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-oficina__titulo small {
+  font:
+    500 clamp(0.62rem, 1.5vh, 0.76rem) / 1.2 system-ui,
+    sans-serif;
+  color: #8fb6d8;
+}
+
+.xbw-peca {
+  display: grid;
+  gap: 0.5vh;
+  padding: 1.4vh 3.2vw;
+  border: 1px solid rgba(120, 190, 255, 0.22);
+  border-radius: 1.2vh;
+  background: rgba(12, 34, 60, 0.66);
+}
+
+/*
+ * PECA QUE A EMPRESA AINDA NAO ALCANCOU.
+ *
+ * Apagar o cartao inteiro foi a primeira tentativa, e estava errado: no banco
+ * de testes, com a empresa no nivel 1, TODAS as pecas ficam bloqueadas — e
+ * uma tela inteira apagada nao se le. O que a pessoa faz aqui e planejar o
+ * que vem depois, entao o texto continua nitido; quem avisa que ainda nao da
+ * e o botao, que diz o nivel em que abre.
+ */
+.xbw-peca[data-liberada="nao"] .xbw-peca__agora,
+.xbw-peca[data-liberada="nao"] .xbw-peca__proximo {
+  color: #8fb6d8;
+}
+
+.xbw-peca__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2vw;
+  margin: 0;
+}
+
+.xbw-peca__topo strong {
+  font:
+    800 clamp(0.82rem, 2.1vh, 1rem) / 1.1 system-ui,
+    sans-serif;
+  color: #eaf6ff;
+}
+
+/*
+ * OS CINCO TRACINHOS.
+ *
+ * Valem mais que "nivel 2 de 5" porque nao precisam ser lidos: quatro pecas
+ * numa tela viram quatro desenhos comparaveis de relance.
+ */
+.xbw-peca__niveis {
+  display: flex;
+  gap: 0.6vw;
+}
+
+.xbw-peca__niveis i {
+  width: 2.4vw;
+  max-width: 14px;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(8, 20, 38, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.18);
+}
+
+.xbw-peca__niveis i.esta-em {
+  background: #4fc3f7;
+  box-shadow: none;
+}
+
+.xbw-peca__agora {
+  margin: 0;
+  font:
+    600 clamp(0.68rem, 1.7vh, 0.84rem) / 1.2 system-ui,
+    sans-serif;
+  color: #cfe6fb;
+}
+
+.xbw-peca__proximo {
+  margin: 0;
+  font:
+    500 clamp(0.62rem, 1.5vh, 0.76rem) / 1.2 system-ui,
+    sans-serif;
+  color: #8fb6d8;
+}
+
+/* Cada efeito e uma etiqueta: a pessoa le tres palavras, nao uma frase. */
+.xbw-peca__muda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2vw 1.6vw;
+  margin: 0;
+}
+
+.xbw-peca__muda span {
+  padding: 0.3vh 2vw;
+  border-radius: 999px;
+  background: rgba(79, 195, 247, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.22);
+  font:
+    600 clamp(0.56rem, 1.35vh, 0.7rem) / 1.2 system-ui,
+    sans-serif;
+  color: #9fd8ff;
+}
+
+.xbw-peca__bt {
+  margin-top: 0.4vh;
+  padding: 1.1vh 0;
+  border: 0;
+  border-radius: 1vh;
+  background: linear-gradient(180deg, #2fbf71, #1d8f53);
+  color: #f7fffb;
+  font:
+    800 clamp(0.72rem, 1.8vh, 0.88rem) / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-peca__bt:disabled {
+  background: rgba(12, 34, 60, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(120, 190, 255, 0.22);
+  color: #7fa5c6;
+  cursor: default;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O RODAPE COM TRES ABAS, E O BOTAO DE VOLTAR NO MEIO — 13/09/2026
+ *
+ * Ordem dele: "retire do app por enquanto recibo, ligacoes, atualizacoes,
+ * vamos aumentar mais os icones ate onde der, e gerar animacoes quando tiver
+ * conversas, icone de conversa deve pulsar a cor como se estivesse acendendo
+ * e apagando" e "deixe tambem botao de voltar ao mapa na parte superior
+ * central do ap".
+ *
+ * QUAIS abas estao no ar mora em `asAbasDoApp`; aqui so o tamanho e o brilho.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * OS ICONES CRESCEM ATE ONDE A BARRA DEIXA.
+ *
+ * Com seis abas cada uma tinha um sexto da largura, e o desenho parava em
+ * 2,15rem para caber. Com tres, cada uma tem o dobro — entao o teto sobe para
+ * 3,4rem, que e onde o desenho ainda nao encosta no de baixo nem empurra o
+ * nome para fora.
+ *
+ * O piso em vh existe para a tela deitada: numa janela baixa o rodape nao pode
+ * comer metade da altura so porque ha largura sobrando.
+ */
+.xbw-abas .xbw-aba__icone {
+  width: clamp(2.2rem, 6.2vh, 3.4rem) !important;
+  height: clamp(2.2rem, 6.2vh, 3.4rem) !important;
+}
+
+/*
+ * O nome cresce junto: icone grande com letra de lupa fica desequilibrado.
+ *
+ * O piso e 0,68rem, que e o menor tamanho de letra que o aplicativo inteiro
+ * usa — com seis abas o nome tinha de encolher abaixo disso para caber, e com
+ * tres nao precisa mais. Ha um teste guardando esse piso.
+ */
+.xbw-aba small {
+  font:
+    700 clamp(0.68rem, 1.5vh, 0.82rem) / 1.1 system-ui,
+    sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
+/* Com tres abas cabe folga entre elas, e cada alvo fica bem mais fácil. */
+.xbw-abas {
+  gap: 2vw !important;
+  padding: 1vh 4vw max(1.6vh, env(safe-area-inset-bottom)) !important;
+}
+
+.xbw-aba {
+  padding: 0.6vh 0.4vw !important;
+  gap: 0.5vh !important;
+}
+
+/*
+ * ── O ICONE DE CONVERSA PISCANDO ─────────────────────────────────────────
+ *
+ * Ordem dele: "pulsar a cor como se estivesse acendendo e apagando".
+ *
+ * Acende com brilho e um respiro de tamanho, e nao com opacidade: um desenho
+ * que some e volta parece falha de carregamento; um desenho que ACENDE parece
+ * chamada. O brilho azul e o mesmo da marca, entao a aba nao muda de
+ * identidade enquanto chama.
+ *
+ * O piscar so existe enquanto ha recado nao lido — quem manda e o
+ * `data-chamando` que a tela escreve. Zerou, para sozinho, sem ninguem
+ * precisar desligar nada.
+ */
+@keyframes xbw-aba-chamando {
+  0%,
+  100% {
+    filter: brightness(1) drop-shadow(0 0 0 rgba(79, 195, 247, 0));
+    transform: scale(1);
+  }
+  50% {
+    filter: brightness(1.55) drop-shadow(0 0 0.7rem rgba(79, 195, 247, 0.95));
+    transform: scale(1.09);
+  }
+}
+
+.xbw-aba[data-chamando="sim"] .xbw-aba__icone {
+  animation: xbw-aba-chamando 1.25s ease-in-out infinite;
+  /* O brilho passa por cima da barra, e nao fica recortado nela. */
+  will-change: filter, transform;
+}
+
+/* O nome acompanha de leve: o olho segue a palavra, nao so a figura. */
+@keyframes xbw-aba-nome-chamando {
+  0%,
+  100% {
+    color: var(--xbw-texto-2, #8fb6d8);
+  }
+  50% {
+    color: #9fd8ff;
+  }
+}
+
+.xbw-aba[data-chamando="sim"] small {
+  animation: xbw-aba-nome-chamando 1.25s ease-in-out infinite;
+}
+
+/* Quem pediu menos movimento no sistema recebe a cor, e nao o pulo. */
+@media (prefers-reduced-motion: reduce) {
+  .xbw-aba[data-chamando="sim"] .xbw-aba__icone {
+    animation: none;
+    filter: brightness(1.35) drop-shadow(0 0 0.5rem rgba(79, 195, 247, 0.8));
+  }
+  .xbw-aba[data-chamando="sim"] small {
+    animation: none;
+    color: #9fd8ff;
+  }
+}
+
+/*
+ * ── O BOTAO DE VOLTAR AO MAPA, NO MEIO DO ALTO ───────────────────────────
+ *
+ * Ordem dele, 13/09/2026: "deixe tambem botao de voltar ao mapa na parte
+ * superior central do ap".
+ *
+ * O canto continua sendo a faixa inteira do alto; o que muda e que a moeda
+ * laranja sai da fila e vai para o meio, e o selo XB fica sozinho na direita.
+ * Assim a saida deixa de ser um item no canto e vira o ponto do alto — que e
+ * o que ele pediu, e tambem o lugar onde o polegar de quem segura o telefone
+ * com as duas maos chega primeiro.
+ */
+.xbw__canto {
+  left: max(3.4vw, calc((100% - min(100%, 46rem)) / 2 + 2.6vw));
+  justify-content: flex-end;
+}
+
+.xbw__sair {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/*
+ * ── O BOTAO DE VOLTAR GANHA UMA FAIXA SO DELE ────────────────────────────
+ *
+ * A primeira tentativa foi a obvia: soltar a moeda no meio do alto, por cima
+ * do cabecalho de cada tela. Medido na tela, deu errado em quatro lugares —
+ * ela caiu em cima do selo "online" do Renan, em cima da linha de aviso da
+ * Entrega Rapida, e empurrou "Entrega Rapida" e "livre em Pizzaria Forno de
+ * Pedra" para duas e quatro linhas.
+ *
+ * O remendo seria espremer todo cabecalho para a metade esquerda. So que o
+ * cabecalho e onde a tela diz o que ela e; encolher todos eles pela metade
+ * para caber um botao e pagar caro por uma coisa barata.
+ *
+ * Entao a moeda saiu da briga: ela tem a propria faixa, no alto de tudo, com
+ * o selo XB do lado direito. Custa pouco mais de meio centimetro de altura, e
+ * em troca TODO cabecalho voltou a ter a largura inteira — inclusive os que ja
+ * estavam apertados antes desta mudanca, porque o lugar que ficava reservado
+ * no canto direito deixou de ser preciso.
+ */
+.xbw {
+  grid-template-rows: auto 1fr auto auto;
+  /* Ninguem mais precisa guardar canto: a faixa nao pisa em tela nenhuma. */
+  --xbw-canto: 0rem;
+}
+
+.xbw__canto {
+  /* Primeira linha da grade, ainda que no codigo ela venha por ultimo. */
+  order: -1;
+  position: static;
+  width: 100%;
+  height: auto;
+  padding: 0.8vh max(3.4vw, calc((100% - min(100%, 46rem)) / 2 + 2.6vw));
+  justify-content: flex-end;
+  /* Duas linhas: nome, moeda e selo em cima; a barra de celular embaixo. */
+  flex-wrap: wrap;
+  row-gap: 0.5vh;
+}
+
+/* A moeda no meio da faixa; o selo XB fica sozinho na direita. */
+.xbw__sair {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * CONTATOS, O NOME NO CANTO E A PLACA MAIS ALTA — 13/09/2026
+ *
+ * Ordem dele: "precisamos adicionar mais um botão que deve ser contatos que
+ * ficou faltando, temos algo mesmo estilo, um azul escuro, e suba mais tela
+ * cinza, e suba no canto superior XBWAPP".
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * O NOME DO APLICATIVO NA FAIXA DE CIMA.
+ *
+ * Encosta na esquerda enquanto a moeda fica no meio e o selo na direita — os
+ * tres dividem a mesma faixa, e nenhum precisa de linha propria. Ele e
+ * absoluto pelo mesmo motivo da moeda: a faixa alinha pela direita, e um
+ * terceiro item na fila empurraria o selo para dentro.
+ */
+.xbw__nome {
+  position: absolute;
+  left: max(3.4vw, calc((100% - min(100%, 46rem)) / 2 + 2.6vw));
+  font:
+    800 clamp(0.95rem, 2.4vh, 1.25rem) / 1 system-ui,
+    sans-serif;
+  letter-spacing: 0.01em;
+  color: #eaf6ff;
+  pointer-events: none;
+}
+
+.xbw__nome em {
+  font-style: normal;
+  color: var(--xbw-marca);
+}
+
+/*
+ * COM QUATRO ABAS, o desenho encolhe um pouco — mas segue bem maior do que
+ * era com seis. O nome embaixo nao desce do piso da casa.
+ */
+.xbw-abas .xbw-aba__icone {
+  width: clamp(1.9rem, 5.2vh, 2.85rem) !important;
+  height: clamp(1.9rem, 5.2vh, 2.85rem) !important;
+}
+
+.xbw-abas {
+  gap: 1.2vw !important;
+  padding: 1vh 3vw max(1.6vh, env(safe-area-inset-bottom)) !important;
+}
+
+/* ── A AGENDA ────────────────────────────────────────────────────────────
+ *
+ * Mesmo desenho da lista de conversas, de proposito: sao duas listas de
+ * gente, e duas listas de gente com aparencia diferente fazem a pessoa
+ * procurar duas vezes onde deveria procurar uma.
+ */
+.xbw-agenda {
+  overflow: hidden;
+}
+
+/* O titulo fica parado; quem rola e a placa. */
+.xbw-agenda > .xbw-topo {
+  flex: none;
+}
+
+/*
+ * A PLACA CLARA DOS CONTATOS.
+ *
+ * Mesmo papel da lista de conversas, de proposito: sao duas listas de gente, e
+ * duas listas de gente com aparencia diferente fazem a pessoa procurar duas
+ * vezes onde deveria procurar uma.
+ *
+ * A placa e quem tem tamanho; a lista rola dentro dela. A tela inteira nao
+ * pode rolar, porque a faixa de cima e as abas de baixo ficam sempre no lugar.
+ */
+/*
+ * A ROLAGEM COM BARRA À VISTA — uma só, para todas as telas.
+ *
+ * Nasceu na agenda de contatos e virou peça comum quando a loja chegou: duas
+ * barras parecidas seriam duas para manter, e a segunda ficaria para trás.
+ *
+ * "placa" põe o papel claro por baixo (contatos); "solto" rola sem moldura
+ * (as telas da loja, que ficam sobre o azul).
+ */
+.xbw-rolagem {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.xbw-rolagem[data-aspecto="placa"] {
+  margin: 1.2vh 2.6vw 1.2vh !important;
+  background-color: #eef2f6;
+  background-image: var(--xbw-veu), url("/assets/xbwapp/XBW_papel-claro.webp");
+  background-size: auto, 200px auto;
+  background-repeat: repeat, repeat;
+  background-position: top left, top left;
+  border-radius: 2.2vh;
+  box-shadow: 0 0.4vh 1.6vh rgba(0, 0, 0, 0.28);
+}
+
+.xbw-rolagem__corpo {
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.xbw-rolagem[data-aspecto="placa"] .xbw-rolagem__corpo {
+  padding: 0.4vh 0 1.2vh;
+}
+
+/*
+ * O TRILHO E O POLEGAR.
+ *
+ * Desenhados à mão porque o aplicativo esconde toda barra do navegador, e a
+ * que o navegador do jogo desenha some sozinha com a tela parada.
+ */
+.xbw-rolagem__trilho {
+  position: absolute;
+  top: 0.9vh;
+  right: 0.9vw;
+  bottom: 0.9vh;
+  width: max(6px, 1.3vw);
+  border-radius: 999px;
+  background: rgba(11, 27, 46, 0.1);
+  pointer-events: none;
+}
+
+.xbw-rolagem__polegar {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  min-height: 8%;
+  border-radius: 999px;
+  background: rgba(11, 27, 46, 0.42);
+}
+
+/* Sobre o azul o trilho se inverte: claro sobre escuro, e não o contrário. */
+.xbw-rolagem[data-aspecto="solto"] .xbw-rolagem__trilho {
+  background: rgba(160, 205, 245, 0.14);
+}
+
+.xbw-rolagem[data-aspecto="solto"] .xbw-rolagem__polegar {
+  background: rgba(160, 205, 245, 0.5);
+}
+
+.xbw-agenda__lista {
+  list-style: none;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.xbw-agenda__lista button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  padding: 1.25vh 3.4vw;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-agenda__lista button:active {
+  background: rgba(11, 27, 46, 0.07);
+}
+
+.xbw-agenda__lista span {
+  display: grid;
+  gap: 0.2vh;
+  min-width: 0;
+}
+
+.xbw-agenda__lista strong {
+  font:
+    700 clamp(0.85rem, 2.1vh, 1.02rem) / 1.15 system-ui,
+    sans-serif;
+  color: #0b1b2e;
+}
+
+.xbw-agenda__lista small {
+  font:
+    500 clamp(0.68rem, 1.6vh, 0.82rem) / 1.25 system-ui,
+    sans-serif;
+  color: rgba(11, 27, 46, 0.62);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * A BARRA DE CELULAR — 13/09/2026
+ *
+ * Ordem dele: "entre XB e botão de voltar ao game, precisamos aplicar icones
+ * de um celular de verdade, bateria, 9G, nivel de sinal, horas real do game,
+ * com data real" e, em seguida, "coloque logo abaixo destas informações se
+ * necessário".
+ *
+ * Ela ocupa a linha inteira DEBAIXO da faixa, e nao o buraco entre a moeda e o
+ * selo: ali cabiam menos de cinco letras. A faixa vira, entao, duas linhas —
+ * nome, moeda e selo em cima; hora, data, sinal, rede e bateria embaixo — que
+ * e como todo telefone se apresenta.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.xbw__status {
+  order: 2;
+  flex: 0 0 100%;
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  padding-top: 0.4vh;
+  border-top: 1px solid rgba(160, 205, 245, 0.16);
+  color: #cfe6fb;
+  font:
+    600 clamp(0.62rem, 1.55vh, 0.78rem) / 1 system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+
+/* A hora e a unica coisa daqui que se le de longe: e a que manda no dia. */
+.xbw__status-hora {
+  font:
+    800 clamp(0.78rem, 1.95vh, 0.95rem) / 1 system-ui,
+    sans-serif;
+  color: #f2fbff;
+  letter-spacing: 0.02em;
+}
+
+.xbw__status-data {
+  color: #93b8d8;
+}
+
+.xbw__status-direita {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 1.6vw;
+}
+
+/* AS BARRINHAS DE SINAL: quatro tracos que crescem, como em qualquer telefone. */
+.xbw__sinal {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35vw;
+  height: clamp(0.62rem, 1.55vh, 0.78rem);
+}
+
+.xbw__sinal i {
+  width: clamp(2px, 0.5vw, 3px);
+  border-radius: 1px;
+  background: rgba(207, 230, 251, 0.28);
+}
+
+.xbw__sinal i[data-aceso="sim"] {
+  background: #cfe6fb;
+}
+
+.xbw__sinal i:nth-child(1) {
+  height: 35%;
+}
+.xbw__sinal i:nth-child(2) {
+  height: 55%;
+}
+.xbw__sinal i:nth-child(3) {
+  height: 78%;
+}
+.xbw__sinal i:nth-child(4) {
+  height: 100%;
+}
+
+.xbw__rede {
+  font:
+    800 clamp(0.58rem, 1.45vh, 0.72rem) / 1 system-ui,
+    sans-serif;
+  letter-spacing: 0.02em;
+  color: #cfe6fb;
+}
+
+/* A BATERIA: casca, suco e o bico do lado — desenhada, sem imagem nenhuma. */
+.xbw__bateria {
+  display: flex;
+  align-items: center;
+  /* O bico da casca avanca 3px para fora: sem folga, ele encosta no numero. */
+  gap: max(0.5rem, 1.6vw);
+}
+
+.xbw__bateria-casca {
+  position: relative;
+  width: clamp(1.4rem, 3.4vh, 1.75rem);
+  height: clamp(0.62rem, 1.55vh, 0.78rem);
+  padding: 1px;
+  border: 1px solid rgba(207, 230, 251, 0.6);
+  border-radius: 0.25rem;
+}
+
+.xbw__bateria-casca::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -3px;
+  width: 2px;
+  height: 38%;
+  transform: translateY(-50%);
+  border-radius: 0 1px 1px 0;
+  background: rgba(207, 230, 251, 0.6);
+}
+
+.xbw__bateria-suco {
+  display: block;
+  height: 100%;
+  border-radius: 0.15rem;
+  background: #7ee787;
+}
+
+/* Pouca bateria fica vermelha: e o unico aviso que a barra sabe dar. */
+.xbw__bateria-suco[data-pouca="sim"] {
+  background: #ff7b72;
+}
+
+.xbw__bateria small {
+  font:
+    700 clamp(0.55rem, 1.4vh, 0.68rem) / 1 system-ui,
+    sans-serif;
+  color: #93b8d8;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * PARA OS PAIS — 13/09/2026
+ *
+ * Ordem dele: "dentro de ferramentas, devemos ter a tela explicando aos pais,
+ * e pode ser salva com senha dos pais e regulagem de tempo".
+ *
+ * Tela de LER antes de mexer: o texto vem primeiro, com linha larga e ar entre
+ * os parágrafos, e os campos vêm depois. Nada aqui compete com a explicação.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.xbw-pais__texto {
+  padding: 1.6vh 5vw 0.6vh;
+  color: #cfe6fb;
+}
+
+.xbw-pais__texto h2 {
+  margin: 0 0 1vh;
+  font:
+    800 clamp(1rem, 2.6vh, 1.2rem) / 1.2 system-ui,
+    sans-serif;
+  color: #f2fbff;
+}
+
+.xbw-pais__texto p {
+  margin: 0 0 1.2vh;
+  font:
+    500 clamp(0.82rem, 2vh, 0.96rem) / 1.5 system-ui,
+    sans-serif;
+  color: #9ec6e8;
+}
+
+.xbw-pais__tranca,
+.xbw-pais__ajustes {
+  display: grid;
+  gap: 1.8vh;
+  margin: 1.4vh 5vw 4vh;
+  padding: 2.2vh 4vw;
+  border: 1px solid rgba(120, 190, 255, 0.22);
+  border-radius: 1.6vh;
+  background: rgba(12, 34, 60, 0.66);
+}
+
+.xbw-pais__tranca label,
+.xbw-pais__ajustes label {
+  display: grid;
+  gap: 0.6vh;
+}
+
+.xbw-pais__tranca span,
+.xbw-pais__ajustes span {
+  font:
+    700 clamp(0.8rem, 2vh, 0.94rem) / 1.2 system-ui,
+    sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-pais__tranca input,
+.xbw-pais__ajustes input {
+  width: 100%;
+  padding: 1.1vh 3vw;
+  border: 1px solid rgba(120, 190, 255, 0.3);
+  border-radius: 1vh;
+  background: rgba(6, 20, 36, 0.8);
+  color: #f2fbff;
+  font:
+    600 clamp(0.88rem, 2.2vh, 1.02rem) / 1.2 system-ui,
+    sans-serif;
+}
+
+.xbw-pais__tranca small,
+.xbw-pais__ajustes small {
+  font:
+    500 clamp(0.7rem, 1.7vh, 0.82rem) / 1.4 system-ui,
+    sans-serif;
+  color: #8fb6d8;
+}
+
+.xbw-pais__salvar {
+  justify-self: start;
+  padding: 1.2vh 6vw;
+  border: 0;
+  border-radius: 1.2vh;
+  background: var(--xbw-marca, #25d366);
+  color: #062012;
+  font:
+    800 clamp(0.86rem, 2.1vh, 1rem) / 1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.xbw-pais__erro {
+  margin: 0;
+  color: #ff7b72;
+  font:
+    600 clamp(0.78rem, 1.9vh, 0.9rem) / 1.3 system-ui,
+    sans-serif;
+}
+
+.xbw-pais__salvo {
+  margin: 0;
+  color: #7ee787;
+  font:
+    700 clamp(0.78rem, 1.9vh, 0.9rem) / 1.3 system-ui,
+    sans-serif;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * A LOJA DA EQUIPE — 13/09/2026
+ *
+ * Ordem dele: "ao clicar em bicicleta devemos ter duas caixas apenas loja,
+ * upgrade (...) nesta loja teremos bicicleta, patins, triciclo, patinete,
+ * caiaque, skate (...) telas ainda vazias mas com veículos do nv 1 ao 5".
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/* Duas caixas ocupam a linha inteira: com duas, coluna estreita é desperdício. */
+.xbw-cracha__caixas--duas {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 3vw;
+  padding: 2.4vh 5vw;
+}
+
+.xbw-cracha__caixas--duas .xbw-caixinha {
+  min-height: 14vh;
+  justify-content: center;
+  gap: 0.8vh;
+}
+
+/* ── OS SEIS ITENS ──────────────────────────────────────────────────────── */
+
+.xbw-loja {
+  list-style: none;
+  margin: 0;
+  padding: 1.4vh 4vw 3vh;
+  display: grid;
+  gap: 1.2vh;
+}
+
+.xbw-loja button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 3vw;
+  padding: 1.8vh 4vw;
+  border: 1px solid rgba(120, 190, 255, 0.22);
+  border-radius: 1.4vh;
+  background: rgba(12, 34, 60, 0.66);
+  text-align: left;
+  cursor: pointer;
+}
+
+.xbw-loja button:active {
+  transform: scale(0.99);
+}
+
+.xbw-loja span {
+  display: grid;
+  gap: 0.3vh;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.xbw-loja strong {
+  font:
+    800 clamp(0.95rem, 2.4vh, 1.12rem) / 1.15 system-ui,
+    sans-serif;
+  color: #eaf6ff;
+}
+
+.xbw-loja small {
+  font:
+    500 clamp(0.72rem, 1.75vh, 0.86rem) / 1.3 system-ui,
+    sans-serif;
+  color: #8fb6d8;
+}
+
+/* ── OS CINCO DEGRAUS DE UM ITEM ────────────────────────────────────────── */
+
+/*
+ * O número do degrau vem primeiro e é grande: a coluna de números é o que se
+ * lê de relance, e é ela que ensina que a escada tem cinco e sempre cinco.
+ */
+.xbw-prateleira {
+  list-style: none;
+  margin: 0;
+  padding: 1.4vh 4vw 3vh;
+  display: grid;
+  gap: 1.2vh;
+}
+
+.xbw-prateleira li {
+  display: flex;
+  align-items: center;
+  gap: 3.4vw;
+  padding: 1.6vh 4vw;
+  border: 1px solid rgba(120, 190, 255, 0.18);
+  border-radius: 1.4vh;
+  background: rgba(12, 34, 60, 0.5);
+}
+
+.xbw-prateleira__nivel {
+  flex: none;
+  width: clamp(1.9rem, 4.6vh, 2.3rem);
+  height: clamp(1.9rem, 4.6vh, 2.3rem);
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(120, 190, 255, 0.16);
+  color: #cfe6fb;
+  font:
+    800 clamp(0.86rem, 2.1vh, 1rem) / 1 system-ui,
+    sans-serif;
+}
+
+.xbw-prateleira__miolo {
+  display: grid;
+  gap: 0.3vh;
+  min-width: 0;
+}
+
+.xbw-prateleira__miolo strong {
+  font:
+    700 clamp(0.9rem, 2.2vh, 1.05rem) / 1.15 system-ui,
+    sans-serif;
+  color: #eaf6ff;
+}
+
+/* A frase que admite o vazio. Discreta, mas presente em toda linha. */
+.xbw-prateleira__miolo small {
+  font:
+    500 clamp(0.7rem, 1.7vh, 0.82rem) / 1.3 system-ui,
+    sans-serif;
+  color: #7f9fbc;
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O AVISO PARA DE PISAR NO NOME DO APLICATIVO — 14/09/2026
+ *
+ * Ordem dele: "conserte esse encavalamento do aviso com o topo".
+ *
+ * ── O QUE ACONTECEU ───────────────────────────────────────────────────────
+ *
+ * As duas faixas que descem no alto — a de mensagem nova e a de chamada
+ * chegando — nasceram presas ao TOPO DO APLICATIVO (`position: absolute;
+ * top: 1vh`). Naquele tempo o alto do aplicativo era espaco vazio: o nome
+ * XBWAPP morava numa barra acima da lista, e o relogio nem existia.
+ *
+ * Em 13/09 o nome subiu para uma faixa propria no alto de tudo, junto da
+ * moeda de voltar, do selo XB e da barra de celular. As faixas continuaram
+ * indo para o mesmo lugar de sempre — que agora estava ocupado. O resultado
+ * na tela: "XBWAPP" e a hora aparecendo POR DENTRO do cartao de aviso, duas
+ * escritas uma em cima da outra.
+ *
+ * ── POR QUE NAO FOI SO EMPURRAR PARA BAIXO ────────────────────────────────
+ *
+ * Empurrar por um numero (`top: 8vh`, digamos) resolveria nesta tela e
+ * quebraria na proxima: a faixa do alto tem duas linhas, e a altura dela muda
+ * com o tamanho da letra e com a altura do telefone. Um numero escrito a mao
+ * ali seria um acerto de hoje e um erro de amanha.
+ *
+ * ── O CONSERTO ───────────────────────────────────────────────────────────
+ *
+ * O aplicativo ja e uma grade de quatro linhas, e a faixa do alto e a
+ * primeira delas. Entao as duas faixas de aviso deixam de flutuar soltas e
+ * passam a morar na SEGUNDA linha — a mesma da tela — encostadas no topo
+ * dela. Elas continuam por cima do conteudo (e o que um aviso faz), mas
+ * comecam exatamente onde o nome do aplicativo acaba, seja qual for a altura
+ * dele. Nenhum numero novo foi inventado.
+ *
+ * A tela e a faixa dividem a mesma casa da grade de proposito: assim o aviso
+ * NAO empurra a tela para baixo quando chega, e NAO deixa um buraco quando
+ * some.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.xbw__tela {
+  grid-row: 2;
+  grid-column: 1;
+}
+
+.xbw-faixa,
+.xbw-toque-faixa {
+  /* Volta para a grade, na mesma casa da tela. `relative` em vez de `static`
+   * porque o z-index so vale em quem esta posicionado — e o aviso precisa
+   * ficar por cima do conteudo. */
+  position: relative !important;
+  grid-row: 2;
+  grid-column: 1;
+  align-self: start;
+  justify-self: center;
+  inset: auto !important;
+  transform: none !important;
+  margin: 1vh 0 0 !important;
+  width: min(92%, 44rem) !important;
 }

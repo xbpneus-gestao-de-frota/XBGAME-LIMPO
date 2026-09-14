@@ -28,6 +28,21 @@ export const GAME_ASSETS = {
    * uma lista que ninguem mantem.
    */
   garotoEmPe: "/assets/XB_Garoto_em_pe.webp",
+  /*
+   * O CABECA DE PREGO — o primeiro vilao, levantando peso na pracinha.
+   *
+   * Ordem dele, 14/09/2026: "bem no ponto amarelo, crie uma animacao do
+   * primeiro vilao que apresentaremos cabeca de prego, deixe a animacao rodando
+   * neste local pintado de amarelo".
+   *
+   * UM arquivo com os QUATRO quadros lado a lado, e nao quatro arquivos. Quem
+   * troca de quadro e o CSS, mexendo a posicao do fundo — entao o primeiro giro
+   * nao pisca por quadro que ainda esta baixando, o mapa nao se redesenha a cada
+   * passo e o navegador para sozinho com a aba escondida.
+   *
+   * Quem monta a tira: scripts/vilao/a_tira_do_cabeca_de_prego.py
+   */
+  cabecaDePregoTira: "/assets/XB_Cabeca_De_Prego_tira.webp",
   /** O retrato do Renan, para a chamada que abre o jogo. */
   renanRetrato: "/assets/XB_Renan_retrato.webp",
   /** O mesmo Renan, redondo e com o anel verde, para o alto da conversa. */
@@ -51,6 +66,19 @@ export const GAME_ASSETS = {
   renanEquipado: "/assets/XB_Renan_equipado.webp",
   /** A Lorena na lista da equipe (recorte da imagem dela com a bicicleta, 11/09/2026). */
   lorenaRetrato: "/assets/XB_Lorena_retrato.webp",
+  /*
+   * OS DOIS DE CORPO INTEIRO, SEM BICICLETA — para a ficha do entregador.
+   *
+   * Ordem dele, 12/09/2026: "onde mostra imagem de entregador (...) sem a
+   * bicicleta". Recorte da vista de frente das folhas de personagem que ele
+   * mandou: maos no bolso da blusa, a mochila XB nas costas, fundo vago.
+   *
+   * Sao altos e estreitos de proposito. A ficha e uma tela de celular em pe:
+   * um desenho quadrado ou deitado obrigaria a cortar a pessoa no joelho, e a
+   * pessoa inteira e justamente o que ele pediu.
+   */
+  renanFicha: "/assets/XB_Renan_ficha.webp",
+  lorenaFicha: "/assets/XB_Lorena_ficha.webp",
   /** Os rabiscos do fundo da conversa, recortados do desenho dele. */
   conversaFundo: "/assets/XB_conversa_fundo.webp",
   /*

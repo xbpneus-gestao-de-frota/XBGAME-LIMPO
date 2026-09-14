@@ -1,4 +1,5 @@
 import { FreeCamera } from "@babylonjs/core/Cameras/freeCamera";
+import type { IdDoAcessorio } from "./osAcessorios";
 import type { Engine } from "@babylonjs/core/Engines/engine";
 import { DirectionalLight } from "@babylonjs/core/Lights/directionalLight";
 import { HemisphericLight } from "@babylonjs/core/Lights/hemisphericLight";
@@ -30,6 +31,8 @@ export interface GameHandle {
   scene: Scene;
   subscribe(listener: GameListener): () => void;
   getSnapshot(): GameSnapshot;
+  /** Grava o jogo agora — o descanso do celular pede isto antes de parar. */
+  salvarAgora(): void;
   startRun(routeId?: string): void;
   pauseRun(): void;
   resumeRun(): void;
@@ -46,6 +49,7 @@ export interface GameHandle {
   upgradeVehicle(id: VehicleId): void;
   upgradeTire(stat: TireStat): void;
   upgradeBikePart(partId: BikePartId): void;
+  upgradeAcessorio(id: IdDoAcessorio): void;
   definirJogador(nome: string, entregadorId: string): StoreActionResult;
   esquecerJogador(): StoreActionResult;
   buyBikeUnit(): void;
@@ -365,6 +369,7 @@ export async function createGameScene(
     scene,
     subscribe: listener => world.subscribe(listener),
     getSnapshot: () => world.getSnapshot(),
+    salvarAgora: () => world.salvarAgora(),
     startRun: routeId => world.startRun(routeId),
     pauseRun: () => world.pauseRun(),
     resumeRun: () => world.resumeRun(),
@@ -381,6 +386,7 @@ export async function createGameScene(
     upgradeVehicle: id => world.upgradeVehicle(id),
     upgradeTire: stat => world.upgradeTire(stat),
     upgradeBikePart: partId => world.upgradeBikePart(partId),
+    upgradeAcessorio: id => world.upgradeAcessorio(id),
     definirJogador: (nome: string, entregadorId: string) =>
       world.definirJogador(nome, entregadorId),
     esquecerJogador: () => world.esquecerJogador(),

@@ -7453,14 +7453,77 @@ body {
   background: #04070c;
 }
 
+/*
+ * O PALCO: uma caixa com a FORMA DO FILME, centrada na tela.
+ *
+ * O video entra inteiro (contain), entao o desenho nao ocupa a janela toda —
+ * sobra faixa preta de um lado ou do outro conforme o aparelho. Esta caixa cai
+ * exatamente onde o desenho cai, e por isso uma porcentagem medida aqui dentro
+ * aponta sempre para o mesmo ponto da CENA, e nao da janela.
+ *
+ * A conta e a mesma que o navegador faz para o contain: a forma do filme,
+ * limitada pela janela, centrada pelo margin: auto.
+ */
+.abertura__palco {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  aspect-ratio: 720 / 1280;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/*
+ * O BOTAO PULAR — POUSADO EM CIMA DA MARCA D'AGUA.
+ *
+ * Ordem dele, 13/09/2026: "no video imagem 3 mostra uma pequena estrela do
+ * Gemini, deixe o botao pular sobre ela". A estrelinha esta queimada no video:
+ * nao da para apagar, da para cobrir.
+ *
+ * Os dois numeros abaixo sao medidos no proprio filme, e nao escolhidos a
+ * olho: a marca fica a 83,4% da largura e 90,5% da altura da cena. O botao
+ * nasce centrado nesse ponto.
+ *
+ * E POR ISSO ELE E MAIOR DO QUE ERA. A estrela tem uns quarenta e cinco pontos
+ * de lado; uma pilula fina passaria por cima dela deixando as duas pontas de
+ * fora, que e pior do que nao cobrir — vira marca com chapeu. A altura daqui
+ * cobre a estrela inteira, e de quebra o botao ficou do tamanho de um dedo.
+ */
 .abertura__pular {
   position: absolute;
-  right: max(1rem, env(safe-area-inset-right));
-  bottom: max(1.4rem, calc(env(safe-area-inset-bottom) + 1rem));
-  padding: 0.7rem 1.4rem;
+  left: 83.4%;
+  top: 90.5%;
+  transform: translate(-50%, -50%);
+  /*
+   * O TAMANHO E MEDIDO EM PORCENTAGEM DA CENA, e nao em pontos de tela.
+   *
+   * A estrela tem 65 por 75 pontos num filme de 720 por 1280 — ou seja, 9% da
+   * largura e 5,9% da altura DA CENA. Num aparelho menor o filme encolhe e a
+   * estrela encolhe junto; um botao medido em pontos ficaria certo numa tela e
+   * errado em todas as outras. Medido em porcentagem, ele encolhe junto com
+   * ela e cobre sempre.
+   *
+   * Os minimos em rem existem para o outro extremo: em tela muito pequena a
+   * pilula nao pode ficar menor que a palavra PULAR.
+   */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15%;
+  height: 7%;
+  min-width: 5.5rem;
+  min-height: 2.2rem;
+  padding: 0;
   border: 1px solid rgb(214 232 240 / 38%);
   border-radius: 999px;
-  background: rgb(4 10 18 / 72%);
+  /*
+   * QUASE OPACO, e nao meio transparente como era.
+   *
+   * O fundo antigo deixava 28% da cena passar — e o que passava, justamente
+   * aqui, era a estrela. Ela aparecia por dentro do botao como um losango
+   * claro, que e o mesmo defeito de antes com uma etapa a mais.
+   */
+  background: rgb(4 10 18 / 94%);
   color: #d8e6ed;
   font:
     800 0.68rem/1 var(--font-body, "Segoe UI"),
@@ -7477,7 +7540,8 @@ body {
 .abertura__pular:hover {
   border-color: rgb(94 224 255 / 90%);
   color: #7be9ff;
-  transform: translateY(-1px);
+  /* o deslocamento do hover soma ao centramento, senao o botao pula do lugar */
+  transform: translate(-50%, -50%) translateY(-1px);
 }
 
 .abertura__aviso {
@@ -8287,48 +8351,80 @@ body {
       var(--bolinha) 54%,
       var(--bolinha-escura) 100%
     );
+  /*
+   * O ARO ESCURO. Sem ele a bolinha laranja desaparece dentro do corpo laranja
+   * do pino de coleta — medido em 12/09/2026, com a escada ligada. E um anel
+   * so, da cor do buraco do desenho, e vale para todos os degraus.
+   */
+  box-shadow: 0 0 0 0.09em rgba(10, 16, 28, 0.85);
   transition:
     background 0.5s linear,
     filter 0.5s linear;
 }
 
 /*
- * OS CINCO ESTAGIOS DO RELOGIO.
+ * OS DEGRAUS DO RELOGIO — a MESMA escada do cartao do pedido.
  *
- * A COR NAO CARREGA O RECADO SOZINHA: a bolinha tambem PULSA, e cada vez mais
- * rapido conforme esquenta. Isso resolve dois problemas de uma vez — a
- * bolinha laranja em cima da loja laranja, que perderia contraste justamente
- * no momento mais tenso, e o jogador que nao distingue as cores.
+ * Ordem dele, 12/09/2026: "precisamos colocar bolinhas de pinos para mudarem de
+ * cor conforme atraso de entrega". A escada ja existia dentro do aplicativo,
+ * com os degraus que ele deu (no tempo, 10%, 25%, 50%, 100%, perdeu) — o que
+ * faltava era LIGAR o mapa nela. Antes disso todo pino nascia azul de "no
+ * prazo" e morria azul, porque ninguem nunca passava o degrau.
+ *
+ * As cores sao as mesmas de FAIXAS, em entregaRapida.ts. Uma cor so pode querer
+ * dizer uma coisa so no jogo inteiro: se o cartao diz amarelo e o mapa diz
+ * laranja para o mesmo pedido, a pessoa aprende duas escadas e erra as duas.
+ *
+ * A COR NAO CARREGA O RECADO SOZINHA, e aqui por dois motivos somados:
+ *   · o corpo do pino de coleta e LARANJA, e bolinha laranja em cima dele
+ *     sumiria justamente no momento mais tenso — por isso o aro escuro em
+ *     volta, que separa a bolinha do corpo em qualquer cor;
+ *   · quem nao distingue as cores precisa de outro sinal — por isso os tres
+ *     degraus de baixo PULSAM, cada vez mais rapido conforme esquenta.
  */
-.mapa__pino[data-bolinha="no-prazo"] {
+.mapa__pino[data-bolinha="sem-relogio"] {
   --bolinha: #8fc9ec;
   --bolinha-clara: #dff1fc;
   --bolinha-escura: #3f7ea6;
 }
-.mapa__pino[data-bolinha="folga-acabando"] {
-  --bolinha: #4fd48a;
-  --bolinha-clara: #c8f7dc;
-  --bolinha-escura: #1c7a49;
+.mapa__pino[data-bolinha="adiantado"] {
+  --bolinha: #2fbf71;
+  --bolinha-clara: #a9efc8;
+  --bolinha-escura: #12693b;
 }
-.mapa__pino[data-bolinha="atrasando"] {
-  --bolinha: #f2d13e;
-  --bolinha-clara: #fdf3c0;
-  --bolinha-escura: #97781a;
+.mapa__pino[data-bolinha="verde"] {
+  --bolinha: #7bd88f;
+  --bolinha-clara: #d3f6db;
+  --bolinha-escura: #2f7a43;
 }
-.mapa__pino[data-bolinha="no-limite"] {
-  --bolinha: #ff8f2c;
-  --bolinha-clara: #ffd8a8;
-  --bolinha-escura: #a04d09;
+.mapa__pino[data-bolinha="amarela"] {
+  --bolinha: #e8d94a;
+  --bolinha-clara: #fbf4b6;
+  --bolinha-escura: #8e7d14;
 }
-.mapa__pino[data-bolinha="estourou"] {
-  --bolinha: #ec3a32;
-  --bolinha-clara: #ffb9b3;
-  --bolinha-escura: #85110d;
+.mapa__pino[data-bolinha="laranja"] {
+  --bolinha: #f2921d;
+  --bolinha-clara: #ffd49a;
+  --bolinha-escura: #94500a;
 }
-.mapa__pino[data-bolinha="atrasando"] .mapa__bolinha {
+.mapa__pino[data-bolinha="muito-atrasado"] {
+  --bolinha: #e8743b;
+  --bolinha-clara: #ffc0a2;
+  --bolinha-escura: #8c3410;
+}
+.mapa__pino[data-bolinha="perdeu"] {
+  --bolinha: #d9534f;
+  --bolinha-clara: #ffb3b0;
+  --bolinha-escura: #7d1815;
+}
+.mapa__pino[data-bolinha="amarela"] .mapa__bolinha {
   animation: mapa-pulso 1.5s ease-in-out infinite;
 }
-.mapa__pino[data-bolinha="no-limite"] .mapa__bolinha {
+.mapa__pino[data-bolinha="laranja"] .mapa__bolinha {
+  animation: mapa-pulso 1.1s ease-in-out infinite;
+}
+.mapa__pino[data-bolinha="muito-atrasado"] .mapa__bolinha,
+.mapa__pino[data-bolinha="perdeu"] .mapa__bolinha {
   animation: mapa-pulso 0.85s ease-in-out infinite;
 }
 @keyframes mapa-pulso {
@@ -8349,16 +8445,20 @@ body {
  * Ordem dele, e melhor do que a explosao que ele mesmo tinha proposto: le no
  * tamanho do pino, nao comemora o fracasso, e FICA NA TELA COMO REGISTRO em
  * vez de piscar e sumir.
+ *
+ * O degrau mudou de nome em 12/09/2026, quando o mapa passou a usar a escada do
+ * cartao do pedido: "estourou" virou "perdeu" — o ultimo degrau, o do cliente
+ * que a XB perdeu. O desenho e o mesmo.
  */
-.mapa__pino[data-bolinha="estourou"] .mapa__corpo {
+.mapa__pino[data-bolinha="perdeu"] .mapa__corpo {
   filter: saturate(0.15) sepia(1) hue-rotate(-32deg) saturate(4.2)
     brightness(0.92);
 }
-.mapa__pino[data-bolinha="estourou"] .mapa__simbolo {
+.mapa__pino[data-bolinha="perdeu"] .mapa__simbolo {
   display: none;
 }
-.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::before,
-.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::after {
+.mapa__pino[data-bolinha="perdeu"] .mapa__bolinha::before,
+.mapa__pino[data-bolinha="perdeu"] .mapa__bolinha::after {
   content: "";
   position: absolute;
   left: 12%;
@@ -8369,10 +8469,10 @@ body {
   background: #fff;
   box-shadow: 0 0 0 1px rgba(90, 8, 6, 0.9);
 }
-.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::before {
+.mapa__pino[data-bolinha="perdeu"] .mapa__bolinha::before {
   transform: rotate(45deg);
 }
-.mapa__pino[data-bolinha="estourou"] .mapa__bolinha::after {
+.mapa__pino[data-bolinha="perdeu"] .mapa__bolinha::after {
   transform: rotate(-45deg);
 }
 
@@ -8510,12 +8610,29 @@ body {
  * A multiplicacao e o que faz virar LUZ e nao verniz colorido: ela escurece o
  * que ja e escuro e deixa o claro tomar a cor, que e como o sol se comporta.
  */
+/*
+ * A LUZ NAO CORRE MAIS SOZINHA — ordem dele, 12/09/2026: "primeiro atualize
+ * relogio um apenas".
+ *
+ * Antes esta camada era uma animacao rodando em ciclo proprio, sem olhar para o
+ * jogo: bonita, e mentira. Enquanto o balcao vivia um dia, o sol aqui nascia
+ * duas vezes e meia.
+ *
+ * Agora a animacao esta PARADA e o jogo diz em que ponto dela parar, pela
+ * `--luz-em` (de 0 a 1). Um atraso negativo em cima de um ciclo de um segundo
+ * poe o desenho exatamente naquele instante do dia — as cores continuam sendo
+ * estas, escritas aqui, e quem escolhe a hora e o relogio do bairro.
+ *
+ * O valor de reserva e 0.45: meio-dia. Se alguem desenhar este mapa sem passar
+ * a hora, ele aparece com a luz do meio do dia, que e a luz neutra.
+ */
 .mapa__luz {
   position: absolute;
   inset: 0;
   pointer-events: none;
   mix-blend-mode: multiply;
-  animation: luz-do-dia var(--dia, 240s) linear infinite;
+  animation: luz-do-dia 1s linear infinite paused;
+  animation-delay: calc(var(--luz-em, 0.45) * -1s);
 }
 
 @keyframes luz-do-dia {
@@ -8801,9 +8918,9 @@ body {
  * Estas NAO sao sorteadas: dependem da hora. Foi por elas que a pergunta da luz
  * do dia travava metade da lista — sem entardecer, nao ha quando acender.
  *
- * O ciclo tem o MESMO tempo da luz do dia e comeca junto com ela, entao as duas
- * andam em fase sem ninguem sincronizar nada. Acende no fim da tarde, fica
- * acesa no entardecer e apaga no amanhecer.
+ * Elas leem a MESMA hora que a luz do dia, pela `--luz-em`, e por isso nao ha
+ * como uma acender fora da hora da outra. Acende no fim da tarde, fica acesa no
+ * entardecer e apaga no amanhecer.
  */
 .vida__acende {
   width: 5%;
@@ -8816,7 +8933,8 @@ body {
     rgba(255, 186, 96, 0) 100%
   );
   opacity: 0;
-  animation: luz-acende var(--dia, 240s) linear infinite;
+  animation: luz-acende 1s linear infinite paused;
+  animation-delay: calc(var(--luz-em, 0.45) * -1s);
 }
 
 @keyframes luz-acende {
@@ -8953,6 +9071,218 @@ body {
     rgba(6, 12, 20, 0.24) 55%,
     rgba(6, 12, 20, 0) 100%
   );
+}
+
+/*
+ * O MORADOR NA PORTA DE CASA.
+ *
+ * Mesmo desenho de peca do garoto da praca — pendurado pelo PE, encolhendo pela
+ * raiz do zoom, com a mesma sombra achatada embaixo e a mesma correcao de cor —
+ * mudando duas coisas de proposito:
+ *
+ * 1. A ALTURA. Ele e menos da metade do garoto, e nao tem tamanho minimo de
+ *    tela. "Bem pequeno, quando for aumentado zoom de pra ver": de longe e um
+ *    pontinho na calcada, de perto e uma pessoa. Piso de tela serve para o que
+ *    a pessoa precisa ACHAR; o morador e o que ela precisa ENCONTRAR, que e
+ *    outra coisa.
+ *
+ * 2. A SOMBRA E MAIS FRACA. Sao dezesseis delas contra uma so do garoto, e
+ *    sombra forte repetida dezesseis vezes vira sujeira preta pela calcada
+ *    inteira.
+ */
+.morador {
+  position: absolute;
+  height: calc(var(--morador-altura, 1.05%) / var(--zoom-raiz, 1));
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.morador__desenho {
+  display: block;
+  height: 100%;
+  width: auto;
+  -webkit-user-drag: none;
+  /* A mesma lavagem do garoto: o desenho nasceu mais limpo que a pintura do
+     bairro, e sem isso ele aparece recortado e colado. */
+  filter: saturate(0.88) contrast(0.94) brightness(1.04) sepia(0.1)
+    hue-rotate(-8deg);
+}
+
+.morador::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 112%;
+  aspect-ratio: 3.4;
+  transform: translate(-50%, 42%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(6, 12, 20, 0.36),
+    rgba(6, 12, 20, 0.16) 55%,
+    rgba(6, 12, 20, 0) 100%
+  );
+}
+
+/*
+ * O CABECA DE PREGO — o primeiro vilao, levantando peso na pracinha.
+ *
+ * Ordem dele, 14/09/2026: "bem no ponto amarelo, crie uma animacao do primeiro
+ * vilao que apresentaremos cabeca de prego, deixe a animacao rodando neste
+ * local pintado de amarelo, redimensione, para que fique padrao de cores
+ * proximos ou iguais ao mapa".
+ *
+ * Peca de jogo, como o garoto e o morador: encolhe pela RAIZ do zoom, tem a
+ * sombra achatada embaixo e e pintada ANTES da camada de luz, para entardecer
+ * junto com o bairro em vez de ficar ao meio-dia enquanto tudo fica laranja.
+ *
+ * ── POR QUE ELE E FUNDO, E NAO <img> ──────────────────────────────────────
+ *
+ * Porque as quatro poses vivem num arquivo so, lado a lado, e quem troca de
+ * pose e o `background-position` daqui. Nao ha relogio no React, o mapa nao se
+ * redesenha a cada passo, o primeiro giro nao pisca — e o navegador para
+ * sozinho quando a aba esta escondida, que nenhum setInterval faz.
+ *
+ * A conta do `background-size`: a tira tem quatro quadros, entao a imagem vale
+ * QUATRO caixas de largura (400%) e uma de altura (100%). E a posicao do
+ * quadro i nao e `i / 4`: e `i / 3`, porque 0% encosta a borda esquerda da
+ * imagem na esquerda da caixa e 100% encosta a direita na direita.
+ */
+.vilao {
+  position: absolute;
+  height: calc(var(--vilao-altura, 3.2%) / var(--zoom-raiz, 1));
+  /*
+   * A proporcao do QUADRO da tira (304 por 320), e nao da tira inteira. Errar
+   * isto espicha o vilao para os lados sem quebrar nada que de erro.
+   */
+  aspect-ratio: 304 / 320;
+  /*
+   * PENDURADO PELO PE, e nao pela borda de baixo.
+   *
+   * A barra esta na FRENTE dele e, visto de cima, o que esta na frente aparece
+   * mais embaixo na tela: as anilhas encostam no chao bem abaixo das botas. Se
+   * ele fosse pendurado pela borda de baixo da imagem, quem pousaria no ponto
+   * do mapa seriam as anilhas, e ele ficaria com os pes no ar.
+   *
+   * Os 85,34% sao onde a sola dele cai dentro do quadro. O mesmo numero esta
+   * em game/oCabecaDePrego.ts e no script que monta a tira, e ha um teste
+   * amarrando os tres.
+   */
+  transform: translate(-50%, -85.34%);
+  background-image: var(--vilao-tira);
+  background-repeat: no-repeat;
+  background-size: 400% 100%;
+  background-position: 0% 0%;
+  pointer-events: none;
+  will-change: background-position;
+
+  /*
+   * A COR: a lavagem mais funda que o bairro ja pediu.
+   *
+   * "Padrao de cores proximos ou iguais ao mapa." O garoto leva
+   * saturate(0,88) porque nasceu com pele e jeans — cores que ja existem
+   * naquela pintura. A mala leva 0,76 porque veio com azul de catalogo. Este
+   * aqui veio de estudio com laranja fluorescente nas botas e nas
+   * munhequeiras, preto puro nos pneus e branco estourado no brilho: e a peca
+   * mais berrante que ja entrou no mapa.
+   *
+   * O numero saiu de prova, e nao de gosto: o vilao foi colado na pracinha de
+   * verdade em cinco acertos diferentes, no tamanho de uso, e comparado lado a
+   * lado. Acima de 0,80 o laranja grita; abaixo de 0,65 ele fica cinza e
+   * perde a cara de vilao.
+   *
+   * O contraste desce porque a pintura do bairro nao tem preto puro nem branco
+   * cheio — tem um veu de ar em tudo. E o sepia com o giro de matiz poe o
+   * desenho no mesmo sol quente do resto.
+   */
+  filter: saturate(0.72) contrast(0.88) brightness(1.02) sepia(0.19)
+    hue-rotate(-10deg);
+
+  animation: vilao-levanta 3500ms step-end infinite;
+}
+
+/*
+ * A MANCHA DO CHAO — larga, porque o que encosta no chao e larguissimo.
+ *
+ * A do garoto tem 108% da largura dele e cabe, porque o que toca o chao sao
+ * dois pes. Aqui sao dois pes e duas pilhas de pneu com a largura de um carro,
+ * e uma poca do tamanho do menino deixaria as anilhas boiando.
+ *
+ * Ela fica na LINHA DO PE e nao na borda de baixo da caixa, pelo mesmo motivo
+ * do `translate`: e ali que o chao esta.
+ */
+.vilao::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 85.34%;
+  width: 96%;
+  aspect-ratio: 3.2;
+  transform: translate(-50%, -34%);
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    rgba(6, 12, 20, 0.42),
+    rgba(6, 12, 20, 0.2) 55%,
+    rgba(6, 12, 20, 0) 100%
+  );
+  z-index: -1;
+}
+
+/*
+ * O COMPASSO DA LEVANTADA.
+ *
+ * Os milesimos sao os de game/oCabecaDePrego.ts, e ha um teste que confere um
+ * contra o outro: se o compasso mudar la e este bloco ficar aqui, o vilao
+ * continua levantando peso no ritmo antigo e nada quebra.
+ *
+ * Quase metade do giro ele esta parado — armando embaixo (90% ate 24%, dando a
+ * volta) e travado em cima (38% ate 72%) — e cruza o meio depressa. Passo
+ * igual vira boneco de relogio, e boneco de relogio denuncia o desenho se
+ * repetindo mais rapido que qualquer outra coisa.
+ *
+ * `step-end` e o que faz cada pose SEGURAR ate a proxima, em vez de o fundo
+ * escorregar de uma para a outra — que mostraria meio vilao e meia barra.
+ */
+@keyframes vilao-levanta {
+  0% {
+    background-position: 0% 0%;
+  }
+  24% {
+    background-position: 33.333% 0%;
+  }
+  31% {
+    background-position: 66.667% 0%;
+  }
+  38% {
+    background-position: 100% 0%;
+  }
+  72% {
+    background-position: 66.667% 0%;
+  }
+  81% {
+    background-position: 33.333% 0%;
+  }
+  90% {
+    background-position: 0% 0%;
+  }
+}
+
+/*
+ * QUEM PEDIU MENOS MOVIMENTO CONTINUA TENDO O VILAO — parado.
+ *
+ * A fonte e a fumaca somem porque sao efeito: tirar nao tira ninguem do bairro.
+ * O vilao e GENTE, como o garoto e os moradores, e sumir com ele mudaria o
+ * lugar em vez de acalmar a tela. Ele fica em pe, travado com a barra na mao —
+ * que e a pose que mais se entende parada.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .vilao {
+    animation: none;
+    background-position: 100% 0%;
+  }
 }
 
 /*
@@ -10698,5 +11028,549 @@ body {
   100% {
     transform: scale(1.15);
     opacity: 0;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * A CENA DA CHAMADA — 12/09/2026
+ *
+ * Ordem dele: "aplicar a chamada de Renan na cut cine". A ligacao ja existia;
+ * o que faltava era o que se ve DEPOIS de atender. O porque dos tempos e das
+ * falas esta em `aCenaDaChamada.ts`.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+/*
+ * ── A CENA E AZUL, COMO O RESTO DA CASA (14/09/2026) ─────────────────────
+ *
+ * Ordem dele: "a tela da chamada de video de Renan para mostrar a pizza esta
+ * verde, saiu do padrao".
+ *
+ * Estava mesmo: o fundo, o veu que cobre a tela inteira, a faixa de cima, a
+ * janelinha da camera e ate o branco do texto nasceram num verde-quase-preto.
+ * Sozinha a tela nao parecia verde — parecia so escura. Do lado do
+ * aplicativo, que e azul-marinho de ponta a ponta, a diferenca salta.
+ *
+ * Cada tom trocou de COR e manteve a CLARIDADE: a cena continua igualzinha de
+ * escura, o borrao do fundo continua com o mesmo peso, e nada de contraste
+ * mudou. So o verde virou o azul da XB.
+ *
+ * As barrinhas de sinal ficaram como estavam — verde cheio, ambar fraco. Ali
+ * a cor nao e enfeite, e recado: e o unico aviso de que a ligacao vai cair.
+ */
+.cena-chamada {
+  position: fixed;
+  inset: 0;
+  /*
+   * ACIMA DO APLICATIVO (420), e nao na altura da tela de chamada (400).
+   *
+   * A ligacao do Renan toca DENTRO do aplicativo desde 08/09. Se a cena
+   * ficasse em 400 ela existiria, responderia ao teclado e seria invisivel,
+   * escondida atras da propria conversa que ela abre depois. Ja aconteceu uma
+   * vez com a tela de chamada, por isso esta escrito aqui.
+   */
+  z-index: 430;
+  pointer-events: auto;
+  overflow: hidden;
+  background: #040d16;
+  color: #eaf6ff;
+  animation: cena-chamada-entra 260ms ease-out both;
+}
+
+@keyframes cena-chamada-entra {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/*
+ * O MESMO DESENHO DUAS VEZES: gigante e borrado atras, para os cantos nao
+ * ficarem vazios, e inteiro na frente. E o que aplicativo de video faz com
+ * imagem que nao tem o formato da tela.
+ */
+.cena-chamada__fundo,
+.cena-chamada__rosto {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  user-select: none;
+}
+
+.cena-chamada__fundo {
+  width: 190%;
+  height: 190%;
+  object-fit: cover;
+  /*
+   * O BORRAO PRECISA TER O BRILHO DA PROPRIA FOTO.
+   *
+   * Escuro demais, ele vira um fundo preto e a beirada redonda reaparece como
+   * um halo, por mais que a mascara dissolva — o olho enxerga a diferenca de
+   * luz, e nao o corte. Com o mesmo brilho da imagem, o quarto atras dele
+   * simplesmente continua para fora do circulo.
+   */
+  filter: blur(3.6rem) saturate(0.9) brightness(0.82) contrast(0.9);
+  opacity: 1;
+}
+
+/*
+ * A RESPIRACAO DA IMAGEM.
+ *
+ * Um vulto parado por quatro segundos parece foto. Meio por cento de sobe e
+ * desce, bem devagar, e o que o olho le como "esta ao vivo" sem virar enjoo.
+ */
+/*
+ * O ROSTO INTEIRO, COM A BORDA APAGADA.
+ *
+ * Duas tentativas antes desta, e as duas erradas por motivos opostos:
+ *
+ *   encaixado inteiro — a borda redonda do recorte aparecia contra o fundo, e
+ *   aquilo virava adesivo colado, nao chamada de video;
+ *
+ *   ampliado ate cobrir os cantos — sumia metade da cara dele. Numa tela em pe
+ *   o circulo so cobre os quatro cantos quando ja esta tao grande que o corte
+ *   come o rosto.
+ *
+ * O certo e o que os aplicativos de video fazem quando a imagem nao tem o
+ * formato da tela: a imagem no meio, o borrao dela mesma em cima e embaixo, e
+ * a beirada DISSOLVIDA em vez de cortada. Ninguem ve onde uma acaba e a outra
+ * comeca — e o rosto dele continua inteiro.
+ */
+.cena-chamada__rosto {
+  width: min(112vw, 82vh);
+  height: min(112vw, 82vh);
+  max-width: none;
+  object-fit: contain;
+  /* A beirada dissolve no ultimo terco do raio, onde so ha o quarto borrado. */
+  mask-image: radial-gradient(
+    circle at 50% 50%,
+    #000 66%,
+    rgba(0, 0, 0, 0.4) 87%,
+    transparent 100%
+  );
+  animation: cena-chamada-respira 5.2s ease-in-out infinite;
+}
+
+@keyframes cena-chamada-respira {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.014);
+  }
+}
+
+/*
+ * O GRAO DA LINHA — o chiado da compressao de video, feito com luz e nao com
+ * imagem. Fica quase invisivel no ar e engrossa quando a ligacao cai.
+ */
+.cena-chamada__grao {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.035) 0 1px,
+      transparent 1px 3px
+    ),
+    radial-gradient(120% 80% at 50% 0%, transparent 40%, rgba(0, 0, 0, 0.55));
+  mix-blend-mode: soft-light;
+  opacity: 0.55;
+}
+
+/* A QUEDA: a imagem esfria, trava e some. O grao engrossa junto. */
+.cena-chamada[data-momento="caindo"] .cena-chamada__rosto {
+  animation: none;
+  filter: saturate(0.35) contrast(1.25) brightness(0.72);
+  transform: translate(-50%, -50%) scale(1.004);
+}
+
+.cena-chamada[data-momento="caindo"] .cena-chamada__grao {
+  opacity: 1;
+  mix-blend-mode: normal;
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.06) 0 2px,
+      transparent 2px 5px
+    ),
+    linear-gradient(180deg, rgba(3, 14, 24, 0.5), rgba(3, 14, 24, 0.75));
+  animation: cena-chamada-engasga 260ms steps(2, end) infinite;
+}
+
+@keyframes cena-chamada-engasga {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0.4%, -0.3%, 0);
+  }
+}
+
+/*
+ * NO FIM SO FICA O AVISO. A imagem, o grao e a janelinha da propria camera vao
+ * embora juntos: camera desligada de uma chamada que ja acabou e enfeite de
+ * coisa que nao existe mais.
+ */
+.cena-chamada[data-momento="fim"] .cena-chamada__fundo,
+.cena-chamada[data-momento="fim"] .cena-chamada__rosto,
+.cena-chamada[data-momento="fim"] .cena-chamada__grao,
+.cena-chamada[data-momento="fim"] .cena-chamada__eu {
+  opacity: 0;
+  transition: opacity 420ms ease-out;
+}
+
+/* Enquanto conecta, a imagem ainda nao entrou. */
+.cena-chamada[data-momento="conectando"] .cena-chamada__rosto {
+  opacity: 0;
+}
+
+.cena-chamada[data-momento="no-ar"] .cena-chamada__rosto {
+  opacity: 1;
+  transition: opacity 420ms ease-out;
+}
+
+/* ── O ALTO: quem é, e como está a linha ────────────────────────────────── */
+
+.cena-chamada__alto {
+  position: absolute;
+  top: max(1.4vh, env(safe-area-inset-top));
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 5%;
+  background: linear-gradient(180deg, rgba(1, 12, 20, 0.72), transparent);
+}
+
+.cena-chamada__quem {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.cena-chamada__quem strong {
+  font: 800 clamp(1.05rem, 2.7vh, 1.35rem) / 1.1 system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  text-shadow: 0 0.1rem 0.5rem rgba(0, 0, 0, 0.6);
+}
+
+.cena-chamada__quem small {
+  font: 500 clamp(0.7rem, 1.6vh, 0.86rem) / 1.2 system-ui, sans-serif;
+  opacity: 0.82;
+  font-variant-numeric: tabular-nums;
+}
+
+/* AS BARRINHAS DE SINAL: o unico aviso antes de a imagem morrer. */
+.cena-chamada__sinal {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.18rem;
+  height: 1.1rem;
+}
+
+.cena-chamada__sinal i {
+  width: 0.28rem;
+  border-radius: 0.1rem;
+  background: rgba(234, 246, 255, 0.24);
+  transition: background 300ms ease-out;
+}
+
+.cena-chamada__sinal i:nth-child(1) {
+  height: 42%;
+}
+.cena-chamada__sinal i:nth-child(2) {
+  height: 70%;
+}
+.cena-chamada__sinal i:nth-child(3) {
+  height: 100%;
+}
+
+.cena-chamada__sinal[data-barras="3"] i,
+.cena-chamada__sinal[data-barras="2"] i:nth-child(-n + 2),
+.cena-chamada__sinal[data-barras="1"] i:nth-child(1) {
+  background: #7ce0a8;
+}
+
+.cena-chamada__sinal[data-barras="1"] i:nth-child(1) {
+  background: #f2c14a;
+}
+
+/* ── A JANELINHA DA PROPRIA CAMERA ─────────────────────────────────────── */
+
+.cena-chamada__eu {
+  position: absolute;
+  right: 4.5%;
+  top: calc(max(1.4vh, env(safe-area-inset-top)) + 4.2rem);
+  width: clamp(4.2rem, 17vw, 5.6rem);
+  aspect-ratio: 3 / 4;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 0.3rem;
+  padding: 0.4rem;
+  border-radius: 0.6rem;
+  border: 1px solid rgba(234, 246, 255, 0.14);
+  background: rgba(2, 13, 22, 0.72);
+  text-align: center;
+}
+
+/* A camera riscada, desenhada com duas formas — sem arquivo de icone. */
+.cena-chamada__eu i {
+  position: relative;
+  display: block;
+  width: 1.5rem;
+  height: 1rem;
+  border-radius: 0.22rem;
+  border: 0.11rem solid rgba(234, 246, 255, 0.45);
+}
+
+.cena-chamada__eu i::after {
+  content: "";
+  position: absolute;
+  left: -0.35rem;
+  top: 50%;
+  width: 2.2rem;
+  height: 0.11rem;
+  background: rgba(234, 246, 255, 0.62);
+  transform: rotate(-32deg);
+}
+
+.cena-chamada__eu span {
+  font: 600 clamp(0.58rem, 1.4vh, 0.72rem) / 1.2 system-ui, sans-serif;
+  opacity: 0.6;
+}
+
+/* ── A LEGENDA: ele tentando falar numa linha que ja esta ruim ──────────── */
+
+.cena-chamada__legenda {
+  position: absolute;
+  left: 50%;
+  bottom: calc(max(2.2vh, env(safe-area-inset-bottom)) + 6.2rem);
+  transform: translateX(-50%);
+  margin: 0;
+  max-width: 74%;
+  padding: 0.42rem 0.9rem;
+  border-radius: 0.6rem;
+  background: rgba(2, 12, 20, 0.74);
+  font: 600 clamp(0.92rem, 2.3vh, 1.15rem) / 1.3 system-ui, sans-serif;
+  text-align: center;
+  animation: cena-chamada-legenda 220ms ease-out both;
+}
+
+@keyframes cena-chamada-legenda {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.cena-chamada__fim {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  margin: 0;
+  font: 600 clamp(1rem, 2.6vh, 1.3rem) / 1.3 system-ui, sans-serif;
+  opacity: 0.72;
+  letter-spacing: 0.02em;
+}
+
+/* ── DESLIGAR: funciona desde o primeiro segundo ────────────────────────── */
+
+.cena-chamada__desligar {
+  position: absolute;
+  left: 50%;
+  bottom: max(2.2vh, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+}
+
+.cena-chamada__desligar span {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  font-size: 1.5rem;
+  color: #fff;
+  transform: rotate(135deg);
+  background: linear-gradient(160deg, #e5544c 0%, #b32a24 100%);
+  box-shadow:
+    0 0 0 0.12rem rgba(10, 6, 4, 0.6),
+    0 0.5rem 1.2rem rgba(0, 0, 0, 0.45);
+  transition:
+    transform 140ms ease-out,
+    filter 140ms ease-out;
+}
+
+.cena-chamada__desligar em {
+  font: 600 clamp(0.66rem, 1.6vh, 0.8rem) / 1 system-ui, sans-serif;
+  font-style: normal;
+  opacity: 0.8;
+}
+
+.cena-chamada__desligar:hover span {
+  filter: brightness(1.08);
+}
+
+.cena-chamada__desligar:active span {
+  transform: rotate(135deg) scale(0.94);
+}
+
+.cena-chamada__desligar:focus-visible {
+  outline: 0.16rem solid #18bfea;
+  outline-offset: 0.3rem;
+  border-radius: 0.6rem;
+}
+
+/*
+ * QUEM PEDIU MENOS MOVIMENTO ve a mesma cena sem a respiracao nem o engasgo.
+ * A historia nao muda; so o balanco sai.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .cena-chamada,
+  .cena-chamada__rosto,
+  .cena-chamada__grao,
+  .cena-chamada__legenda {
+    animation: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+ * O DESCANSO DO CELULAR — 13/09/2026
+ *
+ * Ordem dele: "app salva jogo atual, aparece uma tela que vamos recarregar
+ * celular e já voltamos".
+ *
+ * Ela cobre o jogo inteiro de propósito. Nada aqui pisca, corre ou apressa:
+ * a tela é de PARAR, e uma tela de parar cheia de movimento contradiz a
+ * própria ordem que deu. Só a pilha respira, devagar, como carregando.
+ * ══════════════════════════════════════════════════════════════════════════ */
+
+.recarga {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 6vw;
+  background: radial-gradient(circle at 50% 38%, #0d2340 0%, #06101d 70%);
+}
+
+.recarga__cartao {
+  width: min(100%, 27rem);
+  display: grid;
+  justify-items: center;
+  gap: 2.2vh;
+  padding: 5vh 7vw;
+  border: 1px solid rgba(120, 190, 255, 0.22);
+  border-radius: 2.4vh;
+  background: rgba(10, 28, 50, 0.72);
+  box-shadow: 0 1.2vh 4vh rgba(0, 0, 0, 0.45);
+  text-align: center;
+}
+
+/* A PILHA: mesma casca da barra do aplicativo, em tamanho de cartaz. */
+.recarga__pilha {
+  position: relative;
+  width: 6.4rem;
+  height: 2.9rem;
+  padding: 0.32rem;
+  border: 2px solid rgba(207, 230, 251, 0.7);
+  border-radius: 0.7rem;
+}
+
+.recarga__pilha::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -0.46rem;
+  width: 0.34rem;
+  height: 38%;
+  transform: translateY(-50%);
+  border-radius: 0 0.16rem 0.16rem 0;
+  background: rgba(207, 230, 251, 0.7);
+}
+
+.recarga__suco {
+  display: block;
+  height: 100%;
+  width: 22%;
+  border-radius: 0.4rem;
+  background: #7ee787;
+  animation: recarga-enchendo 3.4s ease-in-out infinite;
+}
+
+@keyframes recarga-enchendo {
+  0% {
+    width: 14%;
+    opacity: 0.75;
+  }
+  60% {
+    width: 100%;
+    opacity: 1;
+  }
+  100% {
+    width: 14%;
+    opacity: 0.75;
+  }
+}
+
+.recarga h1 {
+  margin: 0;
+  font:
+    800 clamp(1.25rem, 3.6vh, 1.7rem) / 1.15 system-ui,
+    sans-serif;
+  color: #f2fbff;
+}
+
+.recarga__fala {
+  margin: 0;
+  font:
+    600 clamp(0.95rem, 2.4vh, 1.1rem) / 1.3 system-ui,
+    sans-serif;
+  color: #9ec6e8;
+}
+
+.recarga__relogio {
+  font:
+    800 clamp(2.4rem, 7vh, 3.4rem) / 1 ui-monospace, SFMono-Regular, Menlo,
+    monospace;
+  color: #eaf6ff;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.recarga__rodape {
+  margin: 0;
+  font:
+    500 clamp(0.8rem, 2vh, 0.94rem) / 1.4 system-ui,
+    sans-serif;
+  color: #8fb6d8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recarga__suco {
+    animation: none;
+    width: 60%;
   }
 }

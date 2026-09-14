@@ -28,7 +28,8 @@ export default function TelaChamadas({
   return (
     <section className="xbw-chamadas" aria-label="Chamadas">
       <header className="xbw-topo xbw-topo--marca">
-        <strong className="xbw-marca">Chamadas</strong>
+        {/* O nome da aba embaixo e "Ligacoes": o titulo do alto diz o mesmo. */}
+        <strong className="xbw-marca">Ligações</strong>
       </header>
       <ul>
         {estado.chamadas.map(c => (

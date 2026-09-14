@@ -24,10 +24,17 @@ describe("o XBWAPP montado", () => {
     expect(() => desenhar()).not.toThrow();
   });
 
-  it("abre na lista de conversas, com a marca no alto", () => {
+  /*
+   * Ordem dele, 12/09/2026: tirar "Pesquisar" e "Todos os contatos" da
+   * primeira tela, para a placa clara crescer. O que tem de estar no alto e a
+   * marca; o campo de pesquisa saiu (continua no codigo, atras da chave).
+   */
+  it("abre na lista de conversas, com a marca no alto e sem os dois campos", () => {
     const html = desenhar();
     expect(html).toContain("XBW");
-    expect(html).toContain("Pesquisar");
+    expect(html).toContain("xbw-conversas");
+    expect(html).not.toContain("Pesquisar");
+    expect(html).not.toContain("Todos os contatos");
   });
 
   /*
@@ -46,15 +53,29 @@ describe("o XBWAPP montado", () => {
    * AJUSTES, ISTO NÃO E O QUE EXISTE DE FATO NO WHATS APP REAL, QUERO O QUE
    * REALMENTE EXISTE". As abas agora sao as quatro do WhatsApp Business.
    */
-  it("tem as quatro abas do WhatsApp Business", () => {
+  /*
+   * Ordem dele, 13/09/2026: "retire do app por enquanto recibo, ligacoes,
+   * atualizacoes". Eram quatro abas; hoje sao tres no ar. As escondidas
+   * continuam existindo no codigo — quem guarda isso e `asAbasDoApp`.
+   */
+  it("tem as quatro abas que estao no ar", () => {
     const html = desenhar();
     for (const aba of [
       "Conversas",
-      "Atualizações",
-      "Ligações",
+      "Contatos",
       "Ferramentas",
+      "Equipe",
     ]) {
       expect(html).toContain(aba);
+    }
+  });
+
+  it("as tres que ele tirou nao aparecem no rodape", () => {
+    const html = desenhar();
+    for (const fora of ["Atualizações", "Ligações", "Recibo"]) {
+      expect(html, `${fora} voltou ao rodape sem ninguem pedir`).not.toContain(
+        `<small>${fora}</small>`
+      );
     }
   });
 
@@ -71,6 +92,9 @@ describe("o XBWAPP montado", () => {
   });
 
   it("da sempre um jeito de voltar para o mapa", () => {
-    expect(desenhar()).toContain("Voltar ao mapa");
+    // Ordem dele, 12/09/2026: o botao passou a se chamar "Voltar ao game" e
+    // mora no canto de cima, com o selo da XB, em toda tela.
+    expect(desenhar()).toContain("Voltar ao game");
+    expect(desenhar()).toContain("xbw__canto");
   });
 });

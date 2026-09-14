@@ -31,6 +31,7 @@
  * voltam. Jogo que trava porque a internet caiu e jogo quebrado.
  */
 import type { Efeito } from "./tipos";
+import { chaveDeTeste } from "./aChaveDeTeste";
 
 /**
  * A LISTA FECHADA DE INTENCOES.
@@ -132,6 +133,16 @@ export interface Situacao {
   pedido?: string;
   /** Como esse personagem ve o jogador, em palavra. */
   reputacao?: string;
+  /**
+   * O QUE ESSA PESSOA LEMBRA DO ENTREGADOR — ideia dele, 13/09/2026.
+   *
+   * Nao e enfeite: e o que dispensa a IA de deduzir qualquer coisa. Com isto
+   * pronto, ela nao inventa quem e a pessoa nem o que esta acontecendo — so
+   * escolhe as palavras. E por isso um modelo pequeno e GRATUITO basta.
+   */
+  lembranca?: string;
+  /** POR QUE a IA esta sendo chamada agora: um dos quatro momentos extremos. */
+  momento?: string;
 }
 
 /**
@@ -276,7 +287,19 @@ export async function pedirResposta(
   const daPagina = await pedirAoClaudeDaPagina(situacao, historico);
   if (daPagina) return daPagina;
 
-  if (acoplada === false) return { falha: "sem-chave" };
+  /*
+   * A CHAVE DIGITADA NA TELA DE AJUSTES — enquanto o jogo está em teste.
+   *
+   * Quando existe, ela vai junto e manda no pedido: o servidor usa ELA em vez
+   * da que está na máquina. É assim que dá para ligar e desligar a
+   * inteligência no meio da partida.
+   *
+   * E ela também desfaz a desistência: o jogo para de tentar na primeira
+   * recusa por falta de chave (senão cada frase digitada viraria uma viagem
+   * inútil até o servidor), e com chave na mão essa desistência não vale mais.
+   */
+  const chave = chaveDeTeste();
+  if (acoplada === false && !chave) return { falha: "sem-chave" };
 
   const desistir = new AbortController();
   const relogio = setTimeout(() => desistir.abort(), ESPERA_MAXIMA_MS);
@@ -287,6 +310,8 @@ export async function pedirResposta(
       body: JSON.stringify({
         situacao,
         historico: historico.slice(-FALAS_DE_MEMORIA),
+        // Vai só quando existe: sem isto o pedido é exatamente o de antes.
+        ...(chave ? { chave } : {}),
       }),
       signal: desistir.signal,
     });

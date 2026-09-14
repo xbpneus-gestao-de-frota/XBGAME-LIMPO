@@ -150,7 +150,7 @@ export const LOJAS: readonly Contato[] = [
 export const MORADORES: readonly Contato[] = [
   {
     id: "casa1",
-    nome: "Cláudia",
+    nome: "Cláudia Prado",
     tipo: "pessoa",
     foto: `${M}claudia.webp`,
     sobre: "casa 1 · mãe de gêmeos, pede sempre em dobro",
@@ -162,7 +162,7 @@ export const MORADORES: readonly Contato[] = [
     nome: "Seu Genaro",
     tipo: "pessoa",
     foto: `${M}genaro.webp`,
-    sobre: "casa 2 · acorda às 5h, reclama de entrega depois das 20h",
+    sobre: "casa 2 · acorda às 5h, não gosta de entrega depois das 20h",
     endereco: "casa 2",
     online: true,
   },
@@ -227,9 +227,6 @@ export const MORADORES: readonly Contato[] = [
    * Terezinha, Cida, Vera, Ilda, Adriano e Silvana. Sao EXATAMENTE as casas 9
    * a 16 da lista de moradores do bairro — mesma idade, mesma mania — entao
    * cada retrato entrou na casa que ja era dele, e nao numa casa qualquer.
-   *
-   * A Cida ja estava aqui de roda de inicial. Agora tem cara: a linha da `cor`
-   * virou linha de `foto`, que era exatamente o combinado.
    */
   {
     id: "casa9",
@@ -263,7 +260,8 @@ export const MORADORES: readonly Contato[] = [
     nome: "Dona Cida",
     tipo: "pessoa",
     foto: `${M}cida.webp`,
-    sobre: "casa 12 · cuida de três netos, pedido grande e sempre com refrigerante",
+    sobre:
+      "casa 12 · cuida de três netos, pedido grande e sempre com refrigerante",
     endereco: "casa 12",
     online: true,
   },
@@ -281,7 +279,8 @@ export const MORADORES: readonly Contato[] = [
     nome: "Dona Ilda",
     tipo: "pessoa",
     foto: `${M}ilda.webp`,
-    sobre: "casa 14 · de manhã está em casa; à tarde joga baralho na casa da Zica",
+    sobre:
+      "casa 14 · de manhã está em casa; à tarde joga baralho na casa da Zica",
     endereco: "casa 14",
     online: true,
   },
@@ -290,7 +289,8 @@ export const MORADORES: readonly Contato[] = [
     nome: "Adriano Rocha",
     tipo: "pessoa",
     foto: `${M}adriano.webp`,
-    sobre: "casa 15 · trabalha em casa, recebe a qualquer hora mas demora a descer",
+    sobre:
+      "casa 15 · trabalha em casa, recebe a qualquer hora mas demora a descer",
     endereco: "casa 15",
     online: true,
   },
@@ -299,35 +299,339 @@ export const MORADORES: readonly Contato[] = [
     nome: "Silvana Almeida",
     tipo: "pessoa",
     foto: `${M}silvana.webp`,
-    sobre: "casa 16 · cachorro grande no quintal, deixar no portãozinho lateral",
+    sobre:
+      "casa 16 · cachorro grande no quintal, deixar no portãozinho lateral",
     endereco: "casa 16",
     online: false,
   },
   /*
-   * ── OS DOIS QUE AINDA ESPERAM DESENHO ────────────────────────────────────
+   * ── AS TRINTA QUE FALTAVAM, 13/09/2026 ───────────────────────────────────
    *
-   * Ficam aqui porque o balcao ja entrega nestes enderecos e porque a roda com
-   * as iniciais nao mente: e o que todo aplicativo de mensagem faz com quem
-   * ainda nao tem foto. Quando os desenhos deles chegarem, e so trocar a linha
-   * da `cor` por uma linha de `foto` — foi o que acabou de acontecer com a
-   * Cida.
+   * O bairro tem QUARENTA E OITO portas de casa desde que o desenho foi
+   * medido, e o balcao ja podia mandar entrega para todas elas. Na agenda,
+   * porem, so dezoito eram gente: nas outras trinta o jogador entregava para
+   * um endereco, e endereco nao conversa, nao reclama e nao agradece.
+   *
+   * O NOME DE CADA UMA VEM DO DESENHO, nao da minha cabeca — "casa da dona
+   * Alzira" virou Dona Alzira, "casa da familia Fontes" virou Neide Fontes.
+   * Era o unico jeito honesto: o mapa ja tinha batizado o bairro inteiro, e
+   * inventar um segundo nome faria a mesma casa se chamar de dois jeitos na
+   * mesma tela.
+   *
+   * NENHUMA TEM RETRATO AINDA, e por isso vao de roda com as iniciais — o que
+   * todo aplicativo de mensagem faz com quem ainda nao tem foto. Quando o
+   * desenho chegar, e trocar a linha da `cor` por uma linha de `foto`.
    */
+  {
+    id: "casa17",
+    nome: "Marcos Toledo",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 17 · churrasco todo domingo; pedido de domingo é sempre urgente",
+    endereco: "casa 17",
+    online: true,
+  },
+  {
+    id: "casa18",
+    nome: "Seu Elpídio",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 18 · só paga em dinheiro, deixa o troco separado num envelope",
+    endereco: "casa 18",
+    online: true,
+  },
+  {
+    id: "casa19",
+    nome: "Bianca Fontes",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 19 · recém-chegada; ainda erra o número da própria casa no aplicativo",
+    endereco: "casa 19",
+    online: true,
+  },
+  {
+    id: "casa20",
+    nome: "Dona Alzira",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 20 · faz doce de leite; encomenda açúcar em saco de cinco quilos",
+    endereco: "casa 20",
+    online: false,
+  },
   {
     id: "casa21",
     nome: "Seu Nivaldo",
     tipo: "pessoa",
     cor: COR.casa,
-    sobre: "casa 21 · em dia de jogo não atende",
+    sobre:
+      "casa 21 · torcedor doente; em dia de jogo não atende de jeito nenhum",
     endereco: "casa 21",
     online: true,
+  },
+  {
+    id: "casa22",
+    nome: "Heitor Pontes",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 22 · dois adolescentes em casa; o lanche some antes de esfriar",
+    endereco: "casa 22",
+    online: true,
+  },
+  {
+    id: "casa23",
+    nome: "Regina Beltrão",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 23 · recebe pela janela da frente; nunca abre o portão para estranho",
+    endereco: "casa 23",
+    online: false,
+  },
+  {
+    id: "casa24",
+    nome: "Seu Deusdete",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 24 · pescador; some na sexta e volta domingo à noite",
+    endereco: "casa 24",
+    online: true,
+  },
+  {
+    id: "casa25",
+    nome: "Seu Vandir",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 25 · motorista; a caminhonete na garagem quer dizer que ele está em casa",
+    endereco: "casa 25",
+    online: true,
+  },
+  {
+    id: "casa26",
+    nome: "Seu Benedito",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 26 · o mais velho do bairro; gosta de conversa, a entrega ali demora cinco minutos a mais",
+    endereco: "casa 26",
+    online: true,
+  },
+  {
+    id: "casa27",
+    nome: "Dona Iracema",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 27 · manicure em casa; sempre tem alguém na sala esperando",
+    endereco: "casa 27",
+    online: true,
+  },
+  {
+    id: "casa28",
+    nome: "Seu Firmino",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 28 · marceneiro; barulho de serra o dia inteiro, melhor bater no portão",
+    endereco: "casa 28",
+    online: true,
+  },
+  {
+    id: "casa29",
+    nome: "Dona Neusa",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 29 · confere a nota antes de assinar; erro de item volta na hora",
+    endereco: "casa 29",
+    online: true,
+  },
+  {
+    id: "casa30",
+    nome: "Dona Aparecida",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 30 · faz o café das sete; entregador que chega cedo sai com um copo",
+    endereco: "casa 30",
+    online: true,
+  },
+  {
+    id: "casa31",
+    nome: "Paulo Camargo",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 31 · casa de esquina, dois portões; atende sempre o da rua de baixo",
+    endereco: "casa 31",
+    online: true,
+  },
+  {
+    id: "casa32",
+    nome: "Seu Nilton",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 32 · conserta bicicleta no quintal — o único que entende de pneu",
+    endereco: "casa 32",
+    online: true,
+  },
+  {
+    id: "casa33",
+    nome: "Seu Percival",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 33 · colecionador de rádio antigo; encomenda peça pequena e frágil",
+    endereco: "casa 33",
+    online: false,
   },
   {
     id: "casa34",
     nome: "Seu Orlando",
     tipo: "pessoa",
     cor: COR.casa,
-    sobre: "casa 34 · sai cedo, pede para deixar com a vizinha",
+    sobre:
+      "casa 34 · sai cedo e volta tarde; pede para deixar com a vizinha da 35",
     endereco: "casa 34",
+    online: false,
+  },
+  {
+    id: "casa35",
+    nome: "Dona Ercília",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 35 · guarda encomenda dos vizinhos; meia rua passa por ali",
+    endereco: "casa 35",
+    online: true,
+  },
+  {
+    id: "casa36",
+    nome: "Sandra Quirino",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 36 · aniversário de alguém quase todo mês; bolo e flor com hora marcada",
+    endereco: "casa 36",
+    online: false,
+  },
+  {
+    id: "casa37",
+    nome: "Seu Osvaldo",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 37 · horta na frente; troca verdura por desconto se deixarem",
+    endereco: "casa 37",
+    online: true,
+  },
+  {
+    id: "casa38",
+    nome: "Seu Anselmo",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 38 · muito pontual; se o prazo é vinte minutos, ele conta no relógio",
+    endereco: "casa 38",
+    online: true,
+  },
+  {
+    id: "casa39",
+    nome: "Túlio Nogueira",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 39 · casal jovem, os dois trabalham fora; só recebem depois das 19h",
+    endereco: "casa 39",
+    online: true,
+  },
+  {
+    id: "casa40",
+    nome: "Dona Julieta",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 40 · o neto põe som alto no fim de semana; ela não escuta a campainha",
+    endereco: "casa 40",
+    online: true,
+  },
+  {
+    id: "casa41",
+    nome: "Marisa Braga",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 41 · casa cheia de neto; pedido nunca é pequeno",
+    endereco: "casa 41",
+    online: true,
+  },
+  {
+    id: "casa42",
+    nome: "Otávio Vilela",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 42 · portão automático que trava; às vezes é preciso esperar",
+    endereco: "casa 42",
+    online: true,
+  },
+  {
+    id: "casa43",
+    nome: "Seu Belmiro",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 43 · cadeira na calçada todo fim de tarde; vê tudo que passa na rua",
+    endereco: "casa 43",
+    online: true,
+  },
+  {
+    id: "casa44",
+    nome: "Célia Assunção",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 44 · faz marmita para fora; manda mais entrega que qualquer comércio",
+    endereco: "casa 44",
+    online: true,
+  },
+  {
+    id: "casa45",
+    nome: "Dona Odete",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre: "casa 45 · só atende se chamarem pelo nome; campainha ela ignora",
+    endereco: "casa 45",
+    online: false,
+  },
+  {
+    id: "casa46",
+    nome: "Seu Sebastião",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 46 · zelador da praça; de manhã não está em casa, está na fonte",
+    endereco: "casa 46",
+    online: true,
+  },
+  {
+    id: "casa47",
+    nome: "Seu Anacleto",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 47 · anota tudo num caderninho; sabe de cor o que pediu no mês passado",
+    endereco: "casa 47",
+    online: true,
+  },
+  {
+    id: "casa48",
+    nome: "Dona Guiomar",
+    tipo: "pessoa",
+    cor: COR.casa,
+    sobre:
+      "casa 48 · a casa mais longe da base; paga a mais para compensar o caminho",
+    endereco: "casa 48",
     online: false,
   },
 ];
@@ -460,6 +764,25 @@ export function renanJaEstaEquipado(): boolean {
   return renanEquipado;
 }
 
+/**
+ * A LORENA — na agenda desde 14/09/2026.
+ *
+ * Ela ja andava no mapa, ja cansava no folego e ja tinha desenho proprio. So
+ * nao estava aqui — e por isso metade do documento que ele escreveu dela nao
+ * tinha onde acontecer: sem contato, nao ha conversa, nao ha grupo, nao ha
+ * memoria e nao ha com quem o Renan implicar.
+ *
+ * Entra como o Renan entrou: gente com nome, e nao mais um da roda.
+ */
+export const LORENA: Contato = {
+  id: "lorena",
+  nome: "Lorena",
+  tipo: "pessoa",
+  foto: GAME_ASSETS.lorenaRetrato,
+  sobre: "Patins, balé e pressa",
+  online: true,
+};
+
 export const XB_TECHNOLOGY: Contato = {
   id: "xb",
   nome: "XB Technology",
@@ -475,13 +798,14 @@ export const GRUPO_ENTREGADORES: Contato = {
   nome: "Entregadores do Bairro",
   tipo: "grupo",
   cor: COR.grupo,
-  sobre: "Grupo · 9 participantes",
-  membros: ["voce", ...ENTREGADORES.map(e => e.id)],
+  sobre: "Grupo · 11 participantes",
+  membros: ["voce", "renan", "lorena", ...ENTREGADORES.map(e => e.id)],
 };
 
 /** Todo mundo, numa lista so. */
 export const CONTATOS: readonly Contato[] = [
   RENAN,
+  LORENA,
   XB_TECHNOLOGY,
   GRUPO_ENTREGADORES,
   ...LOJAS,

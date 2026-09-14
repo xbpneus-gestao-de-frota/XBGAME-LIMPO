@@ -1,5 +1,5 @@
 {
- "nota": "Gerado por scripts/entregador/grades.py a partir das cinco grades em assets-source/entregador/grades. O nome e a posicao do relogio com minutos (12h00 = ir para o fundo, 03h00 = atravessar para a direita). 'graus' e a direcao na tela, medida pela reta entre os dois eixos das rodas; frenteX/Y e trasX/Y sao onde cada pneu encosta, em porcentagem da moldura. 'folha' diz de qual desenho da grade saiu.",
+ "nota": "Gerado por scripts/entregador/grades.py a partir das cinco grades em assets-source/entregador/grades. O nome e a posicao do relogio com minutos (12h00 = ir para o fundo, 03h00 = atravessar para a direita). 'graus' e a direcao na tela, medida pela reta entre os dois eixos das rodas; frenteX/Y e trasX/Y sao onde cada pneu encosta, em porcentagem da moldura. 'folha' diz de qual desenho da grade saiu; com 'espelho', o desenho e o do rumo citado virado para o outro lado, para fechar um buraco grande do relogio.",
  "moldes": [
   {
    "nome": "02h59",
@@ -176,6 +176,17 @@
    "trasX": 49.3,
    "trasY": 95.7,
    "folha": "frente_direita#1",
+   "umaRoda": true
+  },
+  {
+   "nome": "05h00",
+   "graus": 300.2,
+   "frenteX": 53.6,
+   "frenteY": 96.0,
+   "trasX": 53.6,
+   "trasY": 96.0,
+   "folha": "frente_esquerda#2",
+   "espelho": "07h00",
    "umaRoda": true
   },
   {

@@ -52,15 +52,22 @@ export const DESENHOS_DE: Readonly<Record<QuemPedala, OsDesenhosDe>> = {
 export const LORENA = { id: "cand-lorena", nome: "Lorena" } as const;
 
 /**
- * ── POR ENQUANTO ELA JA COMECA NA EQUIPE ──────────────────────────────────
+ * ── ELA AINDA NAO ENTRA NA EQUIPE ─────────────────────────────────────────
  *
- * "Por enquanto gere mesmo formato de renan": ela entra junto com ele, sem
- * preco e sem vaga na garagem — do mesmo jeito que o Renan recebe a primeira
- * bicicleta. Traz a bicicleta dela, entao entra como AGREGADA (a regra que a
- * vaga dela ja tinha). A contratacao pela conversa no aplicativo vem depois;
- * quando vier, e desligar aqui.
+ * Ordem dele, 13/09/2026: "ainda nao entramos na fase dos pedidos, Lorena
+ * ainda nao deve aparecer na equipe".
+ *
+ * Ela CHEGOU a entrar junto com o Renan enquanto o passeio de teste precisava
+ * de dois desenhos pedalando o bairro. Com o passeio desligado, a equipe volta
+ * a contar a historia na ordem: quem entra por cena e o Renan, e a segunda
+ * pessoa entra quando a historia a contratar — nao antes.
+ *
+ * DESLIGAR AQUI NAO APAGA NADA DELA. Os desenhos, os moldes, as cenas paradas
+ * e a vaga na lista de candidatos continuam inteiros e testados. Este
+ * interruptor so decide se ela ja comeca contratada; virar para `true` de
+ * volta e uma linha.
  */
-export const LORENA_JA_NA_EQUIPE = true;
+export const LORENA_JA_NA_EQUIPE = false;
 
 /** Quem tem desenho proprio no mapa, pelo nome que a pessoa tem na equipe. */
 export function quemPedalaPeloNome(nome: string): QuemPedala | null {

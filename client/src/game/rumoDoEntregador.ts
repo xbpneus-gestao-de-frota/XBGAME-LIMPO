@@ -672,7 +672,36 @@ export const GEOMETRIA: Readonly<Record<Rumo, GeometriaDoRumo>> =
  * decidiu assim, com todas as letras: "sem espelho, sem gambiarra". Quando
  * faltar uma direcao, a resposta e desenhar ela — nao emprestar nem virar a do
  * lado. O buraco fica visivel na conta dos vaos, que o script imprime, e vaga
- * ate o desenho chegar.
+ * ate o desenho chegar. (Isto valeu inteiro ate 12/09/2026 — ver a secao
+ * seguinte, em que ele mandou fechar o maior buraco com espelho de gerador.)
+ *
+ * ── O ESPELHO VOLTOU EM 12/09/2026, COM DUAS TRAVAS ───────────────────────
+ *
+ * Ordem dele: "PRIMEIRO APLIQUE O QUE TEMOS SEM TRAVAR CAMERA EM
+ * ENTREGADORES". O que temos e o buraco da frente: entre 06h00 e 04h34 o
+ * relogio do Renan passava 43,1 graus sem desenho nenhum (o da Lorena, 46,1
+ * graus), e e esse buraco que da o tranco quando o entregador cruza a tela por
+ * baixo, vindo para a camera.
+ *
+ * O ESPELHO QUE VOLTOU NAO E O DE ANTES. O de antes virava o desenho na hora
+ * de pintar e deixava as pegadas no lugar velho — dai a sombra a meia
+ * bicicleta do pneu. Agora quem vira e o GERADOR: o script grava um arquivo
+ * novo, com os pixels ao contrario E as pegadas ao contrario (x vira 100 - x),
+ * e o jogo pinta esse arquivo como pinta qualquer outro. Nada vira na tela.
+ *
+ * Duas travas, em scripts/entregador/grades.py:
+ *
+ *   1. o espelho e 180 - graus, entao a altura do rumo nao muda: quem vai para
+ *      o fundo continua de costas, quem vem continua de frente. Foi exatamente
+ *      aqui que o espelho antigo estragou (o noroeste mostrando o rosto), e o
+ *      script para sozinho se um dia isso deixar de valer.
+ *   2. so entra onde o buraco passa de 38 graus, e so no meio dele — nunca
+ *      colado num desenho que ja existe.
+ *
+ * Com isso o maior salto do relogio cai de 43,1 para 30,2 graus no Renan e de
+ * 46,1 para 37,4 na Lorena. O buraco continua aparecendo na conta dos vaos que
+ * o script imprime, e quando o desenho de verdade chegar ele toma o lugar do
+ * espelho sem ninguem mexer em codigo.
  */
 
 /** O nome do rumo de uma fatia. */

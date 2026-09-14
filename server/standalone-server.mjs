@@ -9,9 +9,13 @@ import { fileURLToPath } from "node:url";
 import {
   arrumarPedido,
   criarContador,
-  lerChave,
   responderComoPersonagem,
 } from "./xbwapp-atendimento.mjs";
+import {
+  chaveDoPedido,
+  escolherFornecedor,
+  responderComGratuita,
+} from "./xbwapp-ia-gratuita.mjs";
 
 const RELEASE = "3.6.1";
 
@@ -500,12 +504,38 @@ function responderJson(response, status, dados) {
 }
 
 async function atenderConversa(request, response) {
-  if (!lerChave()) {
+  /*
+   * QUAL INTELIGENCIA RESPONDE — ordem dele, 13/09/2026: so a gratuita.
+   *
+   * A gratuita ganha quando a chave dela existe. Se um dia ele ligar a paga,
+   * basta ter a chave dela e nao ter a da gratuita: nenhuma linha do jogo
+   * muda. Sem chave nenhuma, o 503 sai na hora, sem falar com ninguem — e o
+   * jogo segue inteiro nas falas do bairro.
+   */
+  /*
+   * O PEDIDO E LIDO ANTES DE ESCOLHER QUEM RESPONDE — mudou em 13/09/2026.
+   *
+   * Antes a escolha saia so da maquina: se nao havia chave no ambiente, o 503
+   * saia sem nem abrir o pedido. Agora a chave tambem pode vir do NAVEGADOR,
+   * digitada na tela de ajustes enquanto o jogo esta em teste — e para saber
+   * disso e preciso ler o pedido primeiro.
+   *
+   * A chave do navegador MANDA quando existe: e assim que da para ligar e
+   * desligar a inteligencia no meio da partida sem fechar o jogo.
+   */
+  const bruto = await lerCorpo(request, TAMANHO_MAXIMO_DO_PEDIDO);
+  const chaveDoNavegador = chaveDoPedido(bruto);
+  const fornecedor = chaveDoNavegador ? "gratuita" : escolherFornecedor();
+  if (fornecedor === "nenhum") {
     responderJson(response, 503, { falha: "sem-chave" });
     return;
   }
 
-  const bruto = await lerCorpo(request, TAMANHO_MAXIMO_DO_PEDIDO);
+  /*
+   * `arrumarPedido` so deixa passar os campos que ele conhece, entao a chave
+   * NAO entra no pedido nem de raspao — ela nao chega perto da instrucao que
+   * vai para o fornecedor, e nao pode vazar dentro de um texto.
+   */
   const pedido = arrumarPedido(bruto);
   if (!pedido) {
     responderJson(response, 400, { falha: "pedido-invalido" });
@@ -517,9 +547,19 @@ async function atenderConversa(request, response) {
     return;
   }
 
-  const resposta = await responderComoPersonagem(pedido);
+  const resposta =
+    fornecedor === "gratuita"
+      ? await responderComGratuita(
+          pedido,
+          chaveDoNavegador ? { chave: chaveDoNavegador } : {}
+        )
+      : await responderComoPersonagem(pedido);
   if (resposta.falha) {
-    responderJson(response, 502, { falha: "fora-do-ar" });
+    // O teto do dia da camada gratuita vira 429, igual ao teto daqui: o jogo
+    // ja sabe tratar "limite" — o morador diz que esta sem sinal e as falas do
+    // bairro assumem. Nada quebra; o jogo so volta ao estado gratuito.
+    const codigo = resposta.falha === "limite" ? 429 : 502;
+    responderJson(response, codigo, { falha: resposta.falha });
     return;
   }
   responderJson(response, 200, resposta);

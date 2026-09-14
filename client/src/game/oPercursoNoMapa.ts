@@ -25,6 +25,7 @@
 import { rota as rotaPelasRuas } from "./rotas";
 import { enderecoDe } from "./xbwapp/distancias";
 import { PARADA_S, tempoDaPerna, type EmRota } from "./xbwapp/aRota";
+import type { ChaveDaFaixa } from "./xbwapp/entregaRapida";
 import { MAPA, METROS_POR_PIXEL, type PontoNoMapa } from "./streets";
 import { BASE } from "./addresses";
 import { montarCorrida, type ParadaDaEntrega } from "./aParada";
@@ -35,6 +36,15 @@ export interface PinoDoPercurso {
   papel: "base" | "coleta" | "entrega";
   nome: string;
   em: readonly [number, number];
+  /**
+   * O DEGRAU DO RELOGIO DESTE PEDIDO — e o que pinta a bolinha do pino.
+   *
+   * Vem de fora, por uma funcao, e nao de dentro: este arquivo e de GEOMETRIA
+   * (onde o pino pousa, por onde a rua passa) e nao deve saber o que e um
+   * balcao de pedidos. Sem a funcao, o pino sai sem degrau e a bolinha fica
+   * neutra — que e o certo para um lugar sem relogio correndo.
+   */
+  bolinha?: ChaveDaFaixa;
 }
 
 export interface PercursoNoMapa {
@@ -369,7 +379,10 @@ export function progressoNoPlano(
 }
 
 /** Os pinos do que FALTA passar — so enderecos, sem refazer caminho nenhum. */
-export function pinosDaRota(quem: EmRota): PinoDoPercurso[] {
+export function pinosDaRota(
+  quem: EmRota,
+  degrauDoPedido?: (pedido: string) => ChaveDaFaixa | undefined
+): PinoDoPercurso[] {
   const pinos: PinoDoPercurso[] = [];
   for (const p of quem.paradas) {
     const lugar = enderecoDe(p.lugar);
@@ -378,6 +391,7 @@ export function pinosDaRota(quem: EmRota): PinoDoPercurso[] {
       papel: p.o === "coleta" ? "coleta" : "entrega",
       nome: lugar.nome,
       em: lugar.frente,
+      bolinha: degrauDoPedido?.(p.pedido),
     });
   }
   return pinos;

@@ -68,6 +68,14 @@ import {
   type Situacao,
 } from "@/game/xbwapp/atendimento";
 import type { Boca } from "@/game/xbwapp/entender";
+import {
+  carteirinhaParaAInteligencia,
+  precisaDaInteligencia,
+  respostaDoBairro,
+  vestirRespostaDaInteligencia,
+  type AConversa,
+  type Resposta as RespostaDoContato,
+} from "@/game/xbwapp/aFalaDoContato";
 import { comoEstaAReputacao } from "@/game/xbwapp/efeitos";
 import { XBW_ICONES } from "@/game/xbwapp/icones";
 import type { IdContato, Mensagem, Resposta } from "@/game/xbwapp/tipos";
@@ -75,6 +83,25 @@ import { BotaoIcone, Icone, Retrato } from "./pecas";
 import Balao from "./Balao";
 import AcoesDaMensagem, { PerguntaDeApagar } from "./AcoesDaMensagem";
 import BarraDeEscrever, { type Anexo } from "./BarraDeEscrever";
+
+/*
+ * A CHAVE DAS CHAMADAS — ordem dele, 12/09/2026:
+ * "QUANDO TIVERMOS CHAMADAS RETIRAR ICONE DE 3 PONTOS TELEFONE E CHAMADA DE
+ * VIDEO, ENCAIXAR PERFEITAMENTE BOTAO E LOGO NA BARRA E MELHORAR NOME DE
+ * USUARIO".
+ *
+ * Os tres botoes prometiam o que o jogo ainda nao faz, e cobravam caro por
+ * isso: o alto da conversa tinha voltar, retrato, nome, video, telefone e tres
+ * pontos, mais a moeda e o selo. Sobravam 75 pontos para o nome, que saia
+ * cortado em "Entre...". Sem eles sobram 236, e o nome cabe inteiro.
+ *
+ * Nada foi apagado: trocar false por true aqui traz os tres de volta no dia em
+ * que a chamada tocar de verdade.
+ *
+ * O que sai junto com o botao de tres pontos: o menu dele — pesquisar dentro da
+ * conversa, limpar conversa, bloquear. Volta pela mesma chave.
+ */
+export const TEM_CHAMADAS = false;
 
 /** Quanto tempo o "digitando…" fica antes de cada fala dele aparecer. */
 const DIGITANDO_MS = 1300;
@@ -414,42 +441,92 @@ export default function TelaConversa({
     setEsperando(true);
     setDigitando(true);
 
-    const situacao: Situacao = {
-      personagem: conversa,
-      quem: nomeDe(conversa),
-      tipo: tipoDoContato,
-      pedido: estado.pedidos.find(p => p.loja === conversa)?.numero,
-      reputacao: comoEstaAReputacao(estado.reputacao[conversa] ?? 50),
+    const aConversa: AConversa = {
+      jogo: {
+        minuto: estado.minuto,
+        historico: estado.historico,
+        pedidos: estado.pedidos,
+      },
+      contato: conversa,
+      boca: tipoDoContato,
+      frase,
+      mensagens: mensagens.map(m => ({ de: m.de, texto: m.texto })),
     };
-    const memoria = mensagens.map(m => ({
-      de: m.de === "voce" ? ("voce" as const) : ("outro" as const),
-      texto: m.texto,
-    }));
 
-    const daIa = await pedirResposta(situacao, [
-      ...memoria,
-      { de: "voce", texto: frase },
-    ]);
+    let resposta: RespostaDoContato | null = null;
+
+    /*
+     * A INTELIGENCIA SO NOS QUATRO MOMENTOS EXTREMOS — ordem dele, 13/09/2026.
+     *
+     * Fora deles ela nem e chamada: nao ha viagem ate o servidor, nao ha
+     * espera e nao ha gasto. Os quatro estao em `momentoExtremo.ts`.
+     */
+    const motivo = precisaDaInteligencia(aConversa);
+    if (motivo) {
+      const carteirinha = carteirinhaParaAInteligencia(aConversa, motivo);
+      const situacao: Situacao = {
+        personagem: conversa,
+        quem: nomeDe(conversa),
+        tipo: tipoDoContato,
+        pedido: estado.pedidos.find(p => p.loja === conversa)?.numero,
+        reputacao: comoEstaAReputacao(estado.reputacao[conversa] ?? 50),
+        lembranca: carteirinha.lembranca,
+        momento: carteirinha.momento,
+      };
+      const memoria = mensagens.map(m => ({
+        de: m.de === "voce" ? ("voce" as const) : ("outro" as const),
+        texto: m.texto,
+      }));
+
+      const daIa = await pedirResposta(situacao, [
+        ...memoria,
+        { de: "voce", texto: frase },
+      ]);
+      if (deuCerto(daIa)) {
+        resposta = vestirRespostaDaInteligencia(
+          aConversa,
+          daIa.texto,
+          daIa.intencao
+        );
+      }
+    }
+
+    /*
+     * SE A INTELIGENCIA NAO ENTROU, AS FALAS DO BAIRRO RESPONDEM.
+     *
+     * Antes daqui saia SILENCIO: ordem dele de 07/09/2026, "SEM MENSAGENS
+     * AUTOMATICAS", porque a frase por palavra-chave era sempre a mesma e
+     * denunciava a maquina. Em 13/09/2026 ele mandou construir as falas do
+     * bairro justamente para ocupar este lugar — a frase agora e montada por
+     * pedacos, filtrada pelo jeito da pessoa, trocada pela situacao e nunca
+     * igual as tres ultimas. E de graca, e funciona sem internet.
+     */
+    if (!resposta) resposta = respostaDoBairro(aConversa);
+
     setDigitando(false);
     setEsperando(false);
 
-    /*
-     * SE A IA NAO RESPONDEU, NINGUEM RESPONDE.
-     *
-     * Antes o jogo inventava uma frase por palavra-chave para tapar o buraco.
-     * Ordem dele, 07/09/2026: "SEM MENSAGENS AUTOMATICAS". Entao o balao
-     * simplesmente nao aparece, e o campo de escrever avisa que a IA ainda nao
-     * esta ligada. Silencio honesto e melhor que fala falsa.
-     */
-    if (!deuCerto(daIa)) return;
-
+    const fala = resposta;
     mudar(e =>
       aplicarEfeito(
-        receber(e, conversa, { texto: daIa.texto }, true),
+        receber(e, conversa, { texto: fala.texto }, true),
         conversa,
-        efeitoDaResposta(daIa.intencao)
+        efeitoDaResposta(fala.intencao)
       )
     );
+
+    /*
+     * E, SE ELA JA FALOU DEMAIS, A DESPEDIDA — ideia dele.
+     *
+     * Vem num SEGUNDO balao, depois de um instante, porque e assim que gente
+     * se despede: ninguem emenda "o bolo ta no forno" no fim da mesma frase.
+     */
+    if (fala.despedida) {
+      const adeus = fala.despedida;
+      window.setTimeout(() => {
+        mudar(e => receber(e, conversa, { texto: adeus }, true));
+      }, ENTRE_FALAS_MS + DIGITANDO_MS);
+    }
   }
 
   function anexar(anexo: Anexo) {
@@ -572,21 +649,25 @@ export default function TelaConversa({
               )}
             </span>
           </button>
-          <BotaoIcone
-            nome="video"
-            rotulo="Chamada de vídeo"
-            aoTocar={() => aoLigar?.("video")}
-          />
-          <BotaoIcone
-            nome="telefone"
-            rotulo="Chamada de voz"
-            aoTocar={() => aoLigar?.("voz")}
-          />
-          <BotaoIcone
-            nome="menu"
-            rotulo="Mais opções"
-            aoTocar={() => setMenu(m => !m)}
-          />
+          {TEM_CHAMADAS && (
+            <>
+              <BotaoIcone
+                nome="video"
+                rotulo="Chamada de vídeo"
+                aoTocar={() => aoLigar?.("video")}
+              />
+              <BotaoIcone
+                nome="telefone"
+                rotulo="Chamada de voz"
+                aoTocar={() => aoLigar?.("voz")}
+              />
+              <BotaoIcone
+                nome="menu"
+                rotulo="Mais opções"
+                aoTocar={() => setMenu(m => !m)}
+              />
+            </>
+          )}
         </header>
       )}
 

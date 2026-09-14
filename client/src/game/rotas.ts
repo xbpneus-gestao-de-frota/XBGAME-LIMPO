@@ -134,9 +134,10 @@ function vizinhos(): Map<string, Vizinho[]> {
  * vale a complicacao de uma fila de prioridade de verdade, e assim da para ler
  * o que faz.
  */
-function menorCaminho(
-  partida: ReadonlyMap<string, number>
-): { custo: Map<string, number>; veio: Map<string, { de: string; trecho: TrechoDeRua }> } {
+function menorCaminho(partida: ReadonlyMap<string, number>): {
+  custo: Map<string, number>;
+  veio: Map<string, { de: string; trecho: TrechoDeRua }>;
+} {
   const custo = new Map<string, number>(partida);
   const veio = new Map<string, { de: string; trecho: TrechoDeRua }>();
   const pendentes = new Set<string>(partida.keys());
@@ -320,8 +321,71 @@ const CORTE_DO_BICO = 0.2;
  */
 const AMARRA_METROS = 2.2;
 
+/**
+ * ESTE PONTO JA ESTA PERTO O BASTANTE DO CAMINHO ORIGINAL?
+ *
+ * ── POR QUE ESTA PERGUNTA EXISTE SEPARADA DA DISTANCIA ────────────────────
+ *
+ * A amarra do alisamento so precisa saber UMA coisa: se o ponto se afastou
+ * mais do que o permitido. Medir a distancia exata ate o caminho inteiro
+ * responde isso, mas responde muito mais do que foi perguntado — e cobra por
+ * isso: sao 250 segmentos vezes 4.000 pontos vezes quatro voltas, e era
+ * praticamente O TEMPO INTEIRO de montar uma rota (135 ms medidos em
+ * 13/09/2026, dos quais 137 ms eram este laco).
+ *
+ * Ninguem tinha reparado porque cada caminho e guardado depois de feito. Com
+ * 18 moradores na agenda a conta aparecia uma vez ou outra; com as 48 casas do
+ * bairro, a tela que lista todo mundo com quilometragem passaria seis segundos
+ * parada na primeira vez que fosse aberta.
+ *
+ * ── COMO ELA E RAPIDA SEM MUDAR NENHUM PONTO DO DESENHO ───────────────────
+ *
+ * Para responder SIM basta achar UM segmento perto o bastante — e o segmento
+ * certo quase sempre e o que esta na altura do proprio ponto, porque alisar
+ * nao reordena nada. Entao a busca comeca no palpite e abre em leque; na
+ * imensa maioria das vezes acerta de primeira.
+ *
+ * Para responder NAO e preciso ter olhado TODOS — e e o que este laco faz
+ * antes de devolver falso. Quando isso acontece, quem chamou refaz a conta
+ * exata na ordem de sempre, para o ponto corrigido sair identico ao que saia
+ * antes. Nao ha aproximacao em lugar nenhum: o desenho da rua e o mesmo, byte
+ * a byte, e ha teste guardando isso.
+ */
+function pertoOBastante(
+  q: [number, number],
+  caminho: [number, number][],
+  amarra: number,
+  palpite: number
+): boolean {
+  const ultimo = caminho.length - 1;
+  const j0 = Math.max(1, Math.min(ultimo, palpite));
+  for (let passo = 0; passo <= ultimo; passo += 1) {
+    for (const j of passo === 0 ? [j0] : [j0 + passo, j0 - passo]) {
+      if (j < 1 || j > ultimo) continue;
+      const a = caminho[j - 1]!;
+      const b = caminho[j]!;
+      const vx = b[0] - a[0];
+      const vy = b[1] - a[1];
+      const L2 = vx * vx + vy * vy;
+      const f =
+        L2 < 1e-12
+          ? 0
+          : Math.max(
+              0,
+              Math.min(1, ((q[0] - a[0]) * vx + (q[1] - a[1]) * vy) / L2)
+            );
+      const d = Math.hypot(q[0] - (a[0] + vx * f), q[1] - (a[1] + vy * f));
+      if (d <= amarra) return true;
+    }
+  }
+  return false;
+}
+
 /** A distancia de um ponto a um caminho, em pixels do mapa. */
-function distanciaAoCaminho(q: [number, number], caminho: [number, number][]): number {
+function distanciaAoCaminho(
+  q: [number, number],
+  caminho: [number, number][]
+): number {
   let menor = Infinity;
   for (let i = 1; i < caminho.length; i += 1) {
     const a = caminho[i - 1]!;
@@ -332,7 +396,10 @@ function distanciaAoCaminho(q: [number, number], caminho: [number, number][]): n
     const f =
       L2 < 1e-12
         ? 0
-        : Math.max(0, Math.min(1, ((q[0] - a[0]) * vx + (q[1] - a[1]) * vy) / L2));
+        : Math.max(
+            0,
+            Math.min(1, ((q[0] - a[0]) * vx + (q[1] - a[1]) * vy) / L2)
+          );
     const d = Math.hypot(q[0] - (a[0] + vx * f), q[1] - (a[1] + vy * f));
     if (d < menor) menor = d;
   }
@@ -340,7 +407,10 @@ function distanciaAoCaminho(q: [number, number], caminho: [number, number][]): n
 }
 
 /** O ponto do caminho mais proximo de q, em pixels do mapa. */
-function pontoMaisProximo(q: [number, number], caminho: [number, number][]): [number, number] {
+function pontoMaisProximo(
+  q: [number, number],
+  caminho: [number, number][]
+): [number, number] {
   let melhor: [number, number] = caminho[0]!;
   let menor = Infinity;
   for (let i = 1; i < caminho.length; i += 1) {
@@ -352,7 +422,10 @@ function pontoMaisProximo(q: [number, number], caminho: [number, number][]): [nu
     const f =
       L2 < 1e-12
         ? 0
-        : Math.max(0, Math.min(1, ((q[0] - a[0]) * vx + (q[1] - a[1]) * vy) / L2));
+        : Math.max(
+            0,
+            Math.min(1, ((q[0] - a[0]) * vx + (q[1] - a[1]) * vy) / L2)
+          );
     const p: [number, number] = [a[0] + vx * f, a[1] + vy * f];
     const d = Math.hypot(q[0] - p[0], q[1] - p[1]);
     if (d < menor) {
@@ -386,7 +459,8 @@ function passoParejo(caminho: PontoNoMapa[]): PontoNoMapa[] {
   const somas: number[] = [0];
   for (let i = 1; i < px.length; i += 1) {
     somas.push(
-      somas[i - 1]! + Math.hypot(px[i]![0] - px[i - 1]![0], px[i]![1] - px[i - 1]![1])
+      somas[i - 1]! +
+        Math.hypot(px[i]![0] - px[i - 1]![0], px[i]![1] - px[i - 1]![1])
     );
   }
   const total = somas[somas.length - 1]!;
@@ -420,15 +494,24 @@ function alisar(entrada: PontoNoMapa[]): PontoNoMapa[] {
       const b = atual[i + 1]!;
       const f = CORTE_DO_BICO;
       saida.push([a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f]);
-      saida.push([a[0] + (b[0] - a[0]) * (1 - f), a[1] + (b[1] - a[1]) * (1 - f)]);
+      saida.push([
+        a[0] + (b[0] - a[0]) * (1 - f),
+        a[1] + (b[1] - a[1]) * (1 - f),
+      ]);
     }
     saida.push(atual[atual.length - 1]!);
     // A AMARRA: quem se afastou demais volta para perto do caminho original.
+    const ultimoRef = referencia.length - 1;
     atual = saida.map((p, i) => {
       if (i === 0 || i === saida.length - 1) return p;
       const q = emPx(p);
+      /*
+       * QUASE SEMPRE A RESPOSTA E "ESTE PONTO ESTA BEM" — e provar isso custa
+       * um segmento, nao duzentos e cinquenta. Ver `pertoOBastante`.
+       */
+      const palpite = Math.round((i / saida.length) * ultimoRef);
+      if (pertoOBastante(q, referencia, amarra, palpite)) return p;
       const d = distanciaAoCaminho(q, referencia);
-      if (d <= amarra) return p;
       const perto = pontoMaisProximo(q, referencia);
       const f = amarra / d;
       return emPorcento(
@@ -493,7 +576,7 @@ function fazerRota(de: PontoNoMapa, para: PontoNoMapa): PontoNoMapa[] {
   if (saida.trecho === chegada.trecho) {
     return alisar(
       pelaDireita(
-          pedacoDoTrecho(
+        pedacoDoTrecho(
           saida.trecho,
           saida.andadoNoTrecho,
           chegada.andadoNoTrecho
@@ -520,7 +603,8 @@ function fazerRota(de: PontoNoMapa, para: PontoNoMapa): PontoNoMapa[] {
   const caminho: Array<{ no: string; trecho: TrechoDeRua | null }> = [];
   let atual: string | undefined = fim.no;
   while (atual !== undefined) {
-    const passo: { de: string; trecho: TrechoDeRua } | undefined = veio.get(atual);
+    const passo: { de: string; trecho: TrechoDeRua } | undefined =
+      veio.get(atual);
     caminho.push({ no: atual, trecho: passo?.trecho ?? null });
     atual = passo?.de;
   }
@@ -546,9 +630,7 @@ function fazerRota(de: PontoNoMapa, para: PontoNoMapa): PontoNoMapa[] {
     const veioDe = caminho[i - 1]!.no;
     const comp = comprimentoEmPx(t);
     const pedaco =
-      veioDe === t.de
-        ? pedacoDoTrecho(t, 0, comp)
-        : pedacoDoTrecho(t, comp, 0);
+      veioDe === t.de ? pedacoDoTrecho(t, 0, comp) : pedacoDoTrecho(t, comp, 0);
     pontos.push(...pedaco);
   }
 

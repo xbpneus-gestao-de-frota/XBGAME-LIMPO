@@ -48,11 +48,11 @@ describe("a ligacao do Renan", () => {
      */
     expect(CANVAS).not.toContain('from "./Conversa"');
     const atender = CANVAS.split("const atender = useCallback")[1]!.split(
-      "}, [",
+      "}, ["
     )[0]!;
     expect(atender).toContain("caiNoAplicativo()");
     const cai = CANVAS.split("const caiNoAplicativo = useCallback")[1]!.split(
-      "}, [",
+      "}, ["
     )[0]!;
     expect(cai).toContain("setAbrirNaConversa(QUEM_LIGA.id)");
     expect(cai).toContain("setAppAberto(true)");
@@ -67,10 +67,15 @@ describe("a ligacao do Renan", () => {
 
   it("na terceira ele NAO liga: ele escreve, e cobrando", () => {
     const corpo = CANVAS.split("const recusar = useCallback")[1]!.split(
-      "}, [",
+      "}, ["
     )[0]!;
     expect(corpo).toContain("caiNoAplicativo(PASSO_DA_COBRANCA)");
-    expect(corpo).toContain("setChamando(true)");
+    /*
+     * Desde 13/09 o jogo guarda QUAL chamada esta tocando, e nao so que ha uma:
+     * sao duas do Renan, e atender precisa saber qual cena rodar. Ligar de novo
+     * e voltar a tocar a chamada DA ABERTURA — a da pizza nao insiste.
+     */
+    expect(corpo).toContain('setChamadaAtual("abertura")');
     const cobranca = ROTEIRO_RENAN.passos[PASSO_DA_COBRANCA]!;
     expect(cobranca.falas[0]!.texto).toBe("Fala comigo gente fina!!!!!!");
   });
@@ -93,12 +98,12 @@ describe("a ligacao do Renan", () => {
     const abertura = ROTEIRO_RENAN.passos[ROTEIRO_RENAN.inicio]!;
     const dela = abertura.respostas![0]!;
     expect(dela.texto).toBe(
-      "Não posso sair de casa, mas queria ver meus amigos",
+      "Não posso sair de casa, mas queria ver meus amigos"
     );
     expect(dela.emSeguida).toEqual(["Onde vc vai?"]);
     const pizza = ROTEIRO_RENAN.passos[dela.vaiPara!]!;
     expect(pizza.falas[0]!.texto).toBe(
-      "Tô indo buscar uma pizza a pé, não tem ninguém pra entregar",
+      "Tô indo buscar uma pizza a pé, não tem ninguém pra entregar"
     );
     expect(pizza.respostas![0]!.texto).toBe("Vamos resolver isso");
   });
@@ -112,8 +117,8 @@ describe("a ligacao do Renan", () => {
     const abertura = ROTEIRO_RENAN.passos[ROTEIRO_RENAN.inicio]!;
     const antes = estadoInicial();
     const depois = responder(antes, "renan", abertura.respostas![0]!);
-    const minhas = mensagensDa(depois, "renan").filter((m) => m.de === "voce");
-    expect(minhas.map((m) => m.texto)).toEqual([
+    const minhas = mensagensDa(depois, "renan").filter(m => m.de === "voce");
+    expect(minhas.map(m => m.texto)).toEqual([
       "Não posso sair de casa, mas queria ver meus amigos",
       "Onde vc vai?",
     ]);
@@ -134,7 +139,7 @@ describe("a ligacao do Renan", () => {
     expect(pizza.respostas![0]!.vaiPara).toBe(PASSO_DEPOIS_DE_RESOLVER);
     const depois = ROTEIRO_RENAN.passos[PASSO_DEPOIS_DE_RESOLVER]!;
     expect(depois.falas[0]!.texto).toContain("Achei que era minha pizza");
-    expect(depois.falas.some((f) => f.texto.includes("Bom dia"))).toBe(false);
+    expect(depois.falas.some(f => f.texto.includes("Bom dia"))).toBe(false);
     expect(depois.respostas![0]!.texto).toContain("ensinar a pescar");
   });
 
@@ -152,8 +157,8 @@ describe("a ligacao do Renan", () => {
      * falas). Se um dia trocarem de lugar de novo, este teste avisa.
      */
     const depoisDoBau = ROTEIRO_RENAN.passos[PASSO_DEPOIS_DE_RESOLVER]!;
-    const faltaEntregador = depoisDoBau.respostas!.some((r) =>
-      (r.emSeguida ?? []).some((t) => t.includes("não tenho ninguém")),
+    const faltaEntregador = depoisDoBau.respostas!.some(r =>
+      (r.emSeguida ?? []).some(t => t.includes("não tenho ninguém"))
     );
     expect(faltaEntregador).toBe(true);
 
@@ -161,7 +166,7 @@ describe("a ligacao do Renan", () => {
     expect(aceite.falas[0]!.texto).toContain("Pode contar comigo");
 
     // e ele mostra que esta pronto, em foto, logo depois de aceitar
-    const selfie = aceite.falas.find((f) => f.tipo === "foto");
+    const selfie = aceite.falas.find(f => f.tipo === "foto");
     expect(selfie?.imagem).toContain("selfie-renan-pronto");
     expect(selfie?.esperaMs).toBeGreaterThan(1000);
   });
@@ -205,7 +210,7 @@ describe("a ligacao do Renan", () => {
     let estado = irParaOPasso(
       estadoInicial(),
       "renan",
-      PASSO_DEPOIS_DE_RESOLVER,
+      PASSO_DEPOIS_DE_RESOLVER
     );
     const andados: string[] = [PASSO_DEPOIS_DE_RESOLVER];
     for (let volta = 0; volta < 12; volta += 1) {
@@ -222,9 +227,7 @@ describe("a ligacao do Renan", () => {
     expect(andados.at(-1)).toBe(andados.at(-2));
 
     // e a pizza fecha a cena, do mesmo jeito que abriu a historia
-    const ultimaNossa = estado.mensagens
-      .filter((m) => m.de === "voce")
-      .at(-1);
+    const ultimaNossa = estado.mensagens.filter(m => m.de === "voce").at(-1);
     expect(ultimaNossa?.texto).toContain("pizza");
   });
 
@@ -234,7 +237,7 @@ describe("a ligacao do Renan", () => {
      * conversa faz o que uma conversa faz, e o jogo repara no que ela virou.
      */
     expect(CANVAS).toContain(
-      "if (estadoDoApp.passo[QUEM_LIGA.id] !== PASSO_DEPOIS_DE_RESOLVER) return;",
+      "if (estadoDoApp.passo[QUEM_LIGA.id] !== PASSO_DEPOIS_DE_RESOLVER) return;"
     );
     expect(CANVAS).toContain("setDroneEntregando(true)");
     expect(ESPERA_DEPOIS_DA_ULTIMA_MS).toBeGreaterThan(800);

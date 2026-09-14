@@ -66,8 +66,12 @@ describe("o caminho pelas ruas", () => {
     const primeiro = caminho[0]!;
     const ultimo = caminho[caminho.length - 1]!;
     // As pontas sao as PORTAS, que ficam na rua — nao o meio do predio.
-    expect(Math.hypot(primeiro[0] - BASE.em[0], primeiro[1] - BASE.em[1])).toBeLessThan(1.5);
-    expect(Math.hypot(ultimo[0] - destino.em[0], ultimo[1] - destino.em[1])).toBeLessThan(1.5);
+    expect(
+      Math.hypot(primeiro[0] - BASE.em[0], primeiro[1] - BASE.em[1])
+    ).toBeLessThan(1.5);
+    expect(
+      Math.hypot(ultimo[0] - destino.em[0], ultimo[1] - destino.em[1])
+    ).toBeLessThan(1.5);
   });
 
   it("o caminho desenhado tem o mesmo tamanho da caminhada calculada", () => {
@@ -76,7 +80,11 @@ describe("o caminho pelas ruas", () => {
      * desenho ponto a ponto. Se elas se separarem, o jogo cobra um frete que
      * nao corresponde ao caminho que a pessoa viu ser percorrido.
      */
-    for (const destino of [COMERCIOS[1]!, CASAS[5]!, CASAS[CASAS.length - 2]!]) {
+    for (const destino of [
+      COMERCIOS[1]!,
+      CASAS[5]!,
+      CASAS[CASAS.length - 2]!,
+    ]) {
       const desenhado = metrosDaRota(rota(BASE.em, destino.em));
       const calculado = metrosAPe(BASE.em, destino.em);
       expect(Math.abs(desenhado - calculado)).toBeLessThan(
@@ -88,7 +96,10 @@ describe("o caminho pelas ruas", () => {
   it("nao volta pelo mesmo lugar sem motivo", () => {
     // Um caminho que anda muito mais que a linha reta esta dando volta demais;
     // um que anda menos atravessou alguma coisa.
-    for (const destino of [COMERCIOS[2]!, CASAS[Math.floor(CASAS.length / 2)]!]) {
+    for (const destino of [
+      COMERCIOS[2]!,
+      CASAS[Math.floor(CASAS.length / 2)]!,
+    ]) {
       const caminho = rota(BASE.em, destino.em);
       const reta = Math.hypot(
         destino.em[0] - BASE.em[0],
@@ -101,5 +112,44 @@ describe("o caminho pelas ruas", () => {
       expect(andado).toBeGreaterThan(retaEmMetros * 0.9);
       expect(andado).toBeLessThan(retaEmMetros * 2.6);
     }
+  });
+});
+
+/**
+ * O CAMINHO TAMBEM PRECISA FICAR PRONTO A TEMPO.
+ *
+ * Em 13/09/2026 este arquivo nao teria pegado o defeito que apareceu: montar
+ * UMA rota custava 135 ms, e nenhum teste mede tempo. Com 18 moradores na
+ * agenda isso passava despercebido, porque cada caminho fica guardado depois
+ * de feito; com as 48 casas do bairro, a tela que lista todo mundo com
+ * quilometragem passaria seis segundos parada na primeira vez.
+ *
+ * Nao ha numero magico aqui: a folga e enorme de proposito. O teste nao esta
+ * medindo a velocidade da maquina de quem roda — esta impedindo que a conta
+ * volte a ser cem vezes mais cara sem ninguem perceber.
+ */
+describe("o caminho fica pronto a tempo", () => {
+  it("uma rota nova, do outro lado do bairro, sai em bem menos de meio segundo", () => {
+    const loja = COMERCIOS[COMERCIOS.length - 1]!;
+    const casa = CASAS[CASAS.length - 1]!;
+    const comeco = Date.now();
+    const caminho = rota(loja.em, casa.em);
+    const gasto = Date.now() - comeco;
+
+    expect(caminho.length).toBeGreaterThan(2);
+    expect(gasto).toBeLessThan(500);
+  });
+
+  it("a agenda inteira com quilometragem nao trava a tela", () => {
+    /*
+     * E exatamente o que a tela da loja faz quando pergunta "para quem e a
+     * entrega?": uma rota para cada morador do bairro, de uma vez so.
+     */
+    const loja = COMERCIOS[0]!;
+    const comeco = Date.now();
+    for (const casa of CASAS) rota(loja.em, casa.em);
+    const gasto = Date.now() - comeco;
+
+    expect(gasto).toBeLessThan(4000);
   });
 });

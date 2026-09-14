@@ -4,6 +4,7 @@
  * stable across 30/60/120 Hz devices.
  */
 import type { FreeCamera } from "@babylonjs/core/Cameras/freeCamera";
+import type { IdDoAcessorio } from "./osAcessorios";
 import type { AbstractMesh } from "@babylonjs/core/Meshes/abstractMesh";
 import { Vector3 } from "@babylonjs/core/Maths/math.vector";
 import type { Scene } from "@babylonjs/core/scene";
@@ -209,6 +210,12 @@ export class GameWorld {
     this.listeners.add(listener);
     listener(this.getSnapshot());
     return () => this.listeners.delete(listener);
+  }
+
+
+  /** Grava o jogo agora — usado quando o descanso do celular entra. */
+  salvarAgora(): void {
+    this.store.salvarAgora();
   }
 
   getSnapshot(): GameSnapshot {
@@ -453,6 +460,12 @@ export class GameWorld {
 
   upgradeBikePart(partId: BikePartId): void {
     const result = this.store.upgradeBikePart(partId);
+    this.notice = result.message;
+    this.publish();
+  }
+
+  upgradeAcessorio(id: IdDoAcessorio): void {
+    const result = this.store.upgradeAcessorio(id);
     this.notice = result.message;
     this.publish();
   }

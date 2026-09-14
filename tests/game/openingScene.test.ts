@@ -109,3 +109,71 @@ describe("a cena de abertura", () => {
     );
   });
 });
+
+/**
+ * O BOTAO PULAR COBRE A MARCA D'AGUA DO FILME.
+ *
+ * Ordem dele, 13/09/2026: "no video imagem 3 mostra uma pequena estrela do
+ * Gemini, deixe o botao pular sobre ela". A estrelinha esta QUEIMADA no video —
+ * nao ha o que apagar, so o que cobrir.
+ *
+ * Isto quebra calado de tres jeitos, e os tres estao presos aqui:
+ *   · alguem devolve o botao para o canto da janela, e ele sai de cima da marca
+ *     em toda tela que nao seja 9 por 16;
+ *   · alguem tira o palco, e a porcentagem passa a medir a JANELA;
+ *   · alguem enxuga o botao, e as pontas da estrela aparecem em volta dele.
+ */
+import { readFileSync } from "node:fs";
+
+const CSS_DA_ABERTURA = readFileSync("client/src/index.css", "utf8");
+const TELA = readFileSync("client/src/components/GameCanvas.tsx", "utf8");
+
+describe("o botao PULAR e a marca d'agua", () => {
+  const bloco = (nome: string): string =>
+    CSS_DA_ABERTURA.split(`\n${nome} {`)[1]!.split("\n}")[0]!;
+
+  it("o palco tem a forma do filme, e nao a da janela", () => {
+    const palco = bloco(".abertura__palco");
+    expect(palco).toContain("aspect-ratio: 720 / 1280");
+    expect(palco).toContain("max-width: 100%");
+    expect(palco).toContain("max-height: 100%");
+  });
+
+  it("o botao esta dentro do palco, junto do filme", () => {
+    const palco = TELA.indexOf('className="abertura__palco"');
+    const filme = TELA.indexOf('className="abertura__filme"');
+    const pular = TELA.indexOf('className="abertura__pular"');
+    expect(palco).toBeGreaterThan(0);
+    expect(palco).toBeLessThan(filme);
+    expect(palco).toBeLessThan(pular);
+  });
+
+  it("o botao pousa no ponto medido da marca, e nao num canto", () => {
+    const pular = bloco(".abertura__pular");
+    expect(pular).toContain("left: 83.4%");
+    expect(pular).toContain("top: 90.5%");
+    expect(pular).toContain("translate(-50%, -50%)");
+    expect(pular).not.toMatch(/\n\s*(right|bottom):/);
+  });
+
+  it("o botao e grande o bastante para cobrir a estrela inteira", () => {
+    /*
+     * A estrela mede 65 por 75 pontos num filme de 720 por 1280 — 9,0% da
+     * largura e 5,9% da altura DA CENA. O botao e medido na mesma regua, e nao
+     * em pontos de tela: em aparelho menor o filme encolhe e a estrela encolhe
+     * junto, e um botao em pontos ficaria certo numa tela so.
+     *
+     * E o fundo precisa ser quase opaco, senao a estrela aparece POR DENTRO do
+     * botao — o mesmo defeito com uma etapa a mais.
+     */
+    const pular = bloco(".abertura__pular");
+    const largura = Number(/\n  width: ([\d.]+)%/.exec(pular)![1]);
+    const altura = Number(/\n  height: ([\d.]+)%/.exec(pular)![1]);
+    expect(largura).toBeGreaterThanOrEqual(9.1);
+    expect(altura).toBeGreaterThanOrEqual(6);
+    const opacidade = Number(
+      /background: rgb\(4 10 18 \/ (\d+)%\)/.exec(pular)![1],
+    );
+    expect(opacidade).toBeGreaterThanOrEqual(90);
+  });
+});

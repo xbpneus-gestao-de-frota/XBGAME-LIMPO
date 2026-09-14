@@ -53,6 +53,8 @@ import {
 } from "@/game/xbwapp/chamadas";
 import { AVISO_NA_TELA_MS, deveAvisar } from "@/game/xbwapp/avisos";
 import { varrerTemporarias } from "@/game/xbwapp/ajustes";
+import BarraDoCelular from "./BarraDoCelular";
+import TelaParaOsPais from "./TelaParaOsPais";
 import { Contador, Icone } from "./pecas";
 import TelaConversas from "./TelaConversas";
 import TelaConversa from "./TelaConversa";
@@ -70,6 +72,7 @@ import TelaEtiquetas from "./TelaEtiquetas";
 import TelaEstatisticas from "./TelaEstatisticas";
 import TelaLoja from "./TelaLoja";
 import TelaAjustes from "./TelaAjustes";
+import TelaContatos from "./TelaContatos";
 import TelaChamada from "./TelaChamada";
 import ChamadaChegando from "./ChamadaChegando";
 import FaixaDeAviso from "./FaixaDeAviso";
@@ -78,6 +81,11 @@ import {
   type EntregadorDaCasa,
 } from "./TelaEntregaRapida";
 import { ofertasAbertas } from "@/game/xbwapp/entregaRapida";
+import {
+  NO_AR,
+  abaValida,
+  type NomeDaAba,
+} from "@/game/xbwapp/asAbasDoApp";
 
 /*
  * NADA DE MENSAGEM AUTOMATICA. Ordem dele, 07/09/2026: "SEM MENSAGENS
@@ -88,13 +96,14 @@ import { ofertasAbertas } from "@/game/xbwapp/entregaRapida";
  * cujas falas sao dele, escritas por ele.
  */
 
-type Aba =
-  | "conversas"
-  | "atualizacoes"
-  | "ligacoes"
-  | "ferramentas"
-  | "entregaRapida"
-  | "recibo";
+/*
+ * O TIPO DA ABA E A LISTA MORAM EM `asAbasDoApp`.
+ *
+ * Foi para la quando ele pediu para tirar tres abas do ar: o que decide
+ * quais aparecem e o interruptor de la, e o desenho de cada uma passou a
+ * seguir o NOME, e nao a posicao na barra.
+ */
+type Aba = NomeDaAba;
 
 export default function XBWApp({
   aoFechar,
@@ -179,7 +188,12 @@ export default function XBWApp({
   const [estado, setEstado] = useState<EstadoDoApp>(
     () => estadoInicialDoJogo ?? estadoInicial()
   );
-  const [aba, setAba] = useState<Aba>(abaInicial ?? "conversas");
+  /*
+   * O jogo pode mandar abrir numa aba que esta fora do ar. `abaValida` devolve
+   * a primeira que existe em vez de deixar o aplicativo abrir numa tela que
+   * nao esta na barra.
+   */
+  const [aba, setAba] = useState<Aba>(() => abaValida(abaInicial));
   const [conversa, setConversa] = useState<IdContato | null>(
     conversaInicial ?? null
   );
@@ -390,7 +404,21 @@ export default function XBWApp({
 
   const naoLidas = totalNaoLidas(estado);
   const recados = recadosNaoVistos(estado).length;
-  const dentroDeAlgo = Boolean(conversa || canal || ferramenta);
+  /*
+   * A FICHA DO ENTREGADOR TAMBEM E "DENTRO DE ALGO".
+   *
+   * Ordem dele, 14/09/2026: "ao acessar essa tela icones na parte inferior
+   * devem sumir". A aba da Equipe tem degraus por dentro — a ficha, as caixas,
+   * a portaria, a loja — e a partir do primeiro deles a barra de abas some,
+   * como ja acontece na conversa e na ferramenta.
+   *
+   * Quem avisa e a propria tela da Equipe, porque so ela sabe em que degrau a
+   * pessoa esta.
+   */
+  const [noFundoDaEquipe, setNoFundoDaEquipe] = useState(false);
+  const dentroDeAlgo = Boolean(
+    conversa || canal || ferramenta || noFundoDaEquipe
+  );
   const emLigacao = Boolean(estado.chamadaEmCurso);
   /*
    * Tela cheia quando a pessoa nao esta no meio de nada; faixa fina quando ela
@@ -493,6 +521,7 @@ export default function XBWApp({
                 aoVoltarAoJogo={aoFechar}
               />
             )}
+            {aba === "contatos" && <TelaContatos aoAbrir={abrir} />}
             {aba === "atualizacoes" && (
               <TelaAtualizacoes
                 estado={estado}
@@ -510,7 +539,26 @@ export default function XBWApp({
               <TelaFerramentas estado={estado} aoAbrir={setFerramenta} />
             )}
             {aba === "entregaRapida" && (
-              <TelaEntregaRapida estado={estado} mudar={mudar} equipe={equipe} />
+              <TelaEntregaRapida
+                estado={estado}
+                mudar={mudar}
+                equipe={equipe}
+                aoMergulhar={setNoFundoDaEquipe}
+              />
+            )}
+            {/*
+              PEDIDOS: a mesma tela da Equipe, por outra porta. Escolher alguem
+              aqui abre o BALCAO, e nao a ficha. Ver o comentario da `porta` em
+              TelaEntregaRapida.
+            */}
+            {aba === "pedidos" && (
+              <TelaEntregaRapida
+                estado={estado}
+                mudar={mudar}
+                equipe={equipe}
+                aoMergulhar={setNoFundoDaEquipe}
+                porta="pedidos"
+              />
             )}
             {aba === "recibo" && (
               <TelaEmBranco
@@ -526,62 +574,85 @@ export default function XBWApp({
 
       {!dentroDeAlgo && (
         <nav className="xbw-abas" aria-label="Abas do aplicativo">
-          <Aba
-            nome="conversas"
-            atual={aba}
-            icone="abaConversas"
-            rotulo="Conversas"
-            aviso={naoLidas}
-            aoTocar={setAba}
-          />
-          <Aba
-            nome="atualizacoes"
-            atual={aba}
-            icone="abaStatus"
-            rotulo="Atualizações"
-            aviso={recados}
-            aoTocar={setAba}
-          />
-          <Aba
-            nome="ligacoes"
-            atual={aba}
-            icone="abaChamadas"
-            rotulo="Ligações"
-            aoTocar={setAba}
-          />
-          <Aba
-            nome="ferramentas"
-            atual={aba}
-            icone="pagamento"
-            rotulo="Ferramentas"
-            aoTocar={setAba}
-          />
-          <Aba
-            nome="entregaRapida"
-            atual={aba}
-            icone="pagamento"
-            rotulo="Entrega Rápida"
-            aviso={ofertasAbertas(estado).length}
-            aoTocar={setAba}
-          />
-          <Aba
-            nome="recibo"
-            atual={aba}
-            icone="pagamento"
-            rotulo="Recibo"
-            aoTocar={setAba}
-          />
+          {NO_AR.map(a => (
+            <Aba
+              key={a.nome}
+              nome={a.nome}
+              atual={aba}
+              rotulo={a.rotulo}
+              aviso={
+                a.nome === "conversas"
+                  ? naoLidas
+                  : a.nome === "atualizacoes"
+                    ? recados
+                    : a.nome === "entregaRapida" || a.nome === "pedidos"
+                    ? ofertasAbertas(estado).length
+                    : undefined
+              }
+              aoTocar={setAba}
+            />
+          ))}
         </nav>
       )}
 
-      <button
-        type="button"
-        className="xbw__sair"
-        onClick={aoFechar}
-        aria-label="Fechar o XBWAPP"
-      >
-        Voltar ao mapa
-      </button>
+      {/*
+       * O CANTO DE CIMA — EM TODA TELA, SEM EXCECAO.
+       *
+       * Ordem dele, 12/09/2026: "ACHO QUE TODA TELA DO APP, DEVE MANTER LOGO
+       * NA PARTE SUPERIOR DIREITA E BOTAO DE VOLTAR AO GAME".
+       *
+       * Isto muda a decisao de 08/09, quando a saida ficava so ao lado de
+       * "Todos os contatos" com o argumento de que espalhar a saida daria
+       * mais jeitos de sair sem querer. O que a analise de hoje mostrou e o
+       * contrario: em tela de ferramenta nao ha barra de abas, e quem entrava
+       * no Catalogo ou nas Configuracoes nao via saida nenhuma.
+       *
+       * Fica FORA das telas, no proprio aplicativo: assim vale para as vinte e
+       * tantas de uma vez, e nenhuma pode esquecer de ter.
+       */}
+      <div className="xbw__canto">
+        {/*
+         * O NOME DO APLICATIVO, no canto de cima.
+         *
+         * Ordem dele, 13/09/2026: "suba no canto superior XBWAPP". Ele morava
+         * numa barra propria em cima da lista de conversas, e essa barra
+         * empurrava a placa clara para baixo. Aqui ele divide a faixa com a
+         * saida e o selo — e a placa subiu no lugar que sobrou.
+         *
+         * Fica no aplicativo, e nao em cada tela, porque e o nome do
+         * aplicativo: vale para as vinte e tantas de uma vez.
+         */}
+        <strong className="xbw__nome">
+          XBW<em>APP</em>
+        </strong>
+        <button
+          type="button"
+          className="xbw__sair"
+          onClick={aoFechar}
+          aria-label="Voltar ao game"
+        >
+          {/* O alfinete do mapa, e nao a seta de voltar: a seta ja e o voltar
+              DA TELA, e duas setas iguais no mesmo alto confundem. */}
+          <Icone nome="local" />
+          <span>Voltar ao game</span>
+        </button>
+        <img
+          className="xbw__selo"
+          src="/assets/xbwapp/XBW_marca-xb.webp"
+          alt="XB"
+          aria-hidden="true"
+        />
+
+        {/*
+         * A BARRA DE CELULAR, na linha de baixo da faixa.
+         *
+         * Ordem dele, 13/09/2026: "icones de um celular de verdade, bateria,
+         * 9G, nivel de sinal, horas real do game, com data real" — e "coloque
+         * logo abaixo destas informacoes se necessario". Foi necessario: entre
+         * a moeda e o selo nao cabia nada legivel.
+         */}
+        <BarraDoCelular />
+      </div>
     </div>
   );
 }
@@ -657,6 +728,8 @@ function Ferramentas({
       );
     case "estatisticas":
       return <TelaEstatisticas estado={estado} aoVoltar={aoVoltar} />;
+    case "pais":
+      return <TelaParaOsPais aoVoltar={aoVoltar} />;
     case "ajustes":
       return (
         <TelaAjustes
@@ -673,14 +746,12 @@ function Ferramentas({
 function Aba({
   nome,
   atual,
-  icone,
   rotulo,
   aviso,
   aoTocar,
 }: {
   nome: Aba;
   atual: Aba;
-  icone: Parameters<typeof Icone>[0]["nome"];
   rotulo: string;
   aviso?: number;
   aoTocar: (a: Aba) => void;
@@ -688,12 +759,23 @@ function Aba({
   return (
     <button
       type="button"
+      /*
+       * O NOME VAI NA TELA. E por ele que o desenho de cada aba e escolhido —
+       * antes era pela posicao, e tirar uma aba do meio trocava o desenho de
+       * todas as outras sem erro nenhum aparecer.
+       */
+      data-aba={nome}
+      /*
+       * "Tem recado esperando?" — o piscar do icone de conversa se pendura
+       * aqui. Ordem dele, 13/09/2026: "icone de conversa deve pulsar a cor
+       * como se estivesse acendendo e apagando".
+       */
+      data-chamando={aviso ? "sim" : undefined}
       className={atual === nome ? "xbw-aba xbw-aba--atual" : "xbw-aba"}
       onClick={() => aoTocar(nome)}
       aria-current={atual === nome ? "page" : undefined}
     >
       <span className="xbw-aba__icone">
-        <Icone nome={icone} />
         {aviso ? <Contador quantas={aviso} /> : null}
       </span>
       <small>{rotulo}</small>

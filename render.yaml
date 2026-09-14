@@ -15,3 +15,10 @@ services:
         value: 0.0.0.0
       - key: XB_RELEASE
         value: 3.6.1
+      # A chave da inteligencia gratuita NAO fica escrita aqui: "sync: false"
+      # quer dizer que o valor e digitado no painel do Render, e nunca entra no
+      # repositorio. Sem ela o jogo publicado roda igual, so sem a inteligencia.
+      - key: XBW_CHAVE_GROQ
+        sync: false
+      - key: XBW_MODELO_GROQ
+        value: llama-3.3-70b-versatile

@@ -19,23 +19,21 @@ export type VehicleId =
 
 export type TireStat = "grip" | "durability" | "efficiency" | "capacity";
 
-/** The five upgrade paths in the bicycle-first MVP. */
-export type BikePartId = "tire" | "cargo" | "chain" | "brake" | "wheels";
-
-export type BikePartLevels = Record<BikePartId, number>;
-
-/**
- * Aggregated, deterministic effects consumed by route previews and the UI.
- * Multipliers use 1 as their neutral value; bonuses use 0 as neutral.
+/*
+ * OS TIPOS DAS PECAS MORAM COM A TABELA.
+ *
+ * Em asPecasDaBicicleta, que nao importa nada — porque o aplicativo tambem
+ * precisa deles, e o aplicativo nao pode conhecer o jogo. Reexportados aqui
+ * para quem ja escrevia `from "./types"`.
  */
-export interface BikePartEffects {
-  speedMultiplier: number;
-  payloadBonusKg: number;
-  wearMultiplier: number;
-  controlBonus: number;
-  maintenanceDiscount: number;
-  operatingCostMultiplier: number;
-}
+import type { BikePartLevels } from "./asPecasDaBicicleta";
+import type { NiveisDosAcessorios } from "./osAcessorios";
+
+export type {
+  BikePartEffects,
+  BikePartId,
+  BikePartLevels,
+} from "./asPecasDaBicicleta";
 
 export type CourierId = `courier-${number}`;
 export type DeliveryOperatorId = "player" | CourierId;
@@ -255,6 +253,8 @@ export interface CampaignState {
   dailyMissionDay: string;
   dailyMissions: DailyMissionState[];
   bikePartLevels: BikePartLevels;
+  /** Em que nivel esta cada acessorio do entregador. Ver `osAcessorios`. */
+  acessorioLevels: NiveisDosAcessorios;
   /**
    * Quantas unidades a empresa tem de cada classe. E a fonte da verdade da
    * frota.

@@ -76,6 +76,9 @@ import ExperienceSettings from "./ExperienceSettings";
 import RoutesScreen from "./RoutesScreen";
 import { ENTREGADORES } from "@/game/identity";
 import ChamadaDeVideo from "./ChamadaDeVideo";
+import CenaDaChamada from "./CenaDaChamada";
+import { CENA_DA_ABERTURA, CENA_DA_PIZZA } from "@/game/aCenaDaChamada";
+import { minutoDoDia } from "@/game/oRelogioDoBairro";
 import XBWApp from "./xbwapp/XBWApp";
 import { acoplar } from "@/game/xbwapp/ponte";
 import {
@@ -102,11 +105,14 @@ import {
 import { tocarAvisoDeMensagem } from "@/game/oToqueDoAviso";
 import { calcularFrete } from "@/game/freight";
 import {
+  faixaDoPedido,
   ofertasAbertas,
   passarUmSegundo,
   rotaDe,
   trajeto,
+  type ChaveDaFaixa,
 } from "@/game/xbwapp/entregaRapida";
+import { passearPeloBairro } from "@/game/xbwapp/passeioDeTeste";
 import { emReais } from "@/game/xbwapp/catalogo";
 import {
   esperaNoMapa,
@@ -134,13 +140,22 @@ import {
  * de onde ler. Se a frase mudar no roteiro, muda aqui junto.
  */
 const PRIMEIRA_FALA_DEPOIS_DO_BAU = "Achei que era minha pizza";
+/*
+ * E A PRIMEIRA DA SEGUNDA CHAMADA. Mesma razao: o jogo precisa reconhecer que
+ * esta cena JA ACONTECEU sem abrir o roteiro — e a conversa guardada e a unica
+ * marca que sobrevive a um save. Se ela mudar no roteiro, muda aqui junto.
+ */
+const PRIMEIRA_FALA_DA_PIZZA = "Comi todas as pizzas";
 import {
   ESPERA_DEPOIS_DA_ULTIMA_MS,
   ESPERA_PARA_LIGAR_DE_NOVO_MS,
+  ESPERA_DA_SEGUNDA_CHAMADA_MS,
   PASSO_DA_COBRANCA,
+  PASSO_DA_PIZZA,
   ESPERA_PARA_FECHAR_SOZINHO_MS,
   PASSO_DEPOIS_DE_RESOLVER,
   ULTIMA_FALA_DA_ABERTURA,
+  ULTIMA_FALA_DA_PIZZA,
   RECUSAS_ATE_A_MENSAGEM,
 } from "@/game/aConversa";
 
@@ -185,6 +200,8 @@ import {
   companyLevelFromXp,
   vehicleUpgradeCost,
 } from "@/game/progression";
+import { EMPTY_BIKE_PART_LEVELS } from "@/game/asPecasDaBicicleta";
+import { ACESSORIOS_ZERADOS } from "@/game/osAcessorios";
 import { bikeMaintenanceCost } from "@/game/operations";
 import type { GameHandle } from "@/game/scene";
 import {
@@ -337,27 +354,47 @@ function OpeningScene({ onFinish }: { onFinish(assistida: boolean): void }) {
         } as CSSProperties
       }
     >
-      <video
-        ref={videoRef}
-        className="abertura__filme"
-        poster={GAME_ASSETS.openingClipPoster}
-        playsInline
-        preload="auto"
-        onEnded={() => onFinish(true)}
-        /*
-         * Erro nao marca como vista. Se o aparelho nao soube tocar o filme, a
-         * pessoa nao assistiu — e nao seria justo tirar dela a abertura para
-         * sempre por causa de um codec que faltava naquele dia.
-         */
-        onError={() => onFinish(false)}
-      >
-        <source src={GAME_ASSETS.openingClipWebm} type="video/webm" />
-        <source src={GAME_ASSETS.openingClip} type="video/mp4" />
-      </video>
+      {/*
+        O PALCO TEM A FORMA DO FILME — e existe por um motivo so.
+
+        Ordem dele, 13/09/2026: "no video imagem 3 mostra uma pequena estrela
+        do Gemini, deixe o botao pular sobre ela". A marca d'agua esta QUEIMADA
+        no video, entao nao ha o que apagar: o que da para fazer e pousar o
+        botao exatamente em cima dela.
+
+        Para isso o botao precisa saber onde o filme esta na tela, e nao onde a
+        JANELA esta: o filme entra inteiro (contain), entao sobra faixa preta em
+        cima e embaixo ou dos lados, conforme o formato do aparelho. Preso ao
+        canto da janela, o botao andaria para longe da estrela em toda tela que
+        nao fosse exatamente 9 por 16.
+
+        Esta caixa tem a forma do filme e fica centrada, que e o mesmo lugar
+        onde o filme cai. Dentro dela, uma porcentagem e sempre o mesmo ponto
+        da cena.
+      */}
+      <div className="abertura__palco">
+        <video
+          ref={videoRef}
+          className="abertura__filme"
+          poster={GAME_ASSETS.openingClipPoster}
+          playsInline
+          preload="auto"
+          onEnded={() => onFinish(true)}
+          /*
+           * Erro nao marca como vista. Se o aparelho nao soube tocar o filme, a
+           * pessoa nao assistiu — e nao seria justo tirar dela a abertura para
+           * sempre por causa de um codec que faltava naquele dia.
+           */
+          onError={() => onFinish(false)}
+        >
+          <source src={GAME_ASSETS.openingClipWebm} type="video/webm" />
+          <source src={GAME_ASSETS.openingClip} type="video/mp4" />
+        </video>
+        <button className="abertura__pular" onClick={() => onFinish(true)}>
+          PULAR
+        </button>
+      </div>
       {mudo && <span className="abertura__aviso">TOQUE PARA O SOM</span>}
-      <button className="abertura__pular" onClick={() => onFinish(true)}>
-        PULAR
-      </button>
     </div>
   );
 }
@@ -1329,7 +1366,16 @@ function CompleteScreen({
 function useEntregadorNoMapa(
   rota: EmRota,
   rodando: boolean,
-  vaga: readonly [number, number] = [0, 0]
+  vaga: readonly [number, number] = [0, 0],
+  /*
+   * O DEGRAU DO RELOGIO DE CADA PEDIDO — quem pinta a bolinha do pino.
+   *
+   * Entra por fora, e de proposito NAO entra no `chaveDoTracado`: o degrau muda
+   * a cada segundo e o tracado nao pode ser refeito junto, senao o entregador
+   * volta ao comeco do caminho uma vez por segundo. Os pinos sao remontados a
+   * cada desenho (estao fora do memo), entao a cor acompanha o relogio sozinha.
+   */
+  degrauDoPedido?: (pedido: string) => ChaveDaFaixa | undefined
 ) {
   const chaveDoTracado = [
     rota.em,
@@ -1351,9 +1397,7 @@ function useEntregadorNoMapa(
     if (vagaX === 0 && vagaY === 0) return aqui;
     return {
       ...aqui,
-      caminho: aqui.caminho.map(
-        ([x, y]) => [x + vagaX, y + vagaY] as const
-      ),
+      caminho: aqui.caminho.map(([x, y]) => [x + vagaX, y + vagaY] as const),
     };
   }, [plano, chaveDoTracado, vagaX, vagaY]);
   const tracado: TracadoDoPercurso = plano ?? espera!;
@@ -1363,7 +1407,7 @@ function useEntregadorNoMapa(
   );
   const percurso =
     rota.paradas.length > 0
-      ? { paradas: pinosDaRota(rota), onde: progresso?.onde }
+      ? { paradas: pinosDaRota(rota, degrauDoPedido), onde: progresso?.onde }
       : null;
   const comando = useMemo<ComandoDoEntregador>(
     () => ({
@@ -1437,7 +1481,27 @@ export default function GameCanvas() {
    * mesma: a ligacao toca uma vez por entrada, e nao volta a tocar quando a
    * pessoa vai a central e devolve para o mapa.
    */
-  const [chamando, setChamando] = useState(false);
+  /*
+   * QUAL CHAMADA ESTA TOCANDO — e nao so "esta tocando".
+   *
+   * Eram duas coisas na mesma caixinha enquanto existia uma ligacao so. Com a
+   * segunda (a da pizza), atender precisa saber QUAL cena rodar e em qual
+   * passo a conversa cai. Guardar o nome resolve isso sem espalhar interruptor
+   * novo pela tela: quem quiser saber se o telefone toca pergunta `chamando`,
+   * como sempre perguntou.
+   */
+  const [chamadaAtual, setChamadaAtual] = useState<"abertura" | "pizza" | null>(
+    null
+  );
+  const chamando = chamadaAtual !== null;
+  /*
+   * A CENA QUE ESTA NO AR, quando ha uma.
+   *
+   * Mora AQUI e nao dentro do aplicativo por decisao antiga e boa: o
+   * aplicativo carrega o nome da cena e avisa quem atendeu; quem desenha e o
+   * jogo. Assim cena nova nunca mexe no aplicativo.
+   */
+  const [cenaEmCartaz, setCenaEmCartaz] = useState<string | null>(null);
   const jaChamou = useRef(false);
   /*
    * QUANTAS VEZES ELA JA FOI RECUSADA, e a conversa que veio depois.
@@ -1500,6 +1564,14 @@ export default function GameCanvas() {
   const oBauAbriu = useRef(false);
   const [pracaLimpa, setPracaLimpa] = useState(false);
   /*
+   * A CENA DA PIZZA TERMINOU — e e ela que abre a fase dos pedidos.
+   *
+   * Ordem dele, 13/09/2026: "ainda nao entramos na fase dos pedidos". Mora
+   * aqui, ao lado da praca limpa, porque as duas marcam a mesma coisa em
+   * momentos diferentes: ate onde a historia ja chegou.
+   */
+  const [aPizzaAcabou, setAPizzaAcabou] = useState(false);
+  /*
    * ── O AVISO DO XBWAPP, NO CANTO DE CIMA ──────────────────────────────────
    *
    * Ordem dele, 08/09/2026: "apos abrir o bau chega uma notificacao XB no
@@ -1559,6 +1631,13 @@ export default function GameCanvas() {
        * ela le o relogio que o efeito abaixo empurra.
        */
       minutoDoDia: () => minutoDoBairro.current,
+      /*
+       * O DESCANSO DO CELULAR MANDA GRAVAR ANTES DE PARAR.
+       *
+       * Nao e o aplicativo decidindo salvar: e ele avisando que o jogo vai
+       * parar agora, pela mesma porta por onde pede tudo. Quem grava e o jogo.
+       */
+      salvarTudo: () => handleRef.current?.salvarAgora(),
       kmDaCorrida,
       kmDaEntrega,
       prazoEmMinutos,
@@ -1568,14 +1647,62 @@ export default function GameCanvas() {
        */
       freteDaCorrida: (km, volumes) => calcularFrete("bicicleta", km, volumes),
       jogador: () => ({ nome: nomeDoJogador.current }),
+      /*
+       * O CAIXA, O NIVEL E AS PECAS — para a ficha do entregador.
+       *
+       * Leem o estado do jogo na hora da pergunta, e nao uma copia guardada:
+       * a ficha abre no meio do jogo e o caixa muda a cada entrega paga.
+       */
+      dinheiro: () => handleRef.current?.getSnapshot().campaign.credits ?? 0,
+      nivelDaEmpresa: () =>
+        companyLevelFromXp(
+          handleRef.current?.getSnapshot().campaign.companyXp ?? 0
+        ),
+      pecasDaBicicleta: () =>
+        handleRef.current?.getSnapshot().campaign.bikePartLevels ??
+        EMPTY_BIKE_PART_LEVELS,
+      acessorios: () =>
+        handleRef.current?.getSnapshot().campaign.acessorioLevels ??
+        ACESSORIOS_ZERADOS,
+      /*
+       * O aplicativo avisa que a pessoa escolheu melhorar uma peca. Quem
+       * compra e o jogo, com a mesma regra da garagem — inclusive a recusa
+       * quando falta dinheiro ou nivel.
+       */
+      aconteceu: aviso => {
+        if (aviso.o === "melhorar-peca") {
+          handleRef.current?.upgradeBikePart(aviso.peca);
+        }
+        if (aviso.o === "melhorar-acessorio") {
+          handleRef.current?.upgradeAcessorio(aviso.acessorio);
+        }
+      },
     });
     return () => acoplar(null);
   }, []);
 
   const [appAberto, setAppAberto] = useState(false);
-  const [estadoDoApp, setEstadoDoApp] = useState<EstadoDoApp>(() =>
-    semear(estadoInicialDoApp(), ["padaria", "grupo-bairro", "xb"])
-  );
+  /*
+   * ── O APLICATIVO COMECA VAZIO (13/09/2026) ───────────────────────────────
+   *
+   * Ordem dele: "precisamos limpar tela de mensagens ate este momento,
+   * deixando somente a de Renan; neste ponto atual ainda ninguem deve ter
+   * mandado pedido ou mensagem".
+   *
+   * A padaria, o grupo do bairro e a XB entravam JA FALANDO no primeiro
+   * segundo de jogo — tres conversas por ler antes de a pessoa ter feito
+   * qualquer coisa. Contava uma mentira: que o bairro ja conhecia a empresa e
+   * ja tinha serviço, quando a empresa ainda nem existe.
+   *
+   * Agora a lista comeca sem ninguem, e o Renan e a primeira e unica conversa
+   * — que e exatamente o que a historia diz: um amigo ligando.
+   *
+   * Elas nao foram apagadas: entram no MOMENTO em que o trabalho comeca, logo
+   * abaixo. As primeiras mensagens passam a significar alguma coisa, porque
+   * chegam quando ha por que chegar.
+   */
+  const [estadoDoApp, setEstadoDoApp] =
+    useState<EstadoDoApp>(estadoInicialDoApp);
   const [snapshot, setSnapshot] = useState<GameSnapshot | null>(null);
 
   /*
@@ -1698,13 +1825,33 @@ export default function GameCanvas() {
          */
         const comBalcao = passarUmSegundo(atual, quantosNaEquipe.current);
         /*
-         * O relogio de CONVERSA anda a cada minuto de balcao, e nao a cada
-         * segundo: "12:30" no alto da mensagem e o horario do bairro, e o
-         * bairro nao vive um dia inteiro em quinze minutos de jogo.
+         * ── O PASSEIO DE TESTE ────────────────────────────────────────────
+         *
+         * Ordem dele, 11/09/2026: "precisamos testar por enquanto apenas
+         * usuarios pedalando por todo o mapa". Com o interruptor ligado, quem
+         * fica sem rota ganha as proximas portas do bairro e o balcao cala.
+         * Desligado, esta linha nao faz nada. Ver `passeioDeTeste`.
          */
-        return comBalcao.relogioDoBalcao % 60 === 0
-          ? { ...comBalcao, minuto: comBalcao.minuto + 1 }
-          : comBalcao;
+        const comPasseio = passearPeloBairro(comBalcao, [
+          QUEM_LIGA.nome,
+          LORENA.nome,
+        ]);
+        /*
+         * O RELOGIO DA CONVERSA E CALCULADO, e nao somado.
+         *
+         * Ordem dele, 12/09/2026: "primeiro atualize relogio um apenas". Antes
+         * ele somava um minuto a cada minuto de verdade, o que dava um dia de
+         * vinte e quatro horas de tela enquanto o balcao vivia um dia de dez
+         * minutos e o sol nascia duas vezes e meia. Eram tres dias diferentes
+         * correndo juntos.
+         *
+         * Agora "12:30" no alto da mensagem e a traducao do relogio do balcao
+         * em horas de bairro. Um relogio so — ver `oRelogioDoBairro`.
+         */
+        return {
+          ...comPasseio,
+          minuto: minutoDoDia(comPasseio.relogioDoBalcao),
+        };
       });
     }, 1000);
     return () => window.clearInterval(relogio);
@@ -1739,6 +1886,17 @@ export default function GameCanvas() {
         c.candidatoId === QUEM_LIGA.id
           ? GAME_ASSETS.renanEquipado
           : retratoDoCandidato(c.candidatoId),
+      /*
+       * O DESENHO DE CORPO INTEIRO, para a ficha. Por enquanto so o Renan e a
+       * Lorena tem. Quem nao tem cai no retrato redondo — a ficha abre igual,
+       * so com a pessoa menor. Ninguem fica com a tela vazia.
+       */
+      fotoInteira:
+        c.candidatoId === QUEM_LIGA.id
+          ? GAME_ASSETS.renanFicha
+          : c.candidatoId === LORENA.id
+            ? GAME_ASSETS.lorenaFicha
+            : undefined,
       livre:
         !ocupadosNoBalcao.has(c.name) &&
         !naRua.some(d => d.operatorId === c.id),
@@ -1756,9 +1914,42 @@ export default function GameCanvas() {
    * O selo dele e o prata, porque quem esta avisando e a propria XB, e tocar
    * nele leva direto ao balcao — nao a uma conversa.
    */
+  /*
+   * ── O BAIRRO SO ESCREVE QUANDO O TRABALHO COMECA ─────────────────────────
+   *
+   * A padaria, o grupo do bairro e a XB chegam na MESMA marca que abre a fase
+   * dos pedidos: quando a cena da pizza termina. Antes disso a pessoa nao tem
+   * empresa, nao tem entregador disponivel e nao tem o que responder — e uma
+   * conversa que nao da para responder e so um ponto vermelho na tela.
+   *
+   * Cada uma entra com a PRIMEIRA fala do roteiro dela, sem lida, como era no
+   * comeco do jogo. So mudou a hora de chegar.
+   *
+   * ── E A XB NAO MANDA RECADO (14/09/2026) ─────────────────────────────────
+   *
+   * Ordem dele: "entrou um chamado de whatsapp da XB que nao sei quem criou e
+   * por que esta ali, deve ser removido".
+   *
+   * Era o "aviso do sistema XB Technology" — uma mensagem que nao tem gente do
+   * outro lado. Quem escreve no aplicativo do jogo sao PESSOAS e LOJAS: a
+   * padaria oferecendo o pedido, o grupo do bairro conversando. Aviso de
+   * sistema ja tem lugar proprio, o cartao prata que aparece no mapa quando
+   * chega pedido — e ter a mesma coisa em dois lugares so faz a pessoa
+   * desconfiar de quem esta falando com ela.
+   *
+   * A conversa da XB continua escrita e continua existindo; ela so nao comeca
+   * sozinha.
+   */
+  const jaSemeouOBairro = useRef(false);
+  useEffect(() => {
+    if (!aPizzaAcabou || jaSemeouOBairro.current) return;
+    jaSemeouOBairro.current = true;
+    setEstadoDoApp(atual => semear(atual, ["padaria", "grupo-bairro"]));
+  }, [aPizzaAcabou]);
+
   const ultimoPedidoAvisado = useRef<string | null>(null);
   useEffect(() => {
-    if (appAberto || !pracaLimpa) return;
+    if (appAberto || !pracaLimpa || !aPizzaAcabou) return;
     const abertas = ofertasAbertas(estadoDoApp);
     const ultima = abertas[abertas.length - 1];
     if (!ultima || ultimoPedidoAvisado.current === ultima.id) return;
@@ -1769,7 +1960,7 @@ export default function GameCanvas() {
       texto: `${trajeto(ultima)} · ${emReais(ultima.frete)} · ${ultima.prazoS}s`,
       aba: "entregaRapida",
     });
-  }, [estadoDoApp, appAberto, pracaLimpa]);
+  }, [estadoDoApp, appAberto, pracaLimpa, aPizzaAcabou]);
 
   /*
    * ── O PERCURSO DESENHADO NO MAPA ─────────────────────────────────────────
@@ -1811,7 +2002,23 @@ export default function GameCanvas() {
       ) ?? doRenan
     );
   }, [estadoDoApp.rotas]);
-  const doRenanNoMapa = useEntregadorNoMapa(rotaNoMapa, bairroRodando);
+  /*
+   * A COR DA BOLINHA DE CADA PINO, LIDA A CADA DESENHO.
+   *
+   * Sai do balcao, que e quem tem o relogio: o mesmo degrau que o cartao do
+   * pedido mostra dentro do aplicativo. Assim uma cor quer dizer a mesma coisa
+   * no mapa e na tela do pedido.
+   */
+  const degrauDoPedido = useCallback(
+    (pedido: string) => faixaDoPedido(estadoDoApp, pedido),
+    [estadoDoApp]
+  );
+  const doRenanNoMapa = useEntregadorNoMapa(
+    rotaNoMapa,
+    bairroRodando,
+    undefined,
+    degrauDoPedido
+  );
   const { tracado, percurso } = doRenanNoMapa;
   const comandoDoEntregador = doRenanNoMapa.comando;
 
@@ -1829,7 +2036,8 @@ export default function GameCanvas() {
   const daLorenaNoMapa = useEntregadorNoMapa(
     rotaDaLorena,
     bairroRodando,
-    VAGA_DA_LORENA
+    VAGA_DA_LORENA,
+    degrauDoPedido
   );
 
   /*
@@ -1939,6 +2147,85 @@ export default function GameCanvas() {
       setAbrirNaConversa(null);
       setAbrirNaAba(null);
       setPracaLimpa(true);
+    }, ESPERA_PARA_FECHAR_SOZINHO_MS);
+  }, [estadoDoApp.mensagens]);
+
+  /*
+   * ── A SEGUNDA CHAMADA: ELE COMEU AS PIZZAS (13/09/2026) ──────────────────
+   *
+   * Ordem dele: "vamos para uma nova chamada de video de Renan, apos ele dizer
+   * 'comi todas as pizzas', manda a imagem, dai dizemos 'tudo bem quando
+   * estiver melhor me avisa por favor'".
+   *
+   * ── POR QUE ELA SO COMECA COM A PRACA LIMPA ──────────────────────────────
+   *
+   * A praca limpa e o unico sinal que diz "a abertura terminou de verdade": o
+   * bau abriu, a conversa acabou e o aplicativo se fechou sozinho. Ligar antes
+   * disso poria um telefone tocando por cima da cena que ensina o jogo — o
+   * mesmo erro que o balcao ja e obrigado a esperar.
+   *
+   * ── E POR QUE ELA NAO TOCA DUAS VEZES ────────────────────────────────────
+   *
+   * Quem ja passou por esta cena num save anterior nao ouve o telefone de
+   * novo: a marca e a propria conversa. Contador seria outra coisa para
+   * guardar, e guardar errado.
+   */
+  const jaChamouDaPizza = useRef(false);
+  useEffect(() => {
+    if (!pracaLimpa || jaChamouDaPizza.current) return;
+    if (estadoDoApp.mensagens.some(m => m.texto === PRIMEIRA_FALA_DA_PIZZA)) {
+      jaChamouDaPizza.current = true;
+      return;
+    }
+    const relogio = window.setTimeout(() => {
+      jaChamouDaPizza.current = true;
+      /*
+       * ── ESTA TOCA COM O APLICATIVO FECHADO, E ISSO E DE PROPOSITO ────────
+       *
+       * A da abertura toca DENTRO do aplicativo porque o aplicativo ja estava
+       * aberto: era a primeira vez que a pessoa o via. Esta chega com o
+       * telefone guardado e o bairro na tela — entao ela toma a tela inteira,
+       * pela tela de chamada que existe desde 07/09 e ate hoje nao tinha
+       * nenhuma ligacao para chamar de sua.
+       *
+       * E ha um motivo de maquina, alem do motivo de cena: o aplicativo le o
+       * estado do jogo UMA VEZ, quando abre. Mandar a conversa para um passo
+       * novo com ele ja aberto nao chega la dentro — a conversa fica parada
+       * onde estava, sem erro nenhum na tela. Abrindo depois de atender, ele
+       * nasce ja no passo certo e as falas entram sozinhas.
+       */
+      setChamadaAtual("pizza");
+    }, ESPERA_DA_SEGUNDA_CHAMADA_MS);
+    return () => window.clearTimeout(relogio);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pracaLimpa]);
+
+  /*
+   * ── O TERCEIRO FECHAMENTO: a cena da pizza acabou ────────────────────────
+   *
+   * Mesma regra dos outros dois: o sinal de fim e a ULTIMA FRASE aparecendo na
+   * conversa, e nao um passo nem um contador. Ela e a mesma coisa que a pessoa
+   * acabou de ler na tela.
+   *
+   * `aPizzaAcabou` e o que abre a FASE DOS PEDIDOS. Ordem dele, no mesmo dia:
+   * "ainda nao entramos na fase dos pedidos". Enquanto esta cena nao termina,
+   * o balcao continua publicando para dentro, mas nao chama a pessoa: aviso de
+   * pedido novo por cima do amigo passando mal seria o jogo atropelando a
+   * propria historia.
+   */
+  const jaAcabouAPizza = useRef(false);
+  useEffect(() => {
+    if (jaAcabouAPizza.current) return;
+    const acabou = estadoDoApp.mensagens.some(
+      m => m.texto === ULTIMA_FALA_DA_PIZZA
+    );
+    if (!acabou) return;
+    jaAcabouAPizza.current = true;
+    window.setTimeout(() => {
+      setAppAberto(false);
+      setAbrirNaConversa(null);
+      setAbrirNaAba(null);
+      setAPizzaAcabou(true);
     }, ESPERA_PARA_FECHAR_SOZINHO_MS);
   }, [estadoDoApp.mensagens]);
 
@@ -2115,7 +2402,7 @@ export default function GameCanvas() {
        * nesta cena. Nada de tela nova: e a mesma do aplicativo.
        */
       setAppAberto(true);
-      setChamando(true);
+      setChamadaAtual("abertura");
     }, ESPERA_DA_CHAMADA_MS);
     return () => window.clearTimeout(relogio);
   }, [mostrandoMapa]);
@@ -2141,7 +2428,26 @@ export default function GameCanvas() {
    * desiste e escreve.
    */
   const recusar = useCallback(() => {
-    setChamando(false);
+    /*
+     * A SEGUNDA CHAMADA NAO INSISTE.
+     *
+     * Quem recusa a abertura esta ignorando um amigo que quer comecar alguma
+     * coisa — por isso ele liga de novo, e na terceira manda mensagem. Quem
+     * recusa a chamada da pizza esta ocupado, e ele nao esta pedindo nada:
+     * esta avisando. Entao ele faz o que qualquer um faz — escreve.
+     *
+     * Insistir aqui seria o jogo cobrando atencao para uma cena que ja diz "me
+     * avisa quando puder".
+     */
+    if (chamadaAtual === "pizza") {
+      setChamadaAtual(null);
+      window.setTimeout(
+        () => caiNoAplicativo(PASSO_DA_PIZZA),
+        ESPERA_PARA_LIGAR_DE_NOVO_MS
+      );
+      return;
+    }
+    setChamadaAtual(null);
     setRecusas(quantas => {
       const agora = quantas + 1;
       if (agora > RECUSAS_ATE_A_MENSAGEM) return agora;
@@ -2149,21 +2455,48 @@ export default function GameCanvas() {
         if (agora >= RECUSAS_ATE_A_MENSAGEM) {
           caiNoAplicativo(PASSO_DA_COBRANCA);
         } else {
-          setChamando(true);
+          setChamadaAtual("abertura");
         }
       }, ESPERA_PARA_LIGAR_DE_NOVO_MS);
       return agora;
     });
-  }, [caiNoAplicativo]);
+  }, [caiNoAplicativo, chamadaAtual]);
 
   /*
    * Atendeu dentro do aplicativo: cai na conversa de quem ligou. O aplicativo
    * ja esta aberto, entao aqui so se desliga o toque e se aponta a conversa.
    */
-  const atender = useCallback(() => {
-    setChamando(false);
-    caiNoAplicativo();
-  }, [caiNoAplicativo]);
+  const atender = useCallback(
+    (_quem?: unknown, tipo?: string, cena?: string) => {
+      setChamadaAtual(null);
+      /*
+       * ORDEM DELE, 12/09/2026: "aplicar a chamada de Renan na cut cine".
+       *
+       * Chamada de video COM cena: a cena entra primeiro, e a conversa so
+       * comeca quando ela acaba. Chamada de voz, ou de video sem cena, cai na
+       * conversa como sempre caiu — ninguem fica esperando filme que nao
+       * existe.
+       */
+      if (cena && tipo === "video") {
+        setCenaEmCartaz(cena);
+        return;
+      }
+      caiNoAplicativo();
+    },
+    [caiNoAplicativo]
+  );
+
+  /*
+   * A cena acabou (ou a pessoa desligou): agora sim cai na conversa.
+   *
+   * A abertura cai no passo que o roteiro ja abre sozinho. A da pizza cai no
+   * passo dela — a mesma porta por onde a cobranca entra desde 07/09.
+   */
+  const terminarCena = useCallback(() => {
+    const era = cenaEmCartaz;
+    setCenaEmCartaz(null);
+    caiNoAplicativo(era === CENA_DA_PIZZA ? PASSO_DA_PIZZA : undefined);
+  }, [caiNoAplicativo, cenaEmCartaz]);
 
   const sairDoMapa = useCallback(() => {
     setMostrandoMapa(false);
@@ -2670,6 +3003,11 @@ export default function GameCanvas() {
             <MapaDoBairro
               nomeDoJogador={snapshot.campaign.playerName}
               /*
+               * A HORA DO BAIRRO, para a luz. Sai do mesmo relogio que o
+               * balcao usa — ver `oRelogioDoBairro`.
+               */
+              relogioDoBalcao={estadoDoApp.relogioDoBalcao}
+              /*
                * SEM PEDIDO ACEITO, SEM PINO NENHUM.
                *
                * Ordem dele, 08/09/2026: "reiniciei o game e pinos ja aparecem
@@ -2781,9 +3119,9 @@ export default function GameCanvas() {
             >
               <span className="xbw-avisinho__selo" aria-hidden="true">
                 {/*
-                  * A COR DIZ QUEM MANDOU, antes de a pessoa ler o nome.
-                  * Verde e gente falando; prata e a propria XB avisando.
-                  */}
+                 * A COR DIZ QUEM MANDOU, antes de a pessoa ler o nome.
+                 * Verde e gente falando; prata e a propria XB avisando.
+                 */}
                 <img
                   src={
                     avisoDoApp.aba || avisoDoApp.de === "xb"
@@ -2795,10 +3133,10 @@ export default function GameCanvas() {
                 />
               </span>
               {/*
-                * A LUVA. Ela mora DENTRO do botao de proposito: assim ela anda
-                * junto com o cartao, entra e sai com ele, e nao ha um segundo
-                * em que a mao aponta para um lugar vazio.
-                */}
+               * A LUVA. Ela mora DENTRO do botao de proposito: assim ela anda
+               * junto com o cartao, entra e sai com ele, e nao ha um segundo
+               * em que a mao aponta para um lugar vazio.
+               */}
               <span className="xbw-avisinho__texto">
                 <span className="xbw-avisinho__linha">
                   <strong>{avisoDoApp.quem}</strong>
@@ -2806,32 +3144,32 @@ export default function GameCanvas() {
                 </span>
                 <small>{avisoDoApp.texto}</small>
                 {/*
-                  * ONDE TOCAR, ESCRITO.
-                  *
-                  * Houve aqui uma mao DESENHADA POR MIM apontando o cartao.
-                  * Saiu em 08/09/2026 porque ficou ruim e depois ficou
-                  * obscena. As palavras ficaram no lugar dela.
-                  *
-                  * Elas continuam aqui mesmo agora que existe a luva dele: o
-                  * desenho puxa o olho, a palavra diz o que fazer, e quem joga
-                  * sem som nem cor forte le do mesmo jeito.
-                  */}
+                 * ONDE TOCAR, ESCRITO.
+                 *
+                 * Houve aqui uma mao DESENHADA POR MIM apontando o cartao.
+                 * Saiu em 08/09/2026 porque ficou ruim e depois ficou
+                 * obscena. As palavras ficaram no lugar dela.
+                 *
+                 * Elas continuam aqui mesmo agora que existe a luva dele: o
+                 * desenho puxa o olho, a palavra diz o que fazer, e quem joga
+                 * sem som nem cor forte le do mesmo jeito.
+                 */}
                 {!avisoDoApp.aba && (
                   <em className="xbw-avisinho__toque">toque para abrir</em>
                 )}
               </span>
               {/*
-                * A LUVA XB, agora desenhada por ele — folha de 09/09/2026.
-                *
-                * E a mao que faltava: luva branca, punho preto com o XB aceso
-                * e as ondinhas do toque ja no proprio desenho. Nao ha indicador
-                * em pe sozinho, nao ha silhueta ambigua: e um botao de "toque
-                * aqui", e le assim em qualquer lugar do mundo.
-                *
-                * Fica no canto de baixo do cartao, encostando nele, e bate no
-                * ritmo do halo. `aria-hidden` porque quem usa leitor de tela ja
-                * ouve o nome do botao inteiro — a luva seria repeticao.
-                */}
+               * A LUVA XB, agora desenhada por ele — folha de 09/09/2026.
+               *
+               * E a mao que faltava: luva branca, punho preto com o XB aceso
+               * e as ondinhas do toque ja no proprio desenho. Nao ha indicador
+               * em pe sozinho, nao ha silhueta ambigua: e um botao de "toque
+               * aqui", e le assim em qualquer lugar do mundo.
+               *
+               * Fica no canto de baixo do cartao, encostando nele, e bate no
+               * ritmo do halo. `aria-hidden` porque quem usa leitor de tela ja
+               * ouve o nome do botao inteiro — a luva seria repeticao.
+               */}
               {!avisoDoApp.aba && (
                 <img
                   className="xbw-avisinho__luva"
@@ -2853,7 +3191,14 @@ export default function GameCanvas() {
               }}
               chamadaChegando={
                 chamando
-                  ? { contato: QUEM_LIGA.id, tipo: "video" as const }
+                  ? {
+                      contato: QUEM_LIGA.id,
+                      tipo: "video" as const,
+                      cena:
+                        chamadaAtual === "pizza"
+                          ? CENA_DA_PIZZA
+                          : CENA_DA_ABERTURA,
+                    }
                   : undefined
               }
               aoAtenderChamada={atender}
@@ -2877,10 +3222,31 @@ export default function GameCanvas() {
            * ha nenhuma — por isso ela so aparece se o aplicativo estiver
            * fechado, o que na abertura nunca acontece.
            */}
+          {cenaEmCartaz && (
+            <CenaDaChamada cena={cenaEmCartaz} aoTerminar={terminarCena} />
+          )}
           {chamando && !appAberto && (
             <ChamadaDeVideo
               comSom={feedbackPreferences.soundEnabled}
-              aoAtender={atender}
+              /*
+               * A TELA DE CHAMADA POR FORA TAMBEM CARREGA A CENA.
+               *
+               * Ela nasceu antes de existir cena nenhuma, entao avisava so
+               * "atendeu" — e quem atendia por ela caia direto na conversa,
+               * sem filme. Enquanto nenhuma ligacao acontecia com o
+               * aplicativo fechado isso nao aparecia; a chamada da pizza e a
+               * primeira, e apareceu na hora: a conversa nao andava.
+               *
+               * O nome da cena vem de fora para a tela continuar sem saber de
+               * historia nenhuma — ela so mostra quem esta ligando.
+               */
+              aoAtender={() =>
+                atender(
+                  undefined,
+                  "video",
+                  chamadaAtual === "pizza" ? CENA_DA_PIZZA : CENA_DA_ABERTURA
+                )
+              }
               aoRecusar={recusar}
             />
           )}

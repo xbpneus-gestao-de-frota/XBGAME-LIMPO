@@ -27,12 +27,18 @@ const shouldWrite = process.argv.includes("--write");
 // o padrão do hash é o mesmo que o servidor usa para decidir o cache imutável.
 const BUNDLED_ASSET = new RegExp(`-${VITE_HASH_SOURCE}\\.[A-Za-z0-9]+$`);
 const SOURCE_PUBLIC = path.join(projectRoot, "client", "public");
-// O servidor autonomo vem em DUAS pecas desde 07/09/2026: quem serve o jogo e
-// quem atende o XBWAPP. As duas viajam juntas — sem a segunda, a primeira nao
-// sobe, porque a importa. Este portao confere as duas pelo conteudo.
+// O servidor autonomo vem em TRES pecas desde 13/09/2026: quem serve o jogo,
+// quem atende o XBWAPP e o caminho ate a inteligencia gratuita. As tres viajam
+// juntas — sem qualquer uma delas a primeira nao sobe, porque as importa. Este
+// portao confere as tres pelo conteudo.
+//
+// Foi este portao que pegou a terceira faltando, e ele estava certo: um arquivo
+// novo do servidor tem de ser declarado em DOIS lugares (aqui e no
+// copy-standalone-server), senao ou ele nao viaja, ou viaja sem ser conferido.
 const PECAS_DO_SERVIDOR = [
   "standalone-server.mjs",
   "xbwapp-atendimento.mjs",
+  "xbwapp-ia-gratuita.mjs",
 ];
 const SOURCE_SERVER_DIR = path.join(projectRoot, "server");
 
