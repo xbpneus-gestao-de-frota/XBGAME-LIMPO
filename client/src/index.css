@@ -9080,19 +9080,33 @@ body {
  * raiz do zoom, com a mesma sombra achatada embaixo e a mesma correcao de cor —
  * mudando duas coisas de proposito:
  *
- * 1. A ALTURA. Ele e menos da metade do garoto, e nao tem tamanho minimo de
- *    tela. "Bem pequeno, quando for aumentado zoom de pra ver": de longe e um
- *    pontinho na calcada, de perto e uma pessoa. Piso de tela serve para o que
- *    a pessoa precisa ACHAR; o morador e o que ela precisa ENCONTRAR, que e
- *    outra coisa.
+ * 1. A ALTURA VEM DO VILAO. Ordem dele, 14/09/2026: "analisar moradores deixar
+ *    com mesmo tamanho de cabeca de prego". O numero de verdade chega pelo
+ *    --morador-altura, calculado em game/osMoradoresNaRua.ts a partir do CORPO
+ *    do Cabeca de Prego; o 2,52% escrito aqui e so o valor de socorro para o
+ *    dia em que a variavel nao chegar.
  *
- * 2. A SOMBRA E MAIS FRACA. Sao dezesseis delas contra uma so do garoto, e
- *    sombra forte repetida dezesseis vezes vira sujeira preta pela calcada
- *    inteira.
+ *    Ate 13/09 ele era 1,05% — "aplique morador bem pequeno". Nao estava
+ *    errado: estava sozinho. Quando o vilao parou na pracinha do tamanho de um
+ *    homem, um bairro com gente de dois tamanhos parou de ler como distancia e
+ *    passou a ler como defeito.
+ *
+ *    O que ficou da ordem antiga: ele continua SEM tamanho minimo de tela.
+ *    Piso de tela serve para o que a pessoa precisa ACHAR de longe, que e o
+ *    entregador; afastar o mapa continua sumindo com o morador, e esta certo.
+ *
+ * 2. A SOMBRA. Sao dezesseis delas contra uma so do garoto, e foi por isso que
+ *    ela nasceu mais fraca que as outras: sombra forte repetida dezesseis vezes
+ *    vira sujeira preta pela calcada inteira.
+ *
+ *    Com o morador no tamanho do vilao, a fraca de mais passou a flutuar —
+ *    quanto maior o recorte, mais o olho procura onde ele encosta. Ela subiu
+ *    para a do vilao, que e a peca do mesmo tamanho, e parou ali: ainda e a
+ *    mais clara do bairro, e continua abaixo da do garoto.
  */
 .morador {
   position: absolute;
-  height: calc(var(--morador-altura, 1.05%) / var(--zoom-raiz, 1));
+  height: calc(var(--morador-altura, 2.52%) / var(--zoom-raiz, 1));
   transform: translate(-50%, -100%);
   pointer-events: none;
   will-change: transform;
@@ -9120,8 +9134,8 @@ body {
   border-radius: 50%;
   background: radial-gradient(
     closest-side,
-    rgba(6, 12, 20, 0.36),
-    rgba(6, 12, 20, 0.16) 55%,
+    rgba(6, 12, 20, 0.42),
+    rgba(6, 12, 20, 0.2) 55%,
     rgba(6, 12, 20, 0) 100%
   );
 }
@@ -11573,4 +11587,75 @@ body {
     animation: none;
     width: 60%;
   }
+}
+
+/*
+ * ── A TELA QUE TOCA TAMBEM E AZUL (14/09/2026) ───────────────────────────
+ *
+ * Ordem dele: "segunda chamada de Renan esta verde ainda".
+ *
+ * Em 13/09 a CENA — o filme que roda depois de atender — trocou o verde pelo
+ * azul da casa. A tela que TOCA ficou para tras: continuava verde-quase-preto,
+ * com o nome do aplicativo em verde-limao e o anel do retrato em verde.
+ *
+ * Elas sao a mesma ligacao em dois momentos, e apareciam em duas cores
+ * diferentes com dois segundos de diferenca.
+ *
+ * ── A MESMA REGRA DA VEZ PASSADA ─────────────────────────────────────────
+ *
+ * Cada tom troca de COR e mantem a CLARIDADE. Medido um por um: o fundo tinha
+ * 6,5% de luz e continua com 6,5%; o verde do nome tinha 55,1% e o azul da
+ * casa tem exatamente os mesmos 55,1%. A tela continua igualzinha de escura,
+ * o contraste do texto nao muda, e nada precisa ser reavaliado.
+ *
+ * ── O QUE NAO VIRA AZUL, E POR QUE ───────────────────────────────────────
+ *
+ * Os dois botoes de baixo. Vermelho para recusar e verde para atender nao sao
+ * enfeite: sao a mesma cor em todo telefone que existe, e a mao aprende a
+ * posicao pela cor antes de ler a palavra. Pintar os dois de azul deixaria a
+ * tela bonita e faria alguem recusar a chamada sem querer.
+ *
+ * E a mesma decisao que manteve as barrinhas de sinal verdes na cena.
+ */
+.chamada {
+  background: #011020;
+  color: #eef2f7;
+}
+
+.chamada__tela {
+  background:
+    radial-gradient(120% 60% at 100% 0%, rgba(2, 47, 92, 0.55), transparent 60%),
+    radial-gradient(90% 50% at 0% 42%, rgba(2, 40, 78, 0.42), transparent 62%),
+    radial-gradient(120% 55% at 8% 100%, rgba(2, 43, 84, 0.5), transparent 62%),
+    linear-gradient(168deg, #061f38 0%, #011325 52%, #010f1d 100%);
+}
+
+/* O nome do aplicativo e o "X" do selo: o azul da casa, na mesma claridade. */
+.chamada__logo {
+  border-color: #eef2f7;
+  color: #29a8f0;
+}
+
+.chamada__marca strong span {
+  color: #29a8f0;
+}
+
+.chamada__marca small,
+.chamada__estado,
+.chamada__meio em {
+  color: rgba(226, 235, 244, 0.78);
+}
+
+/* O anel do retrato: era o verde que mais saltava na tela. */
+.chamada__retrato {
+  border-color: rgba(74, 130, 186, 0.85);
+  box-shadow: 0 0 6vh rgba(60, 130, 200, 0.25);
+}
+
+.chamada__rodape {
+  color: rgba(110, 155, 200, 0.62);
+}
+
+.chamada__botao:focus-visible {
+  outline-color: #eef2f7;
 }

@@ -34,6 +34,7 @@ import {
   CAIXAS_DA_FICHA,
   acessoriosDaCaixa,
   caixaDaFicha,
+  desenhoDaPeca,
   faltaNaCaixa,
   oQueEstaMontado,
   oQueEstaNoCorpo,
@@ -876,7 +877,7 @@ function Loja({
 }) {
   return (
     <section className="xbw-oficina" aria-label="Loja">
-      <header className="xbw-cracha__topo">
+      <header className="xbw-oficina__topo">
         <button
           type="button"
           className="xbw-decisao__voltar"
@@ -885,20 +886,39 @@ function Loja({
         >
           ‹
         </button>
-        <span className="xbw-cracha__nome">
+        <span className="xbw-oficina__titulo">
           <strong>Loja</strong>
           <small>o que dá para andar</small>
         </span>
       </header>
 
       <Rolagem rotulo="Itens da loja">
-        <ul className="xbw-loja">
+        <ul className="xbw-vitrine">
           {LOJA_DA_EQUIPE.map(item => (
             <li key={item.id}>
-              <button type="button" onClick={() => aoAbrir(item.id)}>
+              {/*
+                APAGADO E NAO ESCONDIDO. Ordem dele, 14/09/2026: "Renan so deve
+                mostrar por enquanto bicicleta". Uma prateleira com um item so
+                faz a pessoa achar que o jogo acabou ali; com os seis a vista,
+                ela ve para onde o jogo vai.
+              */}
+              <button
+                type="button"
+                onClick={() => aoAbrir(item.id)}
+                disabled={!item.disponivel}
+                data-fechado={item.disponivel ? undefined : "sim"}
+              >
+                <img
+                  className="xbw-vitrine__desenho"
+                  src={item.desenho}
+                  alt=""
+                  draggable={false}
+                />
                 <span>
                   <strong>{item.nome}</strong>
-                  <small>{item.sobre}</small>
+                  <small>
+                    {item.disponivel ? item.sobre : "Ainda não, por enquanto"}
+                  </small>
                 </span>
                 <i className="xbw-seta" aria-hidden="true">
                   ›
@@ -938,7 +958,7 @@ function PrateleiraDoItem({
 
   return (
     <section className="xbw-oficina" aria-label={dados.nome}>
-      <header className="xbw-cracha__topo">
+      <header className="xbw-oficina__topo">
         <button
           type="button"
           className="xbw-decisao__voltar"
@@ -947,7 +967,7 @@ function PrateleiraDoItem({
         >
           ‹
         </button>
-        <span className="xbw-cracha__nome">
+        <span className="xbw-oficina__titulo">
           <strong>{dados.nome}</strong>
           <small>{dados.sobre}</small>
         </span>
@@ -1103,6 +1123,27 @@ function Peca({
   return (
     <article className="xbw-peca" data-liberada={liberada ? "sim" : "nao"}>
       <p className="xbw-peca__topo">
+        {/*
+          O DESENHO DA PECA — ordem dele, 14/09/2026: "na tela acessorios e
+          oficina aplicar as imagens do itens".
+
+          Ele nao substitui o nome: entra ANTES dele, na mesma linha, pequeno.
+          Em cima do nome ficaria bonito e custaria uma tira de tela por cartao
+          — sao quatro cartoes, e a pessoa perderia o de baixo. Do lado, o
+          cartao nao cresce nada e o olho ainda acha a peca antes de ler.
+
+          Quem le a tela em voz alta continua ouvindo "Pneus, nivel 2 de 5": o
+          desenho e enfeite marcado como enfeite (alt vazio), porque o nome ja
+          esta escrito ao lado dele.
+        */}
+        {desenhoDaPeca(peca.id) && (
+          <img
+            className="xbw-peca__desenho"
+            src={desenhoDaPeca(peca.id)}
+            alt=""
+            draggable={false}
+          />
+        )}
         <strong>{peca.name}</strong>
         <span className="xbw-peca__niveis" aria-label={`Nível ${nivel} de 5`}>
           {Array.from({ length: MAX_BIKE_PART_LEVEL }).map((_, i) => (

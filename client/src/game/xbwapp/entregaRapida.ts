@@ -1100,19 +1100,37 @@ export function varrerOfertas(estado: EstadoDoApp): EstadoDoApp {
  */
 export function passarUmSegundo(
   estado: EstadoDoApp,
-  tamanhoDaEquipe = estado.equipeDeAgora
+  tamanhoDaEquipe = estado.equipeDeAgora,
+  /*
+   * ── O RELOGIO ANDA, O BAIRRO NAO CHAMA (14/09/2026) ────────────────────
+   *
+   * Ordem dele: "apos a segunda cut cine de Renan, nao deve ter nhuma mensagem
+   * no whats app, nenhum pedido".
+   *
+   * Com `false`, o relogio do balcao continua andando — e ele que faz a hora
+   * no alto do aplicativo e o sol no bairro — mas ninguem publica nada.
+   *
+   * E a PROXIMA CHAMADA ANDA JUNTO com o relogio. Sem isso, o bairro ficaria
+   * "devendo" um pedido a cada tantos segundos, e no dia em que a fase ligasse
+   * despejaria de uma vez todos os que deviam ter saido enquanto ninguem
+   * estava ouvindo. Aqui o bairro nao guarda pedido na gaveta: ele simplesmente
+   * ainda nao comecou a chamar.
+   */
+  oBairroChama = true
 ): EstadoDoApp {
   const comEquipe =
     tamanhoDaEquipe === estado.equipeDeAgora
       ? estado
       : { ...estado, equipeDeAgora: tamanhoDaEquipe };
+  const andou = {
+    ...comEquipe,
+    relogioDoBalcao: comEquipe.relogioDoBalcao + 1,
+  };
+  if (!oBairroChama) {
+    return { ...andou, proximoPedidoEm: andou.proximoPedidoEm + 1 };
+  }
   return verSeAlguemVoltou(
-    varrerOfertas(
-      publicarPedidos({
-        ...comEquipe,
-        relogioDoBalcao: comEquipe.relogioDoBalcao + 1,
-      })
-    ),
+    varrerOfertas(publicarPedidos(andou)),
     tamanhoDaEquipe
   );
 }

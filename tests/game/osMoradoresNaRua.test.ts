@@ -14,7 +14,11 @@
  *     dois metros ao lado — senão a entrega chega e a pessoa está adiante.
  *   · MORADOR PINTADO DEPOIS DA LUZ. Fica com a cor do meio-dia enquanto o
  *     bairro entardece, e aí parece adesivo colado.
- *   · MORADOR GRANDE. Ele foi pedido pequeno de propósito; se alguém puser
+ *   · MORADOR FORA DE ESCALA. Desde 14/09 ele tem o tamanho do Cabeça de
+ *     Prego, e isso é uma CONTA e não um número copiado — se alguém copiar,
+ *     acertar o vilão passa a deixar o bairro com gente de dois tamanhos, e
+ *     ninguém terá mudado nada para isso acontecer.
+ *   · MORADOR COM PISO DE TELA. Ele cresceu, mas continua sendo cenário: com
  *     piso de tela ele vira boneco na calçada e disputa com o entregador.
  */
 import { describe, expect, it } from "vitest";
@@ -23,9 +27,11 @@ import { resolve } from "node:path";
 
 import {
   ALTURA_DO_MORADOR,
+  MARGEM_DA_PAREDE,
   MORADORES_NA_RUA,
   PASSO_ATE_A_CALCADA,
 } from "@/game/osMoradoresNaRua";
+import { ALTURA_DELE_EM_PE } from "@/game/oCabecaDePrego";
 import { ENDERECOS } from "@/game/addresses";
 import { MORADORES } from "@/game/xbwapp/contatos";
 
@@ -59,6 +65,11 @@ describe("os moradores na porta de casa", () => {
      * A porta fica no MEIO DO ASFALTO — ela foi feita para o entregador
      * encostar nela. Morador parado no meio da rua e a primeira coisa que o
      * olho estranha, entao ele da um passo na direcao da propria casa.
+     *
+     * O passo NAO e obrigatorio. Em 14/09 duas pessoas apareceram em pe no
+     * telhado — as casas 6 e 8 sao as mais coladas na rua do bairro, e meio
+     * caminho ate o meio do telhado ja era a cumeeira. Onde a casa esta a
+     * menos de uma parede da porta, o passo certo e nenhum passo.
      */
     for (const m of MORADORES_NA_RUA) {
       const numero = m.id.replace("casa", "");
@@ -71,11 +82,43 @@ describe("os moradores na porta de casa", () => {
         casa!.telhado[1]! - casa!.em[1]!,
       );
 
-      // saiu da rua
-      expect(daPorta).toBeGreaterThan(0);
+      // nunca para tras: o passo e para dentro ou e zero
+      expect(daPorta).toBeGreaterThanOrEqual(0);
       // e o passo e curto: nunca passa do meio do caminho ate a casa
       expect(daPorta).toBeLessThanOrEqual(PASSO_ATE_A_CALCADA + 1e-9);
       expect(daPorta).toBeLessThanOrEqual(daPortaAoTelhado / 2 + 1e-9);
+    }
+  });
+
+  it("ninguem pisa no telhado: para-se a uma parede do meio da casa", () => {
+    /*
+     * A REGRA QUE FALTAVA, E O DEFEITO QUE ELA CONSERTOU.
+     *
+     * A marca do telhado e o MEIO do telhado, e nao a beirada. Enquanto o
+     * morador tinha um por cento de altura, ninguem via que a Dona Marlene e a
+     * Dona Divina andavam para dentro da casa; quando ele cresceu para o
+     * tamanho do vilao, as duas apareceram em pe na cumeeira.
+     *
+     * A excecao escrita na conta e honesta: quando a porta JA esta mais perto
+     * que uma parede, nao ha onde parar antes — entao para-se na porta, e o
+     * que sobra e a distancia inteira. E o caso da casa 11.
+     */
+    for (const m of MORADORES_NA_RUA) {
+      const casa = ENDERECOS.find(
+        e => e.id === `casa-${m.id.replace("casa", "")}`,
+      )!;
+      const ate = Math.hypot(
+        casa.telhado[0]! - casa.em[0]!,
+        casa.telhado[1]! - casa.em[1]!,
+      );
+      const sobrou = Math.hypot(
+        casa.telhado[0]! - m.em.x,
+        casa.telhado[1]! - m.em.y,
+      );
+      expect(
+        sobrou,
+        `${m.nome} parou a ${sobrou.toFixed(2)} do meio do telhado`,
+      ).toBeGreaterThanOrEqual(Math.min(MARGEM_DA_PAREDE, ate) - 1e-9);
     }
   });
 
@@ -119,9 +162,34 @@ describe("os moradores na porta de casa", () => {
     }
   });
 
-  it("e bem pequeno — menos da metade do garoto da praca", () => {
+  it("tem o tamanho do Cabeca de Prego, e tem porque e a MESMA conta", () => {
+    /*
+     * Ordem dele, 14/09/2026: "analisar moradores deixar com mesmo tamanho de
+     * cabeca de prego".
+     *
+     * O teste nao confere um numero: confere que os dois numeros sao UM SO. Um
+     * "toBeCloseTo(2.52)" passaria hoje e mentiria no dia em que alguem
+     * acertasse o vilao — os moradores continuariam do tamanho de um vilao que
+     * nao existe mais, com o teste verde.
+     */
+    expect(ALTURA_DO_MORADOR).toBe(ALTURA_DELE_EM_PE);
+    const fonte = readFileSync("client/src/game/osMoradoresNaRua.ts", "utf8");
+    expect(
+      fonte,
+      "o morador voltou a ter altura escrita a mao"
+    ).toContain("ALTURA_DO_MORADOR = ALTURA_DELE_EM_PE");
+  });
+
+  it("e gente adulta ao lado do garoto da praca, e nao um predio", () => {
+    /*
+     * A cerca dos dois lados. Por baixo: um adulto nao pode ficar menor que um
+     * menino de quinze anos. Por cima: o morador e CENARIO — se ele passar de
+     * um garoto e meio, dezesseis deles tomam o bairro e brigam com o
+     * entregador, que e a unica peca que precisa ser achada de longe.
+     */
     const garoto = Number(/const GAROTO_ALTURA = ([\d.]+);/.exec(MAPA)![1]);
-    expect(ALTURA_DO_MORADOR).toBeLessThan(garoto / 2);
+    expect(ALTURA_DO_MORADOR).toBeGreaterThan(garoto);
+    expect(ALTURA_DO_MORADOR).toBeLessThan(garoto * 1.5);
   });
 
   it("nao tem piso de tela: de longe e um pontinho, de perto e uma pessoa", () => {

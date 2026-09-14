@@ -107,6 +107,28 @@ export const CAIXAS_DA_FICHA: readonly CaixaDaFicha[] = [
   },
 ];
 
+/**
+ * O DESENHO DE CADA PECA — a arte que ele mandou em 14/09/2026.
+ *
+ * Ordem dele: "na tela acessorios e oficina aplicar as imagens do itens".
+ *
+ * Mora AQUI, e nao em asPecasDaBicicleta, porque aquele arquivo e a tabela do
+ * JOGO — preco, velocidade, desgaste — e e lida tambem pela garagem, que nao
+ * tem aplicativo nenhum. Desenho de tela do aplicativo e assunto do aplicativo.
+ *
+ * Quem nao tem desenho aparece sem desenho, e a linha continua inteira: o
+ * nome, o efeito e o preco nunca dependeram da figura.
+ */
+const DESENHOS_DAS_PECAS: Partial<Record<BikePartId, string>> = {
+  tire: "/assets/xbwapp/XBW_peca_tire.webp",
+  chain: "/assets/xbwapp/XBW_peca_chain.webp",
+  brake: "/assets/xbwapp/XBW_peca_brake.webp",
+  wheels: "/assets/xbwapp/XBW_peca_wheels.webp",
+};
+
+export const desenhoDaPeca = (id: BikePartId): string | undefined =>
+  DESENHOS_DAS_PECAS[id];
+
 export const caixaDaFicha = (id: IdDaCaixa): CaixaDaFicha =>
   CAIXAS_DA_FICHA.find(c => c.id === id) ?? CAIXAS_DA_FICHA[0]!;
 

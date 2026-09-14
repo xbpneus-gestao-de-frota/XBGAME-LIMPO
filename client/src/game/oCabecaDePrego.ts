@@ -84,6 +84,36 @@ export const ALTURA_DO_QUADRO = 3.2;
  */
 export const LINHA_DO_PE = 0.8534;
 
+/**
+ * ONDE ACABA A CABECA DELE, contada do alto do quadro.
+ *
+ * O quadro tem ar em cima dele: entre o alto da cabeca, na pose em pe, e a
+ * borda de cima sobram seis virgula cinco por cento. Enquanto ninguem
+ * perguntava o tamanho DELE, esse ar nao custava nada.
+ *
+ * Passou a custar em 14/09/2026, quando ele virou a regua dos moradores:
+ * "analisar moradores deixar com mesmo tamanho de cabeca de prego". Os
+ * moradores sao recortados rente ao contorno — a imagem inteira e corpo. Se o
+ * tamanho deles copiasse o QUADRO dele, os dezesseis sairiam um palmo mais
+ * altos que o vilao; se copiasse ate a linha do pe, um dedo mais altos. Tem de
+ * copiar o CORPO, que e daqui ate a sola.
+ *
+ * Este numero e MEDIDO no desenho, e nao calculado: ele depende de como o
+ * sujeito foi desenhado dentro da pose. Quem monta a tira mede de novo a cada
+ * vez e avisa se o desenho mudar.
+ */
+export const LINHA_DA_CABECA = 0.0656;
+
+/**
+ * QUANTO DO MAPA O CORPO DELE OCUPA, EM PE — da cabeca a sola.
+ *
+ * E este o numero que significa "o tamanho do Cabeca de Prego". O quadro e
+ * maior que ele por dois motivos que nao sao ele: o ar em cima da cabeca e as
+ * anilhas encostadas no chao, na frente das botas.
+ */
+export const ALTURA_DELE_EM_PE =
+  ALTURA_DO_QUADRO * (LINHA_DO_PE - LINHA_DA_CABECA);
+
 /** Quantas poses a tira tem. */
 export const QUANTOS_QUADROS = 4;
 

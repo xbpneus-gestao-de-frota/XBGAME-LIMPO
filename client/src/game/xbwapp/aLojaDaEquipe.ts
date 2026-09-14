@@ -49,7 +49,27 @@ export interface ItemDaLoja {
   /** Uma linha dizendo para que serve. Sem número: número ainda não existe. */
   sobre: string;
   degraus: readonly DegrauDaLoja[];
+  /** O desenho dele, que ele mandou em 14/09/2026. */
+  desenho: string;
+  /*
+   * ── O QUE O RENAN PODE ANDAR HOJE ───────────────────────────────────────
+   *
+   * Ordem dele, 14/09/2026: "tela de loja deve ter essas caixas para seleção,
+   * mas Renan só deve mostrar por enquanto bicicleta".
+   *
+   * Os seis continuam na prateleira, e continuam com o desenho e os cinco
+   * degraus. O que muda é que só a bicicleta ABRE — os outros cinco aparecem
+   * apagados, com a frase dizendo que ainda não.
+   *
+   * Apagado e não escondido, de propósito: uma prateleira com um item só faz a
+   * pessoa achar que o jogo acabou ali. Com os seis à vista, ela vê para onde
+   * o jogo vai — que é exatamente o que uma loja serve para fazer.
+   */
+  disponivel: boolean;
 }
+
+/** A pasta dos desenhos da loja. */
+const DESENHO = "/assets/xbwapp/XBW_loja_";
 
 /** Todo item da loja tem os mesmos cinco degraus. */
 export const DEGRAUS_POR_ITEM = 5;
@@ -70,6 +90,8 @@ export const LOJA_DA_EQUIPE: readonly ItemDaLoja[] = [
       "Bicicleta assistida",
       "Bicicleta elétrica",
     ]),
+    desenho: `${DESENHO}bicicleta.webp`,
+    disponivel: true,
   },
   {
     id: "patins",
@@ -82,6 +104,8 @@ export const LOJA_DA_EQUIPE: readonly ItemDaLoja[] = [
       "Patins com freio de disco",
       "Patins elétrico",
     ]),
+    desenho: `${DESENHO}patins.webp`,
+    disponivel: false,
   },
   {
     id: "triciclo",
@@ -94,6 +118,8 @@ export const LOJA_DA_EQUIPE: readonly ItemDaLoja[] = [
       "Triciclo assistido",
       "Triciclo elétrico",
     ]),
+    desenho: `${DESENHO}triciclo.webp`,
+    disponivel: false,
   },
   {
     id: "patinete",
@@ -106,6 +132,8 @@ export const LOJA_DA_EQUIPE: readonly ItemDaLoja[] = [
       "Patinete assistido",
       "Patinete elétrico",
     ]),
+    desenho: `${DESENHO}patinete.webp`,
+    disponivel: false,
   },
   {
     id: "caiaque",
@@ -118,6 +146,8 @@ export const LOJA_DA_EQUIPE: readonly ItemDaLoja[] = [
       "Caiaque com motor de apoio",
       "Caiaque elétrico",
     ]),
+    desenho: `${DESENHO}caiaque.webp`,
+    disponivel: false,
   },
   {
     id: "skate",
@@ -130,6 +160,8 @@ export const LOJA_DA_EQUIPE: readonly ItemDaLoja[] = [
       "Skate assistido",
       "Skate elétrico",
     ]),
+    desenho: `${DESENHO}skate.webp`,
+    disponivel: false,
   },
 ];
 

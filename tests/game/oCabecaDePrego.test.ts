@@ -28,7 +28,9 @@ import { describe, expect, it } from "vitest";
 import { GAME_ASSETS } from "@/game/assets";
 import { ENDERECOS } from "@/game/addresses";
 import {
+  ALTURA_DELE_EM_PE,
   ALTURA_DO_QUADRO,
+  LINHA_DA_CABECA,
   LINHA_DO_PE,
   O_COMPASSO,
   O_GIRO_MS,
@@ -115,6 +117,20 @@ describe("a linha do pe e a mesma nos tres lugares", () => {
     );
     expect(achado, "o .vilao perdeu o translate").toBeTruthy();
     expect(Number(achado![1]) / 100).toBeCloseTo(LINHA_DO_PE, 4);
+  });
+
+  it("a linha da CABECA bate com a que o script mede no desenho", () => {
+    /*
+     * Esta nao sai de conta: ela depende de como o sujeito foi desenhado
+     * dentro da pose, e por isso e medida no desenho pronto. O script mede toda
+     * vez que roda e avisa se o desenho mudar — aqui so se confere que o numero
+     * guardado nos dois lugares e o mesmo, que e o que um dia vai escorregar.
+     */
+    const achado = SCRIPT.match(/LINHA_DA_CABECA = ([\d.]+)/);
+    expect(achado, "LINHA_DA_CABECA sumiu do script da tira").toBeTruthy();
+    expect(LINHA_DA_CABECA).toBeCloseTo(Number(achado![1]), 4);
+    // e ela esta em cima da sola, senao ele esta de cabeca para baixo
+    expect(LINHA_DA_CABECA).toBeLessThan(LINHA_DO_PE);
   });
 
   it("a sombra fica na linha do pe, e nao na borda de baixo da caixa", () => {
@@ -252,20 +268,28 @@ describe("o tamanho dele, medido contra o bairro", () => {
     return Number(achado![1]);
   }
 
-  it("o corpo dele e um palmo mais alto que o garoto da praca", () => {
+  it("o corpo dele e mais alto que o garoto da praca", () => {
     /*
-     * A altura do QUADRO nao e a dele: o quadro guarda as anilhas, que
-     * encostam no chao bem abaixo das botas. O corpo e a altura do quadro ate
-     * a linha do pe.
+     * A altura do QUADRO nao e a dele, por dois motivos que nao sao ele: em
+     * cima sobra ar sobre a cabeca, e embaixo estao as anilhas, que encostam no
+     * chao bem a frente das botas. O corpo e o pedaco do meio.
      *
-     * Um homem adulto e grande ao lado de um garoto de quinze anos: entre um e
-     * um e meio. Abaixo disso ele fica MENOR que o menino e deixa de ser
-     * ameaca; acima, a barra come o parquinho.
+     * ESTA CONTA JA ESTEVE ERRADA PARA MAIS. Ate 14/09 ela era quadro vezes
+     * linha do pe, que e a cabeca mais o ar de cima — ele saia 2,73% em vez de
+     * 2,52%. Nao incomodava ninguem enquanto o numero so servia para dizer que
+     * ele era maior que o menino; passou a incomodar quando ele virou a regua
+     * dos dezesseis moradores, e oito por cento de engano viraria oito por
+     * cento de gente grande demais na calcada.
+     *
+     * A cerca dos dois lados: um homem adulto e MAIOR que um garoto de quinze
+     * anos, e nao chega a um garoto e meio. Abaixo, ele deixa de ser ameaca;
+     * acima, a barra come o parquinho.
      */
-    const corpo = ALTURA_DO_QUADRO * LINHA_DO_PE;
-    const razao = corpo / alturaDoGaroto();
-    expect(razao).toBeGreaterThan(1.05);
+    const razao = ALTURA_DELE_EM_PE / alturaDoGaroto();
+    expect(razao).toBeGreaterThan(1);
     expect(razao).toBeLessThan(1.5);
+    // e o corpo e mesmo menor que o quadro que o guarda
+    expect(ALTURA_DELE_EM_PE).toBeLessThan(ALTURA_DO_QUADRO * LINHA_DO_PE);
   });
 
   it("encolhe pela raiz do zoom, como as outras pecas de jogo", () => {

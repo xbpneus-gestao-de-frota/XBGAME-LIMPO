@@ -42,6 +42,7 @@
  * uma casa normal; um vulto na porta é um defeito que ninguém sabe nomear.
  */
 import { ENDERECOS } from "./addresses";
+import { ALTURA_DELE_EM_PE } from "./oCabecaDePrego";
 import { MORADORES } from "./xbwapp/contatos";
 
 export interface MoradorNaRua {
@@ -93,14 +94,38 @@ const QUEM_MORA_ONDE: readonly { casa: number; arte: string }[] = [
 /**
  * QUANTO DA ALTURA DO MAPA ELE OCUPA.
  *
- * "Bem pequeno, quando for aumentado zoom dê pra ver" — então ele NÃO tem piso
- * de tela como o entregador tem. O entregador precisa ser achado de longe,
- * porque é quem a pessoa controla; o morador é cenário que recompensa quem
- * chega perto. De longe ele é um pontinho na calçada, e está certo assim.
+ * Ordem dele, 14/09/2026: "analisar moradores deixar com mesmo tamanho de
+ * cabeça de prego".
  *
- * O número é menos da metade do garoto da praça, que já é pequeno.
+ * ── O QUE MUDOU, E POR QUE O DE ANTES NÃO ESTAVA ERRADO ──────────────────
+ *
+ * Até 14/09 este número era 1,05: "aplique morador bem pequeno, quando for
+ * aumentado zoom dê pra ver", a ordem de 13/09. Ele fazia o que foi pedido —
+ * de longe um pontinho na calçada, de perto uma pessoa.
+ *
+ * O que apareceu depois foi o vilão parado na pracinha, do tamanho de um
+ * homem. Com ele na tela, os moradores deixaram de ser "bem pequenos" e
+ * passaram a ser pequenos DEMAIS: o mesmo bairro com gente de dois tamanhos
+ * não lê como distância, lê como erro. Então a régua agora é ele.
+ *
+ * ── POR QUE ISTO VEM DO ARQUIVO DO VILÃO, E NÃO ESCRITO AQUI ─────────────
+ *
+ * Escrever "2,52" aqui seria mais simples de ler e erraria sozinho no dia em
+ * que alguém acertasse o tamanho do vilão — os moradores ficariam no tamanho
+ * de um vilão que não existe mais, e ninguém teria mudado nada para isso
+ * acontecer. "Mesmo tamanho" só continua verdade se for a MESMA conta.
+ *
+ * É o CORPO dele, e não o quadro: o quadro guarda o ar em cima da cabeça e as
+ * anilhas no chão. Os moradores são recortados rente ao contorno, então o que
+ * se compara com eles é o corpo.
+ *
+ * ── O QUE NÃO MUDOU ──────────────────────────────────────────────────────
+ *
+ * Ele continua sem piso de tela. O entregador tem, porque é o que a pessoa
+ * precisa ACHAR de longe; o morador é cenário, e afastar o mapa continua
+ * sumindo com ele — que é a metade da ordem antiga que segue de pé.
  */
-export const ALTURA_DO_MORADOR = 1.05;
+export const ALTURA_DO_MORADOR = ALTURA_DELE_EM_PE;
 
 /**
  * O PASSO DA RUA PARA A CALÇADA.
@@ -108,14 +133,39 @@ export const ALTURA_DO_MORADOR = 1.05;
  * Quanto ele anda da porta em direção ao telhado, em porcentagem do mapa. Dois
  * por cento é mais ou menos meia rua no desenho: tira o morador do asfalto sem
  * enfiá-lo dentro da sala.
- *
- * O teto pela METADE da distância existe por causa das casas coladas na rua:
- * na casa 11 a porta e o telhado estão a um e meio por cento um do outro, e um
- * passo fixo de dois jogaria o morador para trás da própria casa.
  */
 export const PASSO_ATE_A_CALCADA = 2;
 
-/** Um passo curto da porta em direção à casa — sem nunca passar do meio. */
+/**
+ * ONDE A PAREDE COMEÇA — o passo PARA aqui, e não no meio da casa.
+ *
+ * ── ISTO SAIU DE UM DEFEITO QUE FICOU VISÍVEL EM 14/09/2026 ───────────────
+ *
+ * A marca do telhado é o MEIO do telhado, e não a beirada dele. Enquanto o
+ * morador era um pontinho de um por cento, andar na direção do meio da casa
+ * não aparecia. No dia em que ele passou para o tamanho do Cabeça de Prego,
+ * duas pessoas do bairro ficaram em pé EM CIMA DO TELHADO: a Dona Marlene, da
+ * casa 6, e a Dona Divina, da casa 8.
+ *
+ * O motivo é que essas duas casas são as mais coladas na rua do bairro: da
+ * porta até o meio do telhado há três vírgula cinco por cento, e meio caminho
+ * já é a cumeeira. O cuidado que existia — nunca passar do meio — tinha sido
+ * medido para as casas recuadas, que são a maioria.
+ *
+ * ── A REGRA NOVA, EM UMA FRASE ───────────────────────────────────────────
+ *
+ * Pare a uma parede de distância do meio do telhado. As casas do desenho têm
+ * uns sete por cento de largura, então metade de uma casa é três e meio — e é
+ * esse o pedaço que não se pisa. Quando a porta já está mais perto que isso,
+ * o passo é ZERO e o morador fica na própria porta: é onde ele cabe.
+ *
+ * Só três casas mudam de lugar com isso — a 6, a 8 e a 11, as três coladas na
+ * rua. Para as outras treze o passo continua sendo os dois por cento de sempre
+ * ou pouco menos, porque elas têm quintal.
+ */
+export const MARGEM_DA_PAREDE = 3.6;
+
+/** Um passo curto da porta para a casa — parando na parede, nunca depois. */
 function naCalcada(
   porta: readonly [number, number],
   telhado: readonly [number, number]
@@ -124,7 +174,10 @@ function naCalcada(
   const dy = telhado[1] - porta[1];
   const distancia = Math.hypot(dx, dy);
   if (distancia === 0) return { x: porta[0], y: porta[1] };
-  const passo = Math.min(PASSO_ATE_A_CALCADA, distancia / 2);
+  const passo = Math.max(
+    0,
+    Math.min(PASSO_ATE_A_CALCADA, distancia - MARGEM_DA_PAREDE)
+  );
   return {
     x: porta[0] + (dx / distancia) * passo,
     y: porta[1] + (dy / distancia) * passo,

@@ -170,10 +170,32 @@ describe("a chamada de abertura", () => {
   });
 
   it("quem pediu menos movimento nao ve o tremor", () => {
-    const menos = CSS.split("@media (prefers-reduced-motion: reduce) {")
-      .filter(b => b.includes(".chamada__tela"))
-      .at(-1)!;
-    expect(menos).toMatch(/\.chamada__tela\s*\{\s*animation:\s*none/);
+    /*
+     * O bloco e lido contando as CHAVES, e nao cortando o arquivo no texto do
+     * @media. Cortando, tudo o que vem depois do ultimo @media entra no
+     * pedaco — entao qualquer regra nova escrita no fim da folha passava a
+     * contar como "dentro do bloco", e o teste deixava de perguntar o que
+     * queria perguntar. Aconteceu em 14/09, quando a tela que toca ficou azul.
+     */
+    const blocos: string[] = [];
+    const abre = "@media (prefers-reduced-motion: reduce) {";
+    let i = CSS.indexOf(abre);
+    while (i >= 0) {
+      let fundo = 1;
+      let j = i + abre.length;
+      while (j < CSS.length && fundo > 0) {
+        if (CSS[j] === "{") fundo += 1;
+        if (CSS[j] === "}") fundo -= 1;
+        j += 1;
+      }
+      blocos.push(CSS.slice(i + abre.length, j - 1));
+      i = CSS.indexOf(abre, j);
+    }
+    expect(blocos.length).toBeGreaterThan(0);
+    expect(
+      blocos.some(b => /\.chamada__tela\s*\{\s*animation:\s*none/.test(b)),
+      "a tela que toca voltou a tremer para quem pediu menos movimento"
+    ).toBe(true);
   });
 
   it("a ligacao aparece por cima do bairro, e responde ao toque", () => {

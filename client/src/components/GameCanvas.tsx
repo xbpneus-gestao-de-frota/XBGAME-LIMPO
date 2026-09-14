@@ -1571,6 +1571,28 @@ export default function GameCanvas() {
    * momentos diferentes: ate onde a historia ja chegou.
    */
   const [aPizzaAcabou, setAPizzaAcabou] = useState(false);
+
+  /*
+   * ── O BAIRRO AINDA NAO CHAMA (14/09/2026) ────────────────────────────────
+   *
+   * Ordem dele: "apos a segunda cut cine de Renan, nao deve ter nhuma mensagem
+   * no whats app, nenhum pedido".
+   *
+   * Ate hoje a cena da pizza era a marca que abria a FASE DOS PEDIDOS: assim
+   * que ela terminava, a padaria e o grupo do bairro entravam falando e o
+   * balcao comecava a publicar. Ele decidiu que ainda nao — depois da segunda
+   * cena o aplicativo continua vazio e o bairro continua calado.
+   *
+   * DESLIGADO, E NAO APAGADO. Tudo continua escrito e testado do outro lado
+   * deste interruptor: as conversas, os pedidos de teste, o aviso na tela do
+   * mapa. Virar para `true` devolve a fase inteira numa linha, no dia em que
+   * ele decidir o que a abre.
+   *
+   * O RELOGIO CONTINUA ANDANDO. So o bairro cala. Parar o relogio junto
+   * deixaria o jogo preso as seis da manha para sempre, e a hora no alto do
+   * aplicativo e a mesma coisa que o sol no bairro.
+   */
+  const A_FASE_DOS_PEDIDOS_COMECOU = false;
   /*
    * ── O AVISO DO XBWAPP, NO CANTO DE CIMA ──────────────────────────────────
    *
@@ -1823,7 +1845,11 @@ export default function GameCanvas() {
          * traz cliente perdido de volta: quem saiu da carteira so reabre a
          * porta quando a XB fica maior do que era no dia em que ele saiu.
          */
-        const comBalcao = passarUmSegundo(atual, quantosNaEquipe.current);
+        const comBalcao = passarUmSegundo(
+          atual,
+          quantosNaEquipe.current,
+          A_FASE_DOS_PEDIDOS_COMECOU
+        );
         /*
          * ── O PASSEIO DE TESTE ────────────────────────────────────────────
          *
@@ -1871,7 +1897,25 @@ export default function GameCanvas() {
         .map(o => o.entregador)
         .filter((n): n is string => Boolean(n))
     );
-    const contratados = snapshot?.campaign.hiredCouriers ?? [];
+    /*
+     * ── QUEM FOI CONTRATADO, MENOS QUEM AINDA NAO FOI CHAMADO ─────────────
+     *
+     * Ordem dele, 14/09/2026: "Lorena ainda nao deve aparecer na tela de
+     * equipe, ela nao foi chamada ainda".
+     *
+     * O interruptor dela ja estava desligado desde 13/09 — o que ele desliga e
+     * a CONTRATACAO, e contratacao e uma coisa que ja aconteceu numa partida
+     * salva antes disso. Quem jogava desde os dias em que ela entrava junto com
+     * o Renan continuava com ela na lista, e nenhum interruptor novo ia
+     * desfazer isso.
+     *
+     * Entao a lista da equipe passa a respeitar o interruptor tambem na
+     * LEITURA. Nada e apagado da partida salva: ela volta inteira, com
+     * bicicleta e historico, no dia em que o interruptor virar.
+     */
+    const contratados = (snapshot?.campaign.hiredCouriers ?? []).filter(
+      c => LORENA_JA_NA_EQUIPE || c.candidatoId !== LORENA.id
+    );
     const naRua = snapshot?.campaign.activeDeliveries ?? [];
     return contratados.map(c => ({
       id: c.id,
@@ -1942,6 +1986,7 @@ export default function GameCanvas() {
    */
   const jaSemeouOBairro = useRef(false);
   useEffect(() => {
+    if (!A_FASE_DOS_PEDIDOS_COMECOU) return;
     if (!aPizzaAcabou || jaSemeouOBairro.current) return;
     jaSemeouOBairro.current = true;
     setEstadoDoApp(atual => semear(atual, ["padaria", "grupo-bairro"]));
@@ -1949,6 +1994,7 @@ export default function GameCanvas() {
 
   const ultimoPedidoAvisado = useRef<string | null>(null);
   useEffect(() => {
+    if (!A_FASE_DOS_PEDIDOS_COMECOU) return;
     if (appAberto || !pracaLimpa || !aPizzaAcabou) return;
     const abertas = ofertasAbertas(estadoDoApp);
     const ultima = abertas[abertas.length - 1];

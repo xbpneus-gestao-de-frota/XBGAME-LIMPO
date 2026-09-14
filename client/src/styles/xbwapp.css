@@ -7493,6 +7493,31 @@
     800 clamp(0.82rem, 2.1vh, 1rem) / 1.1 system-ui,
     sans-serif;
   color: #eaf6ff;
+  flex: 1 1 auto;
+}
+
+/*
+ * O DESENHO DA PECA.
+ *
+ * Pequeno de proposito. Ele nao e a informacao — a informacao e o nivel e o
+ * que abre no proximo. Ele e o atalho do olho: quem procura a corrente acha a
+ * corrente sem ler quatro titulos.
+ *
+ * A medida esta em vw porque a largura do cartao tambem esta: assim o desenho
+ * e sempre a mesma fatia da linha, em telefone estreito ou largo. O teto em
+ * px e para o tablet, onde 16vw viraria um cartaz.
+ *
+ * O aspect-ratio e 300/210, o quadro em que as quatro pecas foram cortadas.
+ * Ele existe para a linha ja nascer com a altura certa: sem isso o nome pula
+ * para o lado no instante em que a figura carrega.
+ */
+.xbw-peca__desenho {
+  flex: 0 0 auto;
+  width: 16vw;
+  max-width: 84px;
+  aspect-ratio: 300 / 210;
+  height: auto;
+  object-fit: contain;
 }
 
 /*
@@ -8208,9 +8233,31 @@
   gap: 0.8vh;
 }
 
-/* ── OS SEIS ITENS ──────────────────────────────────────────────────────── */
+/*
+ * ── OS SEIS ITENS: A VITRINE DA EQUIPE ─────────────────────────────────────
+ *
+ * O NOME DESTE BLOCO JA FOI ".xbw-loja", E ISSO ERA UM DEFEITO.
+ *
+ * "Loja" ja era o nome da OUTRA loja — a do bairro, onde se compra a comida
+ * que o entregador leva (components/xbwapp/TelaLoja.tsx). As tres telas de la
+ * carregam className="xbw-loja" nas suas secoes desde antes destas regras
+ * existirem, e ninguem tinha escrito regra nenhuma com esse nome.
+ *
+ * Quando esta lista nasceu, em 13/09, ela pegou o nome que estava livre — e
+ * nao estava. O padding e o gap daqui passaram a cercar as telas de la, e o
+ * ".xbw-loja button" (que ganha do .xbw-botao na conta de especificidade)
+ * passou a espichar os botoes do cabecalho delas de lado a lado, com borda e
+ * fundo de item de prateleira. Nada disso deu erro em lugar nenhum.
+ *
+ * Quem achou foi o teste que nao deixa duas telas dividirem a raiz de um
+ * bloco — e ele so achou em 14/09, quando o primeiro ".xbw-loja__desenho"
+ * fez o nome virar raiz de bloco aos olhos dele.
+ *
+ * VITRINE, entao: e a prateleira dos seis jeitos de andar, e nao a loja de
+ * comida do bairro. A outra fica com o nome dela.
+ */
 
-.xbw-loja {
+.xbw-vitrine {
   list-style: none;
   margin: 0;
   padding: 1.4vh 4vw 3vh;
@@ -8218,7 +8265,7 @@
   gap: 1.2vh;
 }
 
-.xbw-loja button {
+.xbw-vitrine button {
   width: 100%;
   display: flex;
   align-items: center;
@@ -8231,29 +8278,97 @@
   cursor: pointer;
 }
 
-.xbw-loja button:active {
+.xbw-vitrine button:active {
   transform: scale(0.99);
 }
 
-.xbw-loja span {
+.xbw-vitrine span {
   display: grid;
   gap: 0.3vh;
   min-width: 0;
   flex: 1 1 auto;
 }
 
-.xbw-loja strong {
+.xbw-vitrine strong {
   font:
     800 clamp(0.95rem, 2.4vh, 1.12rem) / 1.15 system-ui,
     sans-serif;
   color: #eaf6ff;
 }
 
-.xbw-loja small {
+.xbw-vitrine small {
   font:
     500 clamp(0.72rem, 1.75vh, 0.86rem) / 1.3 system-ui,
     sans-serif;
   color: #8fb6d8;
+}
+
+/*
+ * O DESENHO DO ITEM, NA BEIRA DA LINHA.
+ *
+ * Os seis vieram deitados (300 por 210) e nao em pe, e isso foi escolha: uma
+ * lista de seis figuras em pe vira uma escada de seis degraus altos, e o
+ * sexto cai fora da tela do telefone. Deitados, as seis linhas cabem juntas —
+ * que e o que uma prateleira precisa fazer para ser lida como prateleira.
+ *
+ * flex: 0 0 auto porque o texto ao lado e quem estica; o desenho nao encolhe
+ * quando o nome e comprido.
+ */
+.xbw-vitrine__desenho {
+  flex: 0 0 auto;
+  width: 20vw;
+  max-width: 110px;
+  aspect-ratio: 300 / 210;
+  height: auto;
+  object-fit: contain;
+}
+
+/*
+ * O ITEM QUE AINDA NAO ABRE.
+ *
+ * Ordem dele, 14/09/2026: "Renan so deve mostrar por enquanto bicicleta".
+ *
+ * Apagado, e nao escondido: os cinco continuam a vista para mostrar para onde
+ * o jogo vai. O apagado e forte no DESENHO e fraco no TEXTO, de proposito —
+ * figura sem cor ja diz "ainda nao" de longe, e texto apagado de verdade nao
+ * se le. A frase do lado ("Ainda nao, por enquanto") e quem da o motivo, e
+ * ela precisa continuar legivel para dar.
+ *
+ * Nada aqui depende de cor sozinha: o botao esta disabled, entao o teclado
+ * pula ele e o leitor de tela anuncia que esta indisponivel.
+ */
+.xbw-vitrine button[data-fechado="sim"] {
+  cursor: default;
+  border-color: rgba(120, 190, 255, 0.12);
+  background: rgba(12, 34, 60, 0.38);
+}
+
+.xbw-vitrine button[data-fechado="sim"] .xbw-vitrine__desenho {
+  /*
+   * MEIO APAGADO, E NAO QUASE INVISIVEL.
+   *
+   * Na primeira prova em tela o valor era 0,35 com cinza total, e no fundo
+   * azul escuro do aplicativo os cinco desenhos sumiam — sobravam cinco
+   * caixas vazias com um nome escrito. Isso desmancha o motivo de eles
+   * estarem la: ele mandou por "essas caixas para selecao" para a pessoa VER
+   * o que vem depois da bicicleta.
+   *
+   * E o cinza quase sumiu junto com a opacidade, pelo mesmo motivo: os seis
+   * desenhos sao pretos com risco azul, e e o azul que faz o olho reconhecer
+   * a forma no fundo escuro. Tirando a cor, sobrava uma mancha preta. O pouco
+   * de cinza que ficou serve so para os cinco nao competirem com a bicicleta,
+   * que e a unica que abre.
+   */
+  opacity: 0.55;
+  filter: grayscale(0.3);
+}
+
+.xbw-vitrine button[data-fechado="sim"] .xbw-seta {
+  opacity: 0.3;
+}
+
+.xbw-vitrine button[data-fechado="sim"] strong {
+  color: #b6cfe4;
 }
 
 /* ── OS CINCO DEGRAUS DE UM ITEM ────────────────────────────────────────── */

@@ -207,3 +207,32 @@ describe("a aba de Pedidos e a mesma tela por outra porta", () => {
     expect(APP).toContain('a.nome === "entregaRapida" || a.nome === "pedidos"');
   });
 });
+
+describe("toda classe destas telas tem regra escrita", () => {
+  it("nenhuma classe xbw- desta tela fica sem regra na folha", () => {
+    /*
+     * O DEFEITO QUE ESTE TESTE PEGA, E QUE JA ACONTECEU DUAS VEZES NO MESMO
+     * DIA (14/09/2026).
+     *
+     * Uma classe escrita na tela e esquecida na folha nao estoura em lugar
+     * nenhum: a tela abre, o teste passa, e o desenho sai do tamanho do
+     * arquivo original — ou o titulo sai grudado no subtitulo, que foi o que
+     * aconteceu com o cabecalho da Loja ("Lojao que da para andar").
+     *
+     * Aconteceu de novo minutos depois: o bloco foi renomeado de .xbw-loja
+     * para .xbw-vitrine na folha, e o ".xbw-loja__desenho" escapou da troca
+     * por causa do sublinhado. A bicicleta apareceu do tamanho da tela.
+     *
+     * Uma classe de proposito SEM regra — so para dizer o nome da tela — e
+     * legitima e existe nesta casa, entao ela entra na lista de baixo com o
+     * nome escrito. A lista e a documentacao.
+     */
+    const semRegra = new Set<string>([]);
+    const orfas: string[] = [];
+    for (const m of TELA.matchAll(/className=\{?"([^"]+)"/g))
+      for (const cls of m[1]!.split(/\s+/).filter(c => c.startsWith("xbw-")))
+        if (!semRegra.has(cls) && !new RegExp(`\\.${cls}(?![\\w-])`).test(FOLHA))
+          orfas.push(cls);
+    expect([...new Set(orfas)]).toEqual([]);
+  });
+});

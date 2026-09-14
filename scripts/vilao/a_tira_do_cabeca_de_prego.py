@@ -129,6 +129,30 @@ def linha_do_pe() -> float:
     return (ANCORA[1] - RECORTE[1]) / (RECORTE[3] - RECORTE[1])
 
 
+# ── ONDE ACABA A CABECA DELE ──────────────────────────────────────────────
+#
+# A linha do pe sai de conta: a ancora e a sola, e o recorte diz onde o quadro
+# comeca. A linha da CABECA nao sai de conta nenhuma — ela depende de como o
+# desenhista desenhou o sujeito, e por isso ela e MEDIDA no desenho pronto.
+#
+# Ela existe porque o quadro tem ar em cima dele: entre o alto da cabeca e a
+# borda do quadro sobram uns seis por cento. Enquanto ninguem perguntava o
+# tamanho DELE, esse ar nao custava nada. Passou a custar em 14/09/2026, quando
+# ele virou a regua dos moradores: medir o quadro em vez do corpo poria os
+# dezesseis moradores um palmo mais altos do que ele.
+#
+# O valor esta escrito aqui e em game/oCabecaDePrego.ts, e um teste amarra os
+# dois. Se um dia a pose em pe mudar, este script avisa na hora de rodar.
+LINHA_DA_CABECA = 0.0656
+
+
+def linha_da_cabeca(tira: Image.Image) -> float:
+    """O alto da pose mais alta, contado do alto da tira."""
+    alfa = np.array(tira)[:, :, 3]
+    linhas = np.where((alfa > 16).any(axis=1))[0]
+    return float(linhas[0]) / tira.size[1]
+
+
 if __name__ == "__main__":
     tira = montar()
     DESTINO.parent.mkdir(parents=True, exist_ok=True)
@@ -136,4 +160,12 @@ if __name__ == "__main__":
     print(f"{DESTINO.relative_to(RAIZ)}  {tira.size[0]}x{tira.size[1]}")
     print(f"quadros: {len(POSES)}  cada um {QUADRO[0]}x{QUADRO[1]}")
     print(f"linha do pe: {linha_do_pe() * 100:.2f}% da altura")
+    medida = linha_da_cabeca(tira)
+    print(f"linha da cabeca: {medida * 100:.2f}% da altura")
+    if abs(medida - LINHA_DA_CABECA) > 0.005:
+        print(
+            f"  ATENCAO: LINHA_DA_CABECA aqui e no jogo dizem "
+            f"{LINHA_DA_CABECA * 100:.2f}%, e o desenho diz {medida * 100:.2f}%."
+        )
+        print("  Corrija nos dois lugares, senao os moradores saem de escala.")
     print(f"peso: {DESTINO.stat().st_size / 1024:.0f} KB")
